@@ -10,7 +10,6 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urlparse
 
 
@@ -20,7 +19,7 @@ class Utils:
     @staticmethod
     def setup_logger(
         name: str = "SlopeSniper",
-        log_file: Optional[str] = None,
+        log_file: str | None = None,
         level: int = logging.INFO,
     ) -> logging.Logger:
         """
@@ -59,7 +58,7 @@ class Utils:
         return logger
 
     @staticmethod
-    def get_env_or_default(key: str, default: Optional[str] = None) -> Optional[str]:
+    def get_env_or_default(key: str, default: str | None = None) -> str | None:
         """
         Get value from environment variable.
 
@@ -92,7 +91,7 @@ class Utils:
         return bool(re.match(pattern, address))
 
     @staticmethod
-    def parse_contract_address(text: str) -> Optional[str]:
+    def parse_contract_address(text: str) -> str | None:
         """
         Extract Solana contract address from text.
 
@@ -114,13 +113,13 @@ class Utils:
 
             # Try extracting from URLs
             url_pattern = r"(https?://\S+)"
-            urls = re.findall(url_pattern, text)
+            urls: list[str] = re.findall(url_pattern, text)
             for url in urls:
                 parsed_url = urlparse(url)
-                path_parts = parsed_url.path.split("/")
+                path_parts: list[str] = parsed_url.path.split("/")
                 for part in path_parts:
                     if re.match(pattern, part):
-                        return part
+                        return str(part)
 
             return None
 

@@ -9,7 +9,6 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass, field
-from typing import Optional
 
 import base58
 from solders.keypair import Keypair
@@ -28,7 +27,7 @@ class PolicyConfig:
     ALLOW_MINTS: list[str] = field(default_factory=list)  # If set, ONLY these allowed
 
 
-def get_secret(name: str) -> Optional[str]:
+def get_secret(name: str) -> str | None:
     """
     Get a secret value with gateway -> env fallback.
 
@@ -60,7 +59,7 @@ def get_secret(name: str) -> Optional[str]:
     return None
 
 
-def get_keypair() -> Optional[Keypair]:
+def get_keypair() -> Keypair | None:
     """
     Load Solana keypair from SOLANA_PRIVATE_KEY secret.
 
@@ -92,7 +91,7 @@ def get_keypair() -> Optional[Keypair]:
         raise ValueError(f"Invalid SOLANA_PRIVATE_KEY format: {e}") from e
 
 
-def get_wallet_address() -> Optional[str]:
+def get_wallet_address() -> str | None:
     """
     Get the wallet address from the configured keypair.
 
@@ -115,7 +114,7 @@ def get_rpc_url() -> str:
     return get_secret("SOLANA_RPC_URL") or "https://api.mainnet-beta.solana.com"
 
 
-def get_jupiter_api_key() -> Optional[str]:
+def get_jupiter_api_key() -> str | None:
     """
     Get Jupiter API key for higher rate limits.
 

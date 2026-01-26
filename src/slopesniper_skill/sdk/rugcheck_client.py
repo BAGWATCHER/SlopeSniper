@@ -6,7 +6,7 @@ Fetches token risk scores and reports from rugcheck.xyz API.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 
@@ -26,10 +26,23 @@ class RugCheckClient:
         self.logger = Utils.setup_logger("RugCheckClient")
         self.base_url = "https://api.rugcheck.xyz/v1"
         self.timeout = timeout
+        self._session: aiohttp.ClientSession | None = None
+
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """Get or create a reusable session with connection pooling."""
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
+
+    async def close(self) -> None:
+        """Close the client session."""
+        if self._session and not self._session.closed:
+            await self._session.close()
+            self._session = None
 
     async def get_report_summary(
         self, contract_address: str
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Fetch report summary from RugCheck API.
 
@@ -42,18 +55,18 @@ class RugCheckClient:
         try:
             summary_url = f"{self.base_url}/tokens/{contract_address}/report/summary"
             timeout = aiohttp.ClientTimeout(total=self.timeout)
+            session = await self._get_session()
 
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(summary_url) as response:
-                    response.raise_for_status()
-                    summary = await response.json()
+            async with session.get(summary_url, timeout=timeout) as response:
+                response.raise_for_status()
+                summary: dict[str, Any] = await response.json()
 
-                    self.logger.info(
-                        f"[get_report_summary] Score: {summary.get('score')}, "
-                        f"Risks: {len(summary.get('risks', []))}"
-                    )
+                self.logger.info(
+                    f"[get_report_summary] Score: {summary.get('score')}, "
+                    f"Risks: {len(summary.get('risks', []))}"
+                )
 
-                    return summary
+                return summary
 
         except aiohttp.ClientError as e:
             self.logger.error(f"[get_report_summary] Failed: {e}")

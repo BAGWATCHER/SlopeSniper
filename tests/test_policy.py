@@ -1,15 +1,12 @@
 """Tests for policy gate functionality."""
 
-import pytest
 
+from slopesniper_skill.tools.config import PolicyConfig
 from slopesniper_skill.tools.policy import (
     PolicyResult,
     check_policy,
     is_known_safe_mint,
-    KNOWN_SAFE_MINTS,
 )
-from slopesniper_skill.tools.config import PolicyConfig
-
 
 # Known mints for testing
 SOL_MINT = "So11111111111111111111111111111111111111112"

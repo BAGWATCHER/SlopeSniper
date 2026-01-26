@@ -9,8 +9,8 @@ Bundled SDK for Solana token operations:
 
 __version__ = "0.1.0"
 
-from .jupiter_ultra_client import JupiterUltraClient
 from .jupiter_data_client import JupiterDataClient
+from .jupiter_ultra_client import JupiterUltraClient
 from .rugcheck_client import RugCheckClient
 from .utils import Utils
 

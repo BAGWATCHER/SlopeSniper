@@ -6,13 +6,12 @@ Six tools for safe Solana token trading with policy enforcement.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from ..sdk import JupiterDataClient, JupiterUltraClient, RugCheckClient, Utils
 from .config import get_jupiter_api_key, get_keypair, get_wallet_address
 from .intents import create_intent, get_intent, mark_executed
-from .policy import KNOWN_SAFE_MINTS, check_policy, is_known_safe_mint
-
+from .policy import check_policy, is_known_safe_mint
 
 # Well-known token symbols to mint addresses
 SYMBOL_TO_MINT: dict[str, str] = {
@@ -40,7 +39,7 @@ TOKEN_DECIMALS: dict[str, int] = {
 DEFAULT_DECIMALS = 9
 
 
-def resolve_token(token: str) -> Optional[str]:
+def resolve_token(token: str) -> str | None:
     """
     Resolve a token symbol or mint address to a mint address.
 
@@ -86,10 +85,10 @@ async def solana_get_price(token: str) -> dict[str, Any]:
         results = await data_client.search_token(token)
         if results:
             mint = results[0].get("address")
-        else:
+        if not mint:
             return {"error": f"Token not found: {token}"}
 
-    # Get price
+    # Get price - mint is guaranteed to be str here
     data_client = JupiterDataClient()
     price_data = await data_client.get_price(mint)
 
@@ -177,7 +176,7 @@ async def solana_check_token(mint_address: str) -> dict[str, Any]:
     }
 
 
-async def solana_get_wallet(address: Optional[str] = None) -> dict[str, Any]:
+async def solana_get_wallet(address: str | None = None) -> dict[str, Any]:
     """
     Get wallet balances and holdings.
 

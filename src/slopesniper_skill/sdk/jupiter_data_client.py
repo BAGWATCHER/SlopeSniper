@@ -8,7 +8,7 @@ for getting token prices and searching for tokens.
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 
@@ -23,6 +23,7 @@ class JupiterDataClient:
     - Get USD prices for tokens (up to 50 at once)
     - Search tokens by symbol, name, or mint address
     - Detailed token metadata including audit info and stats
+    - Connection pooling via reusable session
     """
 
     BASE_URL_PRICE = "https://lite-api.jup.ag/price/v3"
@@ -37,43 +38,56 @@ class JupiterDataClient:
         """
         self.logger = Utils.setup_logger("JupiterDataClient")
         self.max_retries = max_retries
+        self._session: aiohttp.ClientSession | None = None
         self.logger.info("[__init__] JupiterDataClient initialized")
+
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """Get or create a reusable session with connection pooling."""
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
+
+    async def close(self) -> None:
+        """Close the client session."""
+        if self._session and not self._session.closed:
+            await self._session.close()
+            self._session = None
 
     async def _make_request(
         self,
         url: str,
-        params: Optional[dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         method: str = "GET",
     ) -> dict[str, Any]:
         """Make HTTP request with exponential backoff retry logic."""
         self.logger.debug(f"[_make_request] {method} {url}, params={params}")
+        session = await self._get_session()
+        timeout = aiohttp.ClientTimeout(total=10)
 
         for attempt in range(self.max_retries):
             try:
-                async with aiohttp.ClientSession() as session:
-                    if method == "GET":
-                        timeout = aiohttp.ClientTimeout(total=10)
-                        async with session.get(
-                            url, params=params, timeout=timeout
-                        ) as response:
-                            response_text = await response.text()
+                if method == "GET":
+                    async with session.get(
+                        url, params=params, timeout=timeout
+                    ) as response:
+                        response_text = await response.text()
 
-                            if response.status == 200:
-                                data = await response.json()
-                                self.logger.debug(
-                                    f"[_make_request] SUCCESS on attempt {attempt + 1}"
-                                )
-                                return data
-                            else:
-                                self.logger.warning(
-                                    f"[_make_request] Attempt {attempt + 1}/{self.max_retries} "
-                                    f"failed: status={response.status}"
-                                )
+                        if response.status == 200:
+                            data: dict[str, Any] = await response.json()
+                            self.logger.debug(
+                                f"[_make_request] SUCCESS on attempt {attempt + 1}"
+                            )
+                            return data
+                        else:
+                            self.logger.warning(
+                                f"[_make_request] Attempt {attempt + 1}/{self.max_retries} "
+                                f"failed: status={response.status}"
+                            )
 
-                                if response.status == 400:
-                                    raise ValueError(
-                                        f"Bad request (400): {response_text}"
-                                    )
+                            if response.status == 400:
+                                raise ValueError(
+                                    f"Bad request (400): {response_text}"
+                                )
 
             except asyncio.TimeoutError:
                 self.logger.warning(
@@ -130,7 +144,7 @@ class JupiterDataClient:
             self.logger.error(f"[get_prices] FAILED: {e}", exc_info=True)
             raise
 
-    async def get_price(self, mint_address: str) -> Optional[dict[str, Any]]:
+    async def get_price(self, mint_address: str) -> dict[str, Any] | None:
         """
         Get USD price for a single token.
 
@@ -186,7 +200,7 @@ class JupiterDataClient:
             self.logger.error(f"[search_token] FAILED: {e}", exc_info=True)
             raise
 
-    async def get_token_info(self, mint_address: str) -> Optional[dict[str, Any]]:
+    async def get_token_info(self, mint_address: str) -> dict[str, Any] | None:
         """
         Get detailed information for a specific token.
 

@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import os
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 from solders.keypair import Keypair
@@ -33,6 +33,7 @@ class JupiterUltraClient:
     - Execute signed swaps
     - Query wallet holdings
     - Exponential backoff with configurable retry logic
+    - Connection pooling via reusable session
     """
 
     BASE_URL = "https://api.jup.ag/ultra/v1"
@@ -42,7 +43,7 @@ class JupiterUltraClient:
     USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 
     def __init__(
-        self, api_key: Optional[str] = None, max_retries: int = 5
+        self, api_key: str | None = None, max_retries: int = 5
     ) -> None:
         """
         Initialize Jupiter Ultra Client.
@@ -53,6 +54,7 @@ class JupiterUltraClient:
         """
         self.logger = Utils.setup_logger("JupiterUltraClient")
         self.max_retries = max_retries
+        self._session: aiohttp.ClientSession | None = None
 
         # Get API key from parameter, env var, or None (free tier)
         self.api_key = api_key or os.environ.get("JUPITER_API_KEY")
@@ -64,12 +66,27 @@ class JupiterUltraClient:
                 "[__init__] JupiterUltraClient initialized (free tier - rate limited)"
             )
 
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """Get or create a reusable session with connection pooling."""
+        if self._session is None or self._session.closed:
+            headers = {"Content-Type": "application/json"}
+            if self.api_key:
+                headers["x-api-key"] = self.api_key
+            self._session = aiohttp.ClientSession(headers=headers)
+        return self._session
+
+    async def close(self) -> None:
+        """Close the client session."""
+        if self._session and not self._session.closed:
+            await self._session.close()
+            self._session = None
+
     async def _make_request(
         self,
         url: str,
         method: str = "GET",
-        params: Optional[dict[str, Any]] = None,
-        json_data: Optional[dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        json_data: dict[str, Any] | None = None,
         timeout: int = 30,
     ) -> dict[str, Any]:
         """
@@ -86,54 +103,48 @@ class JupiterUltraClient:
             JSON response as dictionary
         """
         self.logger.debug(f"[_make_request] {method} {url}, params={params}")
+        session = await self._get_session()
+        client_timeout = aiohttp.ClientTimeout(total=timeout)
 
         for attempt in range(self.max_retries):
             try:
-                async with aiohttp.ClientSession() as session:
-                    headers = {"Content-Type": "application/json"}
-                    if self.api_key:
-                        headers["x-api-key"] = self.api_key
+                if method == "GET":
+                    async with session.get(
+                        url, params=params, timeout=client_timeout
+                    ) as response:
+                        response_text = await response.text()
 
-                    request_kwargs: dict[str, Any] = {
-                        "timeout": aiohttp.ClientTimeout(total=timeout),
-                        "headers": headers,
-                    }
+                        if response.status == 200:
+                            data: dict[str, Any] = await response.json()
+                            self.logger.debug(
+                                f"[_make_request] SUCCESS on attempt {attempt + 1}"
+                            )
+                            return data
+                        else:
+                            self.logger.warning(
+                                f"[_make_request] Attempt {attempt + 1}/{self.max_retries} "
+                                f"failed: status={response.status}, "
+                                f"body={response_text[:500]}"
+                            )
 
-                    if method == "GET":
-                        request_kwargs["params"] = params
-                        async with session.get(url, **request_kwargs) as response:
-                            response_text = await response.text()
+                elif method == "POST":
+                    async with session.post(
+                        url, json=json_data, timeout=client_timeout
+                    ) as response:
+                        response_text = await response.text()
 
-                            if response.status == 200:
-                                data = await response.json()
-                                self.logger.debug(
-                                    f"[_make_request] SUCCESS on attempt {attempt + 1}"
-                                )
-                                return data
-                            else:
-                                self.logger.warning(
-                                    f"[_make_request] Attempt {attempt + 1}/{self.max_retries} "
-                                    f"failed: status={response.status}, "
-                                    f"body={response_text[:500]}"
-                                )
-
-                    elif method == "POST":
-                        request_kwargs["json"] = json_data
-                        async with session.post(url, **request_kwargs) as response:
-                            response_text = await response.text()
-
-                            if response.status == 200:
-                                data = await response.json()
-                                self.logger.debug(
-                                    f"[_make_request] SUCCESS on attempt {attempt + 1}"
-                                )
-                                return data
-                            else:
-                                self.logger.warning(
-                                    f"[_make_request] Attempt {attempt + 1}/{self.max_retries} "
-                                    f"failed: status={response.status}, "
-                                    f"body={response_text[:500]}"
-                                )
+                        if response.status == 200:
+                            data = await response.json()
+                            self.logger.debug(
+                                f"[_make_request] SUCCESS on attempt {attempt + 1}"
+                            )
+                            return data
+                        else:
+                            self.logger.warning(
+                                f"[_make_request] Attempt {attempt + 1}/{self.max_retries} "
+                                f"failed: status={response.status}, "
+                                f"body={response_text[:500]}"
+                            )
 
             except asyncio.TimeoutError:
                 self.logger.warning(
@@ -160,9 +171,9 @@ class JupiterUltraClient:
         input_mint: str,
         output_mint: str,
         amount: int,
-        taker: Optional[str] = None,
+        taker: str | None = None,
         slippage_bps: int = 50,
-        exclude_dexes: Optional[str] = None,
+        exclude_dexes: str | None = None,
     ) -> dict[str, Any]:
         """
         Get swap quote and unsigned transaction.

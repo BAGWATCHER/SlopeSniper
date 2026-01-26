@@ -1,6 +1,7 @@
 """Tests for configuration functionality."""
 
 import os
+
 import pytest
 
 from slopesniper_skill.tools.config import (

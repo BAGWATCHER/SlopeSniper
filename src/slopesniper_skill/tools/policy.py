@@ -8,7 +8,7 @@ All checks must pass for a trade to be allowed.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from .config import PolicyConfig, get_policy_config
 
@@ -18,7 +18,7 @@ class PolicyResult:
     """Result of policy check."""
 
     allowed: bool
-    reason: Optional[str] = None
+    reason: str | None = None
     checks_passed: list[str] = field(default_factory=list)
     checks_failed: list[str] = field(default_factory=list)
 
@@ -40,8 +40,8 @@ def check_policy(
     to_mint: str,
     amount_usd: float,
     slippage_bps: int,
-    rugcheck_result: Optional[dict[str, Any]] = None,
-    config: Optional[PolicyConfig] = None,
+    rugcheck_result: dict[str, Any] | None = None,
+    config: PolicyConfig | None = None,
 ) -> PolicyResult:
     """
     Run all policy gates on a proposed trade.
