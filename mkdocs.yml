@@ -1,0 +1,82 @@
+site_name: SlopeSniper Skill
+site_description: Safe Solana token trading skill for Claude Code
+site_url: https://slopesniper.github.io/slopesniper-skill
+repo_url: https://github.com/slopesniper/slopesniper-skill
+repo_name: slopesniper/slopesniper-skill
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Configuration: getting-started/configuration.md
+      - Quick Start: getting-started/quickstart.md
+  - Tools:
+      - Overview: tools/overview.md
+      - solana_get_price: tools/get-price.md
+      - solana_search_token: tools/search-token.md
+      - solana_check_token: tools/check-token.md
+      - solana_get_wallet: tools/get-wallet.md
+      - solana_quote: tools/quote.md
+      - solana_swap_confirm: tools/swap-confirm.md
+  - Security:
+      - Policy Gates: security/policy.md
+      - Two-Step Swaps: security/two-step-swaps.md
+      - Known Safe Tokens: security/known-safe.md
+  - API Reference: api.md
+  - Contributing: contributing.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - tables
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/slopesniper
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/slopesniper
