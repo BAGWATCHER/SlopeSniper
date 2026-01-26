@@ -2,7 +2,7 @@
 
 <img src="logo.jpg" alt="SlopeSniper Logo" width="500">
 
-# SlopeSniper Skill
+# SlopeSniper Skill 🦞
 
 **Safe Solana token trading for Claude Code**
 
