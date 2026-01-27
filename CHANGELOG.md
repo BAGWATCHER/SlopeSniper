@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-01-27
+
+### Added
+- **Wallet backup system** - Automatic backups before wallet overwrites
+  - Backups stored in `~/.slopesniper/wallet_backups/`
+  - Keeps last 10 backups with timestamps
+  - Address files for easy identification
+- **Backup export commands**:
+  - `slopesniper export --list-backups` - List all backed up wallets
+  - `slopesniper export --backup TIMESTAMP` - Export specific backup
+- **Safe uninstall** - `slopesniper uninstall` with safety confirmations
+  - Requires `--confirm` flag
+  - Shows wallet address before removal
+  - Double confirmation: type "DELETE MY WALLET"
+  - `--keep-data` option to preserve wallet/config
+
+### Changed
+- `slopesniper export` now shows backup availability info
+
 ## [0.2.5] - 2026-01-27
 
 ### Fixed
@@ -103,7 +122,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.5...HEAD
+[Unreleased]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.6...HEAD
+[0.2.6]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.2...v0.2.3
