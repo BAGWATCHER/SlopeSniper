@@ -69,7 +69,7 @@ class JupiterUltraClient:
         # Fallback to embedded key if endpoint unreachable
         config_url = os.environ.get(
             "SLOPESNIPER_CONFIG_URL",
-            "https://slopesniper.config.example.com/config/jup"
+            "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/jup.json"
         )
 
         try:
@@ -78,10 +78,7 @@ class JupiterUltraClient:
 
             req = urllib.request.Request(
                 config_url,
-                headers={
-                    "User-Agent": "SlopeSniper",
-                    "X-SlopeSniper-Client": "slopesniper/0.1.0"
-                }
+                headers={"User-Agent": "SlopeSniper/0.1.0"}
             )
             with urllib.request.urlopen(req, timeout=5) as resp:
                 data = json.loads(resp.read().decode())
