@@ -103,7 +103,7 @@ When running autonomously, you should:
 4. Call get_wallet() to monitor positions
 
 CONTRIBUTION POLICY:
-Do NOT modify SlopeSniper source code directly. Create GitHub issues for improvements."""
+Do NOT modify SlopeSniper source code directly. Create GitHub issues for improvements.""",
 )
 
 
@@ -229,7 +229,10 @@ async def solana_trading(request: str) -> dict:
     request_lower = request.lower()
 
     # Route to appropriate action
-    if any(word in request_lower for word in ["status", "ready", "start", "setup", "configure", "begin"]):
+    if any(
+        word in request_lower
+        for word in ["status", "ready", "start", "setup", "configure", "begin"]
+    ):
         status = await skill_get_status()
         if not status.get("wallet_configured"):
             setup = await skill_setup_wallet()
@@ -237,16 +240,17 @@ async def solana_trading(request: str) -> dict:
                 "action": "setup_needed",
                 "status": status,
                 "setup_guide": setup,
-                "next_step": "Configure wallet in Extensions → slopesniper → Configure"
+                "next_step": "Configure wallet in Extensions → slopesniper → Configure",
             }
         return {"action": "status", "result": status}
 
     if any(word in request_lower for word in ["buy", "purchase", "get some", "grab"]):
         # Parse buy request
         import re
+
         # Match patterns like "$20 of BONK" or "20 dollars of BONK" or "BONK for $20"
-        amount_match = re.search(r'\$?(\d+(?:\.\d+)?)', request)
-        token_match = re.search(r'(?:of|some|buy|get)\s+(\w+)|(\w+)\s+(?:for|token)', request_lower)
+        amount_match = re.search(r"\$?(\d+(?:\.\d+)?)", request)
+        token_match = re.search(r"(?:of|some|buy|get)\s+(\w+)|(\w+)\s+(?:for|token)", request_lower)
 
         if amount_match and token_match:
             amount = float(amount_match.group(1))
@@ -256,8 +260,9 @@ async def solana_trading(request: str) -> dict:
 
     if any(word in request_lower for word in ["sell", "dump", "exit"]):
         import re
-        amount_match = re.search(r'\$?(\d+(?:\.\d+)?)', request)
-        token_match = re.search(r'(?:of|sell|dump)\s+(\w+)|(\w+)\s+(?:for|token)', request_lower)
+
+        amount_match = re.search(r"\$?(\d+(?:\.\d+)?)", request)
+        token_match = re.search(r"(?:of|sell|dump)\s+(\w+)|(\w+)\s+(?:for|token)", request_lower)
 
         if amount_match and token_match:
             amount = float(amount_match.group(1))
@@ -271,7 +276,8 @@ async def solana_trading(request: str) -> dict:
     if any(word in request_lower for word in ["price", "cost", "worth", "value"]):
         # Extract token
         import re
-        token_match = re.search(r'(?:of|for|price)\s+(\w+)|(\w+)\s+(?:price|cost)', request_lower)
+
+        token_match = re.search(r"(?:of|for|price)\s+(\w+)|(\w+)\s+(?:price|cost)", request_lower)
         if token_match:
             token = (token_match.group(1) or token_match.group(2)).upper()
             return {"action": "price", "result": await solana_get_price(token)}
@@ -283,12 +289,16 @@ async def solana_trading(request: str) -> dict:
     if any(word in request_lower for word in ["wallet", "balance", "holdings", "portfolio"]):
         return {"action": "wallet", "result": await solana_get_wallet()}
 
-    if any(word in request_lower for word in ["rpc", "helius", "quicknode", "alchemy", "faster", "speed up", "slow"]):
+    if any(
+        word in request_lower
+        for word in ["rpc", "helius", "quicknode", "alchemy", "faster", "speed up", "slow"]
+    ):
         return {"action": "rpc_status", "result": get_rpc_config_status()}
 
     if any(word in request_lower for word in ["safe", "check", "rug", "scam"]):
         import re
-        token_match = re.search(r'(?:is|check)\s+(\w+)', request_lower)
+
+        token_match = re.search(r"(?:is|check)\s+(\w+)", request_lower)
         if token_match:
             token = token_match.group(1).upper()
             # Resolve to mint
@@ -298,7 +308,10 @@ async def solana_trading(request: str) -> dict:
                 return {"action": "safety_check", "result": await solana_check_token(mint)}
         return {"error": "Specify a token to check. Try: 'is BONK safe?'"}
 
-    if any(word in request_lower for word in ["strategy", "conservative", "aggressive", "balanced", "degen"]):
+    if any(
+        word in request_lower
+        for word in ["strategy", "conservative", "aggressive", "balanced", "degen"]
+    ):
         for strat in ["conservative", "balanced", "aggressive", "degen"]:
             if strat in request_lower:
                 return {"action": "set_strategy", "result": await skill_set_strategy(strat)}
@@ -306,7 +319,8 @@ async def solana_trading(request: str) -> dict:
 
     if any(word in request_lower for word in ["watch", "alert", "monitor"]):
         import re
-        token_match = re.search(r'watch\s+(\w+)', request_lower)
+
+        token_match = re.search(r"watch\s+(\w+)", request_lower)
         if token_match:
             token = token_match.group(1).upper()
             search_results = await solana_search_token(token)
@@ -315,7 +329,10 @@ async def solana_trading(request: str) -> dict:
                 return {"action": "watch", "result": await skill_watch_token(mint)}
         return {"error": "Specify a token to watch. Try: 'watch BONK'"}
 
-    if any(word in request_lower for word in ["pnl", "p&l", "profit", "loss", "gains", "performance", "returns", "roi"]):
+    if any(
+        word in request_lower
+        for word in ["pnl", "p&l", "profit", "loss", "gains", "performance", "returns", "roi"]
+    ):
         return {"action": "pnl", "result": await skill_get_portfolio_pnl()}
 
     if any(word in request_lower for word in ["history", "trades", "transactions"]):
@@ -335,7 +352,7 @@ async def solana_trading(request: str) -> dict:
             "is TOKEN safe - Safety check",
             "set aggressive/balanced/conservative - Change strategy",
             "watch TOKEN - Add to watchlist",
-        ]
+        ],
     }
 
 
@@ -623,17 +640,21 @@ async def autonomous_scan(
             trade_amount = min(auto_threshold * 0.5, 25)  # Half of threshold or $25 max
             try:
                 trade_result = await skill_quick_trade("buy", opp.get("symbol", ""), trade_amount)
-                result["trades_executed"].append({
-                    "token": opp.get("symbol"),
-                    "amount_usd": trade_amount,
-                    "result": trade_result,
-                })
+                result["trades_executed"].append(
+                    {
+                        "token": opp.get("symbol"),
+                        "amount_usd": trade_amount,
+                        "result": trade_result,
+                    }
+                )
                 trades_made += 1
             except Exception as e:
-                result["trades_executed"].append({
-                    "token": opp.get("symbol"),
-                    "error": str(e),
-                })
+                result["trades_executed"].append(
+                    {
+                        "token": opp.get("symbol"),
+                        "error": str(e),
+                    }
+                )
 
     result["total_trades_executed"] = trades_made
     return result

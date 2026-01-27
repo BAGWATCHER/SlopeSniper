@@ -65,17 +65,13 @@ def check_policy(
 
     # 1. Check slippage limit
     if slippage_bps > config.MAX_SLIPPAGE_BPS:
-        checks_failed.append(
-            f"slippage ({slippage_bps}bps > max {config.MAX_SLIPPAGE_BPS}bps)"
-        )
+        checks_failed.append(f"slippage ({slippage_bps}bps > max {config.MAX_SLIPPAGE_BPS}bps)")
     else:
         checks_passed.append(f"slippage ({slippage_bps}bps)")
 
     # 2. Check trade size limit
     if amount_usd > config.MAX_TRADE_USD:
-        checks_failed.append(
-            f"trade_size (${amount_usd:.2f} > max ${config.MAX_TRADE_USD:.2f})"
-        )
+        checks_failed.append(f"trade_size (${amount_usd:.2f} > max ${config.MAX_TRADE_USD:.2f})")
     else:
         checks_passed.append(f"trade_size (${amount_usd:.2f})")
 
@@ -110,9 +106,7 @@ def check_policy(
 
             # Check score
             if score is not None and score > config.MIN_RUGCHECK_SCORE:
-                checks_failed.append(
-                    f"rugcheck_score ({score} > max {config.MIN_RUGCHECK_SCORE})"
-                )
+                checks_failed.append(f"rugcheck_score ({score} > max {config.MIN_RUGCHECK_SCORE})")
             elif score is not None:
                 checks_passed.append(f"rugcheck_score ({score})")
 

@@ -61,7 +61,7 @@ class JupiterDataClient:
         """
         config_url = os.environ.get(
             "SLOPESNIPER_CONFIG_URL",
-            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/jup.json"
+            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/jup.json",
         )
 
         try:
@@ -69,8 +69,7 @@ class JupiterDataClient:
             import urllib.request
 
             req = urllib.request.Request(
-                config_url,
-                headers={"User-Agent": f"SlopeSniper/{self._get_version()}"}
+                config_url, headers={"User-Agent": f"SlopeSniper/{self._get_version()}"}
             )
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode())
@@ -100,6 +99,7 @@ class JupiterDataClient:
         """Get package version for User-Agent."""
         try:
             from .. import __version__
+
             return __version__
         except Exception:
             return "0.0.0"
@@ -111,7 +111,7 @@ class JupiterDataClient:
         try:
             xored = base64.b64decode(encoded)
             key = f"{_p}{_y}"
-            key_bytes = (key * ((len(xored) // len(key)) + 1))[:len(xored)]
+            key_bytes = (key * ((len(xored) // len(key)) + 1))[: len(xored)]
             return bytes(a ^ b for a, b in zip(xored, key_bytes.encode(), strict=False)).decode()
         except Exception:
             return ""
@@ -153,9 +153,7 @@ class JupiterDataClient:
                                 )
 
                                 if response.status == 400:
-                                    raise ValueError(
-                                        f"Bad request (400): {response_text}"
-                                    )
+                                    raise ValueError(f"Bad request (400): {response_text}")
 
             except asyncio.TimeoutError:
                 self.logger.warning(
@@ -175,9 +173,7 @@ class JupiterDataClient:
 
         raise RuntimeError(f"Failed after {self.max_retries} attempts")
 
-    async def get_prices(
-        self, mint_addresses: list[str]
-    ) -> dict[str, dict[str, Any]]:
+    async def get_prices(self, mint_addresses: list[str]) -> dict[str, dict[str, Any]]:
         """
         Get USD prices for one or more tokens.
 
@@ -187,9 +183,7 @@ class JupiterDataClient:
         Returns:
             Dictionary mapping mint addresses to price data
         """
-        self.logger.info(
-            f"[get_prices] Fetching prices for {len(mint_addresses)} token(s)"
-        )
+        self.logger.info(f"[get_prices] Fetching prices for {len(mint_addresses)} token(s)")
 
         if len(mint_addresses) > 50:
             self.logger.warning(
@@ -200,12 +194,8 @@ class JupiterDataClient:
         ids_param = ",".join(mint_addresses)
 
         try:
-            data = await self._make_request(
-                url=self.BASE_URL_PRICE, params={"ids": ids_param}
-            )
-            self.logger.info(
-                f"[get_prices] SUCCESS: Retrieved prices for {len(data)} token(s)"
-            )
+            data = await self._make_request(url=self.BASE_URL_PRICE, params={"ids": ids_param})
+            self.logger.info(f"[get_prices] SUCCESS: Retrieved prices for {len(data)} token(s)")
             return data
 
         except Exception as e:
@@ -229,9 +219,7 @@ class JupiterDataClient:
 
             if mint_address in prices:
                 price_data = prices[mint_address]
-                self.logger.info(
-                    f"[get_price] SUCCESS: ${price_data.get('usdPrice', 0):.8f}"
-                )
+                self.logger.info(f"[get_price] SUCCESS: ${price_data.get('usdPrice', 0):.8f}")
                 return price_data
             else:
                 self.logger.warning(f"[get_price] Price not found for {mint_address}")

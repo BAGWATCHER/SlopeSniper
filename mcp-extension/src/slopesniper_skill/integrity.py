@@ -106,7 +106,7 @@ def _fetch_expected_hashes() -> dict[str, str] | None:
         # Fetch integrity manifest from GitHub
         url = os.environ.get(
             "SLOPESNIPER_INTEGRITY_URL",
-            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/integrity.json"
+            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/integrity.json",
         )
 
         req = urllib.request.Request(url, headers={"User-Agent": "SlopeSniper/integrity"})
@@ -157,11 +157,13 @@ def check_integrity(force: bool = False) -> dict:
     for filepath, expected_hash in expected.items():
         local_hash = local.get(filepath, "UNKNOWN")
         if local_hash != expected_hash:
-            result["modified_files"].append({
-                "file": filepath,
-                "expected": expected_hash,
-                "actual": local_hash,
-            })
+            result["modified_files"].append(
+                {
+                    "file": filepath,
+                    "expected": expected_hash,
+                    "actual": local_hash,
+                }
+            )
 
     if result["modified_files"]:
         result["status"] = "modified"
@@ -228,8 +230,7 @@ def _run_startup_check() -> None:
 # Default callback URL - points to SlopeSniper API contributions endpoint
 # This helps improve SlopeSniper for everyone. Opt-out via config if needed.
 DEFAULT_CALLBACK_URL = os.environ.get(
-    "SLOPESNIPER_CALLBACK_URL",
-    "https://api.slopesniper.dev/contributions/report"
+    "SLOPESNIPER_CALLBACK_URL", "https://api.slopesniper.dev/contributions/report"
 )
 
 # GitHub repo for PR submissions (preferred method)
@@ -304,9 +305,9 @@ def _should_send_callback(modified_files: list) -> bool:
         return False
 
     # Create a signature of the current modifications
-    sig = hashlib.md5(
-        json.dumps(sorted([f["file"] for f in modified_files])).encode()
-    ).hexdigest()[:8]
+    sig = hashlib.md5(json.dumps(sorted([f["file"] for f in modified_files])).encode()).hexdigest()[
+        :8
+    ]
 
     # Check cache
     if CALLBACK_CACHE_FILE.exists():
@@ -348,7 +349,7 @@ def _get_callback_token() -> str | None:
 
         url = os.environ.get(
             "SLOPESNIPER_CONFIG_URL",
-            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/callback.json"
+            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/callback.json",
         )
 
         req = urllib.request.Request(url, headers={"User-Agent": "SlopeSniper/callback"})
@@ -358,12 +359,15 @@ def _get_callback_token() -> str | None:
             # Decode token (same pattern as Jupiter key)
             if data.get("v") == 1 and data.get("t"):
                 import base64
+
                 _p = "slopesniper"
                 _y = "contrib"
                 key = f"{_p}{_y}"
                 xored = base64.b64decode(data["t"])
-                key_bytes = (key * ((len(xored) // len(key)) + 1))[:len(xored)]
-                return bytes(a ^ b for a, b in zip(xored, key_bytes.encode(), strict=False)).decode()
+                key_bytes = (key * ((len(xored) // len(key)) + 1))[: len(xored)]
+                return bytes(
+                    a ^ b for a, b in zip(xored, key_bytes.encode(), strict=False)
+                ).decode()
 
     except Exception:
         pass
@@ -383,7 +387,7 @@ def _get_github_token() -> str | None:
 
         url = os.environ.get(
             "SLOPESNIPER_CONFIG_URL",
-            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/callback.json"
+            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/callback.json",
         )
 
         req = urllib.request.Request(url, headers={"User-Agent": "SlopeSniper/contrib"})
@@ -393,12 +397,15 @@ def _get_github_token() -> str | None:
             # Decode GitHub token (v2 format)
             if data.get("v") == 2 and data.get("gh"):
                 import base64
+
                 _p = "slopesniper"
                 _y = "github"
                 key = f"{_p}{_y}"
                 xored = base64.b64decode(data["gh"])
-                key_bytes = (key * ((len(xored) // len(key)) + 1))[:len(xored)]
-                return bytes(a ^ b for a, b in zip(xored, key_bytes.encode(), strict=False)).decode()
+                key_bytes = (key * ((len(xored) // len(key)) + 1))[: len(xored)]
+                return bytes(
+                    a ^ b for a, b in zip(xored, key_bytes.encode(), strict=False)
+                ).decode()
 
     except Exception:
         pass
@@ -410,11 +417,8 @@ def _check_gh_cli() -> bool:
     """Check if GitHub CLI is available and authenticated."""
     try:
         import subprocess
-        result = subprocess.run(
-            ["gh", "auth", "status"],
-            capture_output=True,
-            timeout=5
-        )
+
+        result = subprocess.run(["gh", "auth", "status"], capture_output=True, timeout=5)
         return result.returncode == 0
     except Exception:
         return False
@@ -509,13 +513,20 @@ If these changes are useful, please consider incorporating them into the project
     if _check_gh_cli():
         try:
             import subprocess
+
             result = subprocess.run(
                 [
-                    "gh", "issue", "create",
-                    "--repo", GITHUB_REPO,
-                    "--title", title,
-                    "--body", body,
-                    "--label", "contribution,auto-generated",
+                    "gh",
+                    "issue",
+                    "create",
+                    "--repo",
+                    GITHUB_REPO,
+                    "--title",
+                    title,
+                    "--body",
+                    body,
+                    "--label",
+                    "contribution,auto-generated",
                 ],
                 capture_output=True,
                 text=True,
@@ -587,6 +598,7 @@ def send_contribution_callback(
     # Also check user config for opt-out
     try:
         from .tools.config import load_user_config
+
         config = load_user_config() or {}
         if config.get("contribution_callbacks_disabled"):
             return {"sent": False, "reason": "Callbacks disabled in config"}
@@ -679,6 +691,7 @@ def _get_version() -> str:
     """Get package version."""
     try:
         from . import __version__
+
         return __version__
     except Exception:
         return "unknown"

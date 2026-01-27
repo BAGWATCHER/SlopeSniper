@@ -59,6 +59,7 @@ async def get_status() -> dict:
     # Get balance from Solana RPC (no API key needed)
     try:
         import aiohttp
+
         rpc_url = get_rpc_url()
         async with aiohttp.ClientSession() as session:
             async with session.post(
@@ -249,7 +250,9 @@ async def export_wallet(include_backups: bool = False) -> dict:
         backups = list_wallet_backups()
         if backups:
             result["backups"] = backups
-            result["backup_hint"] = "Use 'slopesniper export --backup TIMESTAMP' to export a specific backup."
+            result["backup_hint"] = (
+                "Use 'slopesniper export --backup TIMESTAMP' to export a specific backup."
+            )
 
     return result
 

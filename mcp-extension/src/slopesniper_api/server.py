@@ -156,7 +156,7 @@ async def root():
 
 @app.get("/config/jup")
 async def get_jupiter_config(
-    x_slopesniper_client: str = Header(None, alias="X-SlopeSniper-Client")
+    x_slopesniper_client: str = Header(None, alias="X-SlopeSniper-Client"),
 ):
     """
     DEPRECATED: Config is now hosted on GitHub.
@@ -282,6 +282,7 @@ async def api_natural(req: NaturalRequest):
     """
     # Import the universal handler from MCP server
     from slopesniper_mcp.server import solana_trading
+
     return await solana_trading(req.request)
 
 
@@ -385,6 +386,7 @@ async def get_contribution_stats():
 def main():
     """Run the API server."""
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8420)
 
 

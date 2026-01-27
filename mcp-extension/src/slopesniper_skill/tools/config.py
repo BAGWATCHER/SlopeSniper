@@ -69,9 +69,12 @@ def _get_machine_id() -> str:
     # Try to get hardware UUID (macOS)
     try:
         import subprocess
+
         result = subprocess.run(
             ["ioreg", "-d2", "-c", "IOPlatformExpertDevice"],
-            capture_output=True, text=True, timeout=5
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if "IOPlatformUUID" in result.stdout:
             for line in result.stdout.split("\n"):
@@ -139,6 +142,7 @@ def _get_or_create_machine_key() -> bytes:
 
     # Fernet requires URL-safe base64 encoded key
     import base64
+
     return base64.urlsafe_b64encode(key)
 
 
@@ -228,10 +232,9 @@ def _cleanup_old_backups() -> None:
 
     # Get all backup files (exclude .address files)
     backups = sorted(
-        [f for f in WALLET_BACKUP_DIR.iterdir()
-         if f.is_file() and not f.name.endswith('.address')],
+        [f for f in WALLET_BACKUP_DIR.iterdir() if f.is_file() and not f.name.endswith(".address")],
         key=lambda f: f.stat().st_mtime,
-        reverse=True
+        reverse=True,
     )
 
     # Remove old backups beyond the limit
@@ -628,7 +631,10 @@ def _validate_rpc_config(provider: str, value: str) -> tuple[bool, str | None]:
     elif provider == "quicknode":
         # Quicknode URLs must match pattern
         if not value.startswith("https://") or "quiknode.pro" not in value:
-            return False, "Invalid Quicknode URL. Must be https://your-endpoint.solana-*.quiknode.pro/..."
+            return (
+                False,
+                "Invalid Quicknode URL. Must be https://your-endpoint.solana-*.quiknode.pro/...",
+            )
 
     elif provider == "custom":
         # Custom must be a valid HTTPS URL
@@ -655,10 +661,12 @@ def set_rpc_config(provider: str, value: str) -> dict:
         return {"success": False, "error": error}
 
     # Save to encrypted config
-    save_user_config({
-        "rpc_provider": provider,
-        "rpc_value": value,
-    })
+    save_user_config(
+        {
+            "rpc_provider": provider,
+            "rpc_value": value,
+        }
+    )
 
     # Build URL for display (masked)
     url = _build_rpc_url(provider, value)
@@ -791,25 +799,29 @@ def get_config_status() -> dict:
     recommendations = []
 
     if not has_custom_key:
-        recommendations.append({
-            "category": "Jupiter API",
-            "message": "Using shared API key. For better performance, set your own Jupiter API key.",
-            "benefits": [
-                "10x higher rate limits",
-                "Faster quote responses",
-                "Priority transaction routing",
-            ],
-            "how_to": "Run: slopesniper config --set-jupiter-key YOUR_KEY",
-            "get_key": "Get a free key at: https://station.jup.ag/docs/apis/ultra-api",
-        })
+        recommendations.append(
+            {
+                "category": "Jupiter API",
+                "message": "Using shared API key. For better performance, set your own Jupiter API key.",
+                "benefits": [
+                    "10x higher rate limits",
+                    "Faster quote responses",
+                    "Priority transaction routing",
+                ],
+                "how_to": "Run: slopesniper config --set-jupiter-key YOUR_KEY",
+                "get_key": "Get a free key at: https://station.jup.ag/docs/apis/ultra-api",
+            }
+        )
 
     if not rpc_status["configured"]:
-        recommendations.append({
-            "category": "RPC Endpoint",
-            "message": "Using default RPC endpoint. For faster transactions, configure a custom RPC provider.",
-            "providers": rpc_status["recommendation"]["providers"],
-            "how_to": rpc_status["recommendation"]["how_to"],
-        })
+        recommendations.append(
+            {
+                "category": "RPC Endpoint",
+                "message": "Using default RPC endpoint. For faster transactions, configure a custom RPC provider.",
+                "providers": rpc_status["recommendation"]["providers"],
+                "how_to": rpc_status["recommendation"]["how_to"],
+            }
+        )
 
     if recommendations:
         result["recommendations"] = recommendations
@@ -831,16 +843,15 @@ def list_wallet_backups() -> list[dict]:
 
     # Get all backup files (exclude .address files)
     backup_files = sorted(
-        [f for f in WALLET_BACKUP_DIR.iterdir()
-         if f.is_file() and not f.name.endswith('.address')],
+        [f for f in WALLET_BACKUP_DIR.iterdir() if f.is_file() and not f.name.endswith(".address")],
         key=lambda f: f.stat().st_mtime,
-        reverse=True
+        reverse=True,
     )
 
     for backup_file in backup_files:
         # Parse timestamp from filename
         # Format: wallet.enc.YYYYMMDD_HHMMSS or wallet.json.YYYYMMDD_HHMMSS
-        parts = backup_file.name.split('.')
+        parts = backup_file.name.split(".")
         if len(parts) >= 3:
             timestamp = parts[-1]  # YYYYMMDD_HHMMSS
         else:
@@ -873,12 +884,14 @@ def list_wallet_backups() -> list[dict]:
             except Exception:
                 address = "(corrupted)"
 
-        backups.append({
-            "timestamp": timestamp,
-            "address": address,
-            "path": str(backup_file),
-            "filename": backup_file.name,
-        })
+        backups.append(
+            {
+                "timestamp": timestamp,
+                "address": address,
+                "path": str(backup_file),
+                "filename": backup_file.name,
+            }
+        )
 
     return backups
 
@@ -898,7 +911,7 @@ def export_backup_wallet(timestamp: str) -> dict | None:
 
     # Find the backup file
     for backup_file in WALLET_BACKUP_DIR.iterdir():
-        if not backup_file.is_file() or backup_file.name.endswith('.address'):
+        if not backup_file.is_file() or backup_file.name.endswith(".address"):
             continue
 
         if timestamp in backup_file.name:
