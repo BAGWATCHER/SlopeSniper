@@ -13,7 +13,7 @@ Usage:
     slopesniper strategy [name]     View or set strategy
     slopesniper scan [filter]       Scan for opportunities (trending/new/graduated/pumping)
     slopesniper update              Update to latest version
-    slopesniper version             Show current version
+    slopesniper version [--check]   Show version (--check for update availability)
 """
 
 from __future__ import annotations
@@ -95,14 +95,38 @@ async def cmd_scan(filter_type: str = "all") -> None:
     print_json(result)
 
 
-def cmd_version() -> None:
-    """Show current version."""
+def cmd_version(check_latest: bool = False) -> None:
+    """Show current version and optionally check for updates."""
     from . import __version__
-    print_json({
+
+    result = {
         "version": __version__,
         "package": "slopesniper-mcp",
         "repo": "https://github.com/maddefientist/SlopeSniper",
-    })
+        "changelog": "https://github.com/maddefientist/SlopeSniper/blob/main/CHANGELOG.md",
+    }
+
+    if check_latest:
+        try:
+            import urllib.request
+            import re
+
+            # Fetch pyproject.toml from GitHub to get latest version
+            url = "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/mcp-extension/pyproject.toml"
+            req = urllib.request.Request(url, headers={"User-Agent": "SlopeSniper"})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                content = resp.read().decode()
+                match = re.search(r'version\s*=\s*"([^"]+)"', content)
+                if match:
+                    latest = match.group(1)
+                    result["latest_version"] = latest
+                    result["update_available"] = latest != __version__
+                    if latest != __version__:
+                        result["update_command"] = "slopesniper update"
+        except Exception:
+            result["latest_version"] = "unknown (couldn't check)"
+
+    print_json(result)
 
 
 def cmd_update() -> None:
@@ -237,7 +261,8 @@ def main() -> None:
             asyncio.run(cmd_scan(filter_type))
 
         elif cmd == "version":
-            cmd_version()
+            check_latest = "--check" in args or "-c" in args
+            cmd_version(check_latest=check_latest)
 
         elif cmd == "update":
             cmd_update()

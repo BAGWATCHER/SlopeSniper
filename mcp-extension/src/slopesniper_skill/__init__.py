@@ -22,7 +22,10 @@ Example:
     >>> asyncio.run(main())
 """
 
-__version__ = "0.1.0"
+# Version is the single source of truth - update here for releases
+# Follow semantic versioning: MAJOR.MINOR.PATCH
+# Beta versions use 0.x.x (0.MINOR.PATCH)
+__version__ = "0.2.0"
 
 from .tools import (
     # Core trading tools
