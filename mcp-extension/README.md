@@ -1,200 +1,340 @@
 <div align="center">
 
-<img src="logo.jpg" alt="SlopeSniper Logo" width="500">
+<img src="logo.jpg" alt="SlopeSniper Logo" width="400">
 
-# SlopeSniper Skill 🦞
+# SlopeSniper
 
-**Safe Solana token trading for Claude Code**
+**Trade Solana tokens with natural language**
 
-[![CI](https://github.com/slopesniper/slopesniper-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/slopesniper/slopesniper-skill/actions/workflows/ci.yml)
-[![PyPI version](https://badge.fury.io/py/slopesniper-skill.svg)](https://pypi.org/project/slopesniper-skill/)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://slopesniper.github.io/slopesniper-skill)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-[Documentation](https://slopesniper.github.io/slopesniper-skill) · [PyPI](https://pypi.org/project/slopesniper-skill/) · [Issues](https://github.com/slopesniper/slopesniper-skill/issues)
+[Quick Start](#-quick-start) · [Features](#-features) · [Documentation](#-documentation) · [Contributing](#-contributing)
 
 </div>
 
 ---
 
-A Claude Code skill that provides **policy-enforced, two-step token swaps** on Solana via Jupiter aggregator.
+## What is SlopeSniper?
 
-## ✨ Features
+SlopeSniper is an AI-powered Solana trading assistant. Instead of navigating DEX interfaces, just tell it what you want:
 
-- **🔒 Two-Step Swaps** - Quote → Confirm flow prevents accidental trades
-- **🛡️ Policy Gates** - Configurable limits on slippage, trade size, and token safety
-- **🔍 Rugcheck Integration** - Automatic safety analysis before trading
-- **⚡ Jupiter Aggregation** - Best prices across all Solana DEXs
-- **🔑 Secure** - Private keys never exposed to LLM
+```
+"Buy $25 of BONK"
+"What's trending right now?"
+"Is POPCAT safe to trade?"
+"Sell half my WIF position"
+```
 
-## 📦 Installation
+SlopeSniper handles token resolution, safety checks, quotes, and execution—all through conversation.
 
-### Clawdbot (Recommended)
+---
+
+## Current Status
+
+| Platform | Status | Description |
+|----------|--------|-------------|
+| **Clawdbot** | ✅ Beta | Natural language trading via Claude Code |
+| Claude Desktop (MCP) | 🔜 Coming Soon | Direct integration with Claude Desktop |
+| Web API | 🔜 Coming Soon | REST API for custom integrations |
+
+---
+
+## 🚀 Quick Start
+
+### 1. Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/skills/install.sh | bash
 ```
 
-Then add your wallet key to `~/.clawdbot/clawdbot.json`:
+### 2. Initialize Your Wallet
 
-```json
+```bash
+slopesniper status
+```
+
+On first run, SlopeSniper automatically generates a dedicated trading wallet:
+
+```
 {
-  "skills": {
-    "entries": {
-      "slopesniper": {
-        "apiKey": "your_solana_private_key"
-      }
-    }
-  }
+  "wallet_address": "7xK9mN2...",
+  "private_key": "4ZBCvJL...",    <-- SAVE THIS! Only shown once!
+  "IMPORTANT": "Send SOL to your wallet address to start trading"
 }
 ```
 
-### Claude Desktop (MCP Extension)
+### 3. Fund Your Wallet
 
-```bash
-cd mcp-extension && ./install.sh
+Send SOL to the displayed wallet address. This is your dedicated trading wallet—only deposit what you're willing to trade.
+
+### 4. Start Trading
+
+Talk to Clawdbot:
+
+```
+You: "Check my trading status"
+You: "Buy $20 of BONK"
+You: "What's the price of SOL?"
 ```
 
-Or manually add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+---
 
-```json
-{
-  "mcpServers": {
-    "slopesniper": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/SlopeSniper/mcp-extension", "python", "-m", "slopesniper_mcp.server"],
-      "env": { "SOLANA_PRIVATE_KEY": "your_key" }
-    }
-  }
-}
+## ✨ Features
+
+### Natural Language Trading
+
+No commands to memorize. Just describe what you want:
+
+| You Say | What Happens |
+|---------|--------------|
+| "Buy $25 of BONK" | Resolves token → safety check → quote → execute |
+| "Sell half my WIF" | Calculates 50% of holdings → executes sell |
+| "What's pumping?" | Scans for trending tokens with volume spikes |
+| "Is POPCAT safe?" | Runs rugcheck analysis, shows risk factors |
+| "Set aggressive mode" | Increases trade limits and auto-execution threshold |
+
+### Safety First
+
+- **Rugcheck Integration** - Automatic scam token detection before every trade
+- **Two-Step Confirmation** - Large trades require explicit approval
+- **Auto-Execute Thresholds** - Only small trades execute automatically
+- **Dedicated Wallet** - Auto-generated wallet isolates trading funds
+
+### Trading Strategies
+
+| Strategy | Max Trade | Auto-Execute | Safety Checks |
+|----------|-----------|--------------|---------------|
+| Conservative | $25 | Under $10 | Required |
+| Balanced | $100 | Under $25 | Required |
+| Aggressive | $500 | Under $50 | Optional |
+| Degen | $1000 | Under $100 | None |
+
+Change anytime: `"Set conservative mode"` or `"Use degen strategy"`
+
+### Smart Execution
+
+```
+You: "Buy $20 of BONK"
+     ↓
+[1] Resolve BONK → mint address
+[2] Run rugcheck safety analysis
+[3] Get Jupiter quote (best price across all DEXs)
+[4] Auto-execute (under $25 threshold)
+     ↓
+"Bought 1.2M BONK for $20. Tx: solscan.io/tx/..."
 ```
 
-### Claude Cowork (Web API)
+For trades above your auto-execute threshold, you'll be asked to confirm first.
 
-Deploy the API server and access via WebFetch:
-
-```bash
-cd mcp-extension
-export SOLANA_PRIVATE_KEY="your_key"
-docker-compose up -d
-```
-
-See [COWORK.md](mcp-extension/COWORK.md) for usage.
-
-### Python Package
-
-```bash
-pip install slopesniper-skill
-```
-
-## 🚀 Quick Start
-
-```python
-import asyncio
-from slopesniper_skill import solana_get_price, solana_quote, solana_swap_confirm
-
-async def main():
-    # Check price
-    price = await solana_get_price("SOL")
-    print(f"SOL: ${price['price_usd']:.2f}")
-
-    # Get a quote (runs policy checks)
-    quote = await solana_quote(
-        from_mint="So11111111111111111111111111111111111111112",
-        to_mint="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-        amount="0.1"
-    )
-    print(f"Swap: {quote['in_amount']} SOL → {quote['out_amount_est']} USDC")
-
-    # Confirm the swap
-    result = await solana_swap_confirm(quote['intent_id'])
-    print(f"Done: {result['explorer_url']}")
-
-asyncio.run(main())
-```
-
-## 🛠️ Tools
-
-| Tool | Description |
-|------|-------------|
-| `solana_get_price` | Get real-time token prices |
-| `solana_search_token` | Search for tokens by name/symbol |
-| `solana_check_token` | Run rugcheck safety analysis |
-| `solana_get_wallet` | View wallet balances |
-| `solana_quote` | Get swap quote with policy checks |
-| `solana_swap_confirm` | Execute a quoted swap |
-
-## ⚙️ Configuration
-
-### Required
-
-```bash
-export SOLANA_PRIVATE_KEY="your-base58-private-key"
-```
-
-### Optional
-
-```bash
-export JUPITER_API_KEY="..."              # Higher rate limits
-export SOLANA_RPC_URL="..."               # Custom RPC
-```
-
-### Policy Settings
-
-```bash
-export POLICY_MAX_SLIPPAGE_BPS=100        # 1% max slippage
-export POLICY_MAX_TRADE_USD=50.0          # $50 max per trade
-export POLICY_MIN_RUGCHECK_SCORE=2000     # Max risk score
-export POLICY_DENY_MINTS="mint1,mint2"    # Blocked tokens
-```
-
-## 🔐 Security
-
-- **Private keys** never logged or passed to LLM
-- **Symbols blocked** for execution - only mint addresses accepted
-- **One-time execution** - Each intent can only be used once
-- **2-minute expiry** - Stale quotes automatically expire
-- **Policy gates** - All trades checked against configurable limits
+---
 
 ## 📖 Documentation
 
-Full documentation at [slopesniper.github.io/slopesniper-skill](https://slopesniper.github.io/slopesniper-skill)
+### CLI Reference
 
-- [Installation Guide](https://slopesniper.github.io/slopesniper-skill/getting-started/installation/)
-- [Configuration](https://slopesniper.github.io/slopesniper-skill/getting-started/configuration/)
-- [Tool Reference](https://slopesniper.github.io/slopesniper-skill/tools/overview/)
-- [Security Model](https://slopesniper.github.io/slopesniper-skill/security/policy/)
+```bash
+slopesniper status              # Check wallet and trading readiness
+slopesniper price SOL           # Get current token price
+slopesniper price BONK          # Get meme coin price
+slopesniper buy BONK 25         # Buy $25 of BONK
+slopesniper sell WIF 50         # Sell $50 worth of WIF
+slopesniper check POPCAT        # Run safety analysis
+slopesniper search "dog"        # Search for tokens
+slopesniper strategy            # View current strategy
+slopesniper strategy aggressive # Change to aggressive mode
+```
+
+### Wallet Management
+
+Your wallet is stored locally at `~/.slopesniper/wallet.json`. The private key is shown **only once** at creation—make sure to save it!
+
+**To view your wallet address:**
+```bash
+slopesniper status
+```
+
+**To import an existing wallet:**
+Set the `SOLANA_PRIVATE_KEY` environment variable before running any commands.
+
+### Configuration
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SOLANA_PRIVATE_KEY` | No | Override auto-generated wallet |
+| `SOLANA_RPC_URL` | No | Custom RPC endpoint (defaults to public mainnet) |
+| `JUPITER_API_KEY` | No | Your own Jupiter key for higher rate limits |
+
+### Trading Limits
+
+Default limits (Balanced strategy):
+- **Max trade size**: $100 per transaction
+- **Auto-execute threshold**: $25 (trades under this execute without confirmation)
+- **Slippage tolerance**: 1%
+
+Customize with `slopesniper strategy <mode>` or set environment variables:
+
+```bash
+export POLICY_MAX_TRADE_USD=200
+export POLICY_MAX_SLIPPAGE_BPS=50  # 0.5%
+```
+
+---
+
+## 🔐 Security
+
+### What We Do
+
+- **Isolated Wallet** - Auto-generates a dedicated trading wallet separate from your main holdings
+- **Local Storage** - Private keys stored only on your machine (`~/.slopesniper/`)
+- **No Key Exposure** - Private keys never sent to any API or logged
+- **Rugcheck Integration** - Every trade runs safety analysis first
+- **Two-Step Trades** - Large trades require explicit confirmation
+
+### Best Practices
+
+1. **Use the auto-generated wallet** - Don't import your main wallet
+2. **Fund conservatively** - Only deposit what you're actively trading
+3. **Start with conservative mode** - Get comfortable before increasing limits
+4. **Save your private key** - It's only shown once at wallet creation
+5. **Monitor your transactions** - Check Solscan for trade history
+
+---
+
+## 🛠️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      Clawdbot                           │
+│                    (Claude Code)                        │
+└─────────────────────┬───────────────────────────────────┘
+                      │ Natural Language
+                      ▼
+┌─────────────────────────────────────────────────────────┐
+│                   SlopeSniper CLI                       │
+│              slopesniper <command>                      │
+└─────────────────────┬───────────────────────────────────┘
+                      │
+        ┌─────────────┼─────────────┐
+        ▼             ▼             ▼
+┌───────────┐  ┌───────────┐  ┌───────────┐
+│  Jupiter  │  │ Rugcheck  │  │  Solana   │
+│  DEX API  │  │    API    │  │    RPC    │
+└───────────┘  └───────────┘  └───────────┘
+```
+
+### Components
+
+- **CLI** (`slopesniper`) - Command-line interface for direct execution
+- **SDK** - Python library for Jupiter, Rugcheck, and Solana interactions
+- **Strategy Engine** - Manages trading limits and auto-execution rules
+- **Intent System** - Two-step quote → confirm flow with expiring intents
+
+---
+
+## 🔜 Roadmap
+
+### Coming Soon
+
+- **Claude Desktop Integration** - MCP extension for native Claude Desktop support
+- **Web API** - REST endpoints for custom integrations
+- **Portfolio Tracking** - P&L tracking and trade history
+- **Price Alerts** - Notifications for price movements
+- **DCA Automation** - Scheduled recurring buys
+
+### Future Ideas
+
+- Multi-wallet support
+- Limit orders
+- Copy trading
+- Telegram bot interface
+
+---
 
 ## 🧪 Development
 
-```bash
-# Clone
-git clone https://github.com/slopesniper/slopesniper-skill.git
-cd slopesniper-skill
+### Prerequisites
 
-# Install dev dependencies
-pip install -e ".[dev]"
+- Python 3.10+
+- [uv](https://github.com/astral-sh/uv) package manager
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/maddefientist/SlopeSniper.git
+cd SlopeSniper
+
+# Install in development mode
+cd mcp-extension
+uv pip install -e .
 
 # Run tests
 pytest
 
-# Lint
-ruff check src/ tests/
+# Run linter
+ruff check src/
 ```
+
+### Project Structure
+
+```
+SlopeSniper/
+├── config/                 # Public configuration files
+├── skills/                 # Clawdbot skill definition
+│   ├── install.sh         # One-line installer
+│   └── slopesniper/
+│       └── SKILL.md       # Skill metadata and docs
+├── mcp-extension/         # Main package
+│   ├── src/
+│   │   ├── slopesniper_skill/    # Core trading logic
+│   │   │   ├── cli.py            # CLI entry point
+│   │   │   ├── sdk/              # API clients
+│   │   │   └── tools/            # Trading tools
+│   │   ├── slopesniper_mcp/      # MCP server (coming soon)
+│   │   └── slopesniper_api/      # Web API (coming soon)
+│   ├── Dockerfile
+│   └── pyproject.toml
+└── README.md
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how to help:
+
+1. **Report Bugs** - Open an issue with reproduction steps
+2. **Suggest Features** - Open an issue describing your idea
+3. **Submit PRs** - Fork, branch, code, test, PR
+
+Please follow existing code style and include tests for new features.
+
+---
+
+## ⚠️ Disclaimer
+
+SlopeSniper is experimental software for trading volatile assets.
+
+- **Not financial advice** - Do your own research
+- **Risk of loss** - Only trade what you can afford to lose
+- **No guarantees** - Software may have bugs; trades may fail
+- **Meme coins are risky** - Most go to zero
+
+By using SlopeSniper, you acknowledge these risks and take full responsibility for your trades.
+
+---
 
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## 🤝 Contributing
-
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
 ---
 
 <div align="center">
 
-**Built with ❤️ by [SlopeSniper](https://github.com/slopesniper)**
+**Built for degens, by degens** 🎯
+
+[Report Bug](https://github.com/maddefientist/SlopeSniper/issues) · [Request Feature](https://github.com/maddefientist/SlopeSniper/issues) · [Contribute](https://github.com/maddefientist/SlopeSniper/pulls)
 
 </div>
