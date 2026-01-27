@@ -154,7 +154,7 @@ async def root():
 
 # NOTE: Jupiter API key is now served from GitHub, not this server.
 # This endpoint is kept for backwards compatibility but requires env var.
-# Config URL: https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/jup.json
+# Config URL: https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/jup.json
 
 
 @app.get("/config/jup")
@@ -166,12 +166,12 @@ async def get_jupiter_config(
 
     This endpoint redirects to the GitHub-hosted config.
     Direct your client to fetch from:
-    https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/jup.json
+    https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/jup.json
     """
     return {
         "error": "deprecated",
         "message": "Config moved to GitHub",
-        "config_url": "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/jup.json",
+        "config_url": "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/jup.json",
     }
 
 

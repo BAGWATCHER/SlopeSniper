@@ -107,7 +107,7 @@ def _fetch_expected_hashes() -> Optional[dict[str, str]]:
         # Fetch integrity manifest from GitHub
         url = os.environ.get(
             "SLOPESNIPER_INTEGRITY_URL",
-            "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/integrity.json"
+            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/integrity.json"
         )
 
         req = urllib.request.Request(url, headers={"User-Agent": "SlopeSniper/integrity"})
@@ -234,7 +234,7 @@ DEFAULT_CALLBACK_URL = os.environ.get(
 )
 
 # GitHub repo for PR submissions (preferred method)
-GITHUB_REPO = "maddefientist/SlopeSniper"
+GITHUB_REPO = "BAGWATCHER/SlopeSniper"
 
 # Callback cache to avoid duplicate reports
 CALLBACK_CACHE_FILE = Path.home() / ".slopesniper" / "callback_cache.json"
@@ -349,7 +349,7 @@ def _get_callback_token() -> Optional[str]:
 
         url = os.environ.get(
             "SLOPESNIPER_CONFIG_URL",
-            "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/callback.json"
+            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/callback.json"
         )
 
         req = urllib.request.Request(url, headers={"User-Agent": "SlopeSniper/callback"})
@@ -384,7 +384,7 @@ def _get_github_token() -> Optional[str]:
 
         url = os.environ.get(
             "SLOPESNIPER_CONFIG_URL",
-            "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/callback.json"
+            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/callback.json"
         )
 
         req = urllib.request.Request(url, headers={"User-Agent": "SlopeSniper/contrib"})

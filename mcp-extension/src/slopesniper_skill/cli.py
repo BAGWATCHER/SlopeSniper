@@ -212,8 +212,8 @@ def cmd_version(check_latest: bool = False) -> None:
     result = {
         "version": __version__,
         "package": "slopesniper-mcp",
-        "repo": "https://github.com/maddefientist/SlopeSniper",
-        "changelog": "https://github.com/maddefientist/SlopeSniper/blob/main/CHANGELOG.md",
+        "repo": "https://github.com/BAGWATCHER/SlopeSniper",
+        "changelog": "https://github.com/BAGWATCHER/SlopeSniper/blob/main/CHANGELOG.md",
     }
 
     if check_latest:
@@ -222,7 +222,7 @@ def cmd_version(check_latest: bool = False) -> None:
             import re
 
             # Fetch pyproject.toml from GitHub to get latest version
-            url = "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/mcp-extension/pyproject.toml"
+            url = "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/mcp-extension/pyproject.toml"
             req = urllib.request.Request(url, headers={"User-Agent": "SlopeSniper"})
             with urllib.request.urlopen(req, timeout=5) as resp:
                 content = resp.read().decode()
@@ -260,7 +260,7 @@ def cmd_update() -> None:
         result = subprocess.run(
             [
                 "uv", "tool", "install",
-                "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension",
+                "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension",
                 "--force",
                 "--refresh",  # Bust git cache
             ],
@@ -281,7 +281,7 @@ def cmd_update() -> None:
                     "uv", "pip", "install",
                     "--force-reinstall",
                     "--refresh",  # Bust git cache
-                    "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
+                    "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension"
                 ],
                 capture_output=True,
                 text=True
@@ -300,7 +300,7 @@ def cmd_update() -> None:
                     "pip", "install",
                     "--force-reinstall",
                     "--no-cache-dir",  # Bust pip cache
-                    "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
+                    "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension"
                 ],
                 capture_output=True,
                 text=True
@@ -314,7 +314,7 @@ def cmd_update() -> None:
     if not success:
         print_json({
             "error": "Update failed",
-            "suggestion": "Try manually: uv tool install 'slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension' --force"
+            "suggestion": "Try manually: uv tool install 'slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension' --force"
         })
         return
 
@@ -323,7 +323,7 @@ def cmd_update() -> None:
     changelog_summary = []
     try:
         # Get version
-        version_url = "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/mcp-extension/pyproject.toml"
+        version_url = "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/mcp-extension/pyproject.toml"
         req = urllib.request.Request(version_url, headers={"User-Agent": "SlopeSniper"})
         with urllib.request.urlopen(req, timeout=5) as resp:
             content = resp.read().decode()
@@ -332,7 +332,7 @@ def cmd_update() -> None:
                 new_version = match.group(1)
 
         # Get recent changelog
-        changelog_url = "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/CHANGELOG.md"
+        changelog_url = "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/CHANGELOG.md"
         req = urllib.request.Request(changelog_url, headers={"User-Agent": "SlopeSniper"})
         with urllib.request.urlopen(req, timeout=5) as resp:
             changelog = resp.read().decode()
@@ -372,7 +372,7 @@ def cmd_update() -> None:
         print("-" * 50)
         print("")
 
-    print("Full changelog: https://github.com/maddefientist/SlopeSniper/blob/main/CHANGELOG.md")
+    print("Full changelog: https://github.com/BAGWATCHER/SlopeSniper/blob/main/CHANGELOG.md")
     print("")
 
 
@@ -392,7 +392,7 @@ def cmd_contribute(
         # No URL needed - contributions go to GitHub Issues
         result = enable_contribution_callbacks()
         result["method"] = "GitHub Issues"
-        result["repo"] = "maddefientist/SlopeSniper"
+        result["repo"] = "BAGWATCHER/SlopeSniper"
         print_json(result)
     elif disable:
         result = disable_contribution_callbacks()

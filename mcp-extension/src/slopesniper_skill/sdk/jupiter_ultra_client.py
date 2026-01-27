@@ -74,7 +74,7 @@ class JupiterUltraClient:
         """
         config_url = os.environ.get(
             "SLOPESNIPER_CONFIG_URL",
-            "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/jup.json"
+            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/jup.json"
         )
 
         try:

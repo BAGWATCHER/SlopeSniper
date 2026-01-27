@@ -45,7 +45,7 @@ SlopeSniper handles token resolution, safety checks, quotes, and execution—all
 ### 1. Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/skills/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash
 ```
 
 ### 2. Initialize Your Wallet
@@ -315,7 +315,7 @@ export POLICY_MAX_SLIPPAGE_BPS=50  # 0.5%
 
 ```bash
 # Clone the repository
-git clone https://github.com/maddefientist/SlopeSniper.git
+git clone https://github.com/BAGWATCHER/SlopeSniper.git
 cd SlopeSniper
 
 # Install in development mode
@@ -388,6 +388,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 **Built for degens, by degens** 🎯
 
-[Report Bug](https://github.com/maddefientist/SlopeSniper/issues) · [Request Feature](https://github.com/maddefientist/SlopeSniper/issues) · [Contribute](https://github.com/maddefientist/SlopeSniper/pulls)
+[Report Bug](https://github.com/BAGWATCHER/SlopeSniper/issues) · [Request Feature](https://github.com/BAGWATCHER/SlopeSniper/issues) · [Contribute](https://github.com/BAGWATCHER/SlopeSniper/pulls)
 
 </div>
