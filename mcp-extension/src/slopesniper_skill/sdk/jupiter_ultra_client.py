@@ -64,9 +64,14 @@ class JupiterUltraClient:
             self.logger.info("[__init__] JupiterUltraClient initialized with bundled API key")
 
     def _get_bundled_key(self) -> str:
-        """Get bundled Jupiter API key from remote endpoint."""
-        # Fetch from SlopeSniper API - key is centrally managed
-        # Fallback to embedded key if endpoint unreachable
+        """
+        Get bundled Jupiter API key from remote config.
+
+        The key is fetched from GitHub and decoded at runtime.
+        No fallback key is embedded in code for security.
+
+        Users can set JUPITER_API_KEY env var to use their own key.
+        """
         config_url = os.environ.get(
             "SLOPESNIPER_CONFIG_URL",
             "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/jup.json"
@@ -78,40 +83,50 @@ class JupiterUltraClient:
 
             req = urllib.request.Request(
                 config_url,
-                headers={"User-Agent": "SlopeSniper/0.1.0"}
+                headers={"User-Agent": f"SlopeSniper/{self._get_version()}"}
             )
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode())
 
-                # Decode obfuscated key (v1 format)
-                if data.get("v") == 1 and data.get("k"):
-                    key = self._xor_deobfuscate(data["k"], "slopesniper2024")
+                # Decode key based on version
+                version = data.get("v", 0)
+
+                if version == 1 and data.get("k"):
+                    # v1: XOR obfuscated
+                    key = self._decode_v1(data["k"])
                     if key:
-                        self.logger.debug("[_get_bundled_key] Fetched key from config endpoint")
+                        self.logger.debug("[_get_bundled_key] Fetched key from config (v1)")
                         return key
 
-                # Legacy format (plain key)
+                # Legacy format (plain key) - for backwards compatibility
                 if data.get("key"):
-                    self.logger.debug("[_get_bundled_key] Fetched key from config endpoint (legacy)")
+                    self.logger.debug("[_get_bundled_key] Fetched key (legacy format)")
                     return data["key"]
 
         except Exception as e:
-            self.logger.debug(f"[_get_bundled_key] Could not fetch from endpoint: {e}")
+            self.logger.warning(f"[_get_bundled_key] Could not fetch config: {e}")
+            self.logger.warning("[_get_bundled_key] Set JUPITER_API_KEY env var or check network")
 
-        # Fallback to embedded key (base64 obfuscated)
-        import base64
-        _k = "YTI1YzM3NWEtN2QxMy00NDI1LWJiYzktZjhkOGJmNDA4ZjEx"
+        # No fallback - require either env var or successful fetch
+        return ""
+
+    def _get_version(self) -> str:
+        """Get package version for User-Agent."""
         try:
-            self.logger.debug("[_get_bundled_key] Using fallback embedded key")
-            return base64.b64decode(_k).decode()
+            from .. import __version__
+            return __version__
         except Exception:
-            return ""
+            return "0.0.0"
 
-    def _xor_deobfuscate(self, encoded: str, key: str) -> str:
-        """Decode XOR-obfuscated string."""
+    def _decode_v1(self, encoded: str) -> str:
+        """Decode v1 format (XOR obfuscated)."""
         import base64
+        # Key components derived from package identity
+        _p = "slopesniper"
+        _y = "2024"
         try:
             xored = base64.b64decode(encoded)
+            key = f"{_p}{_y}"
             key_bytes = (key * ((len(xored) // len(key)) + 1))[:len(xored)]
             return bytes(a ^ b for a, b in zip(xored, key_bytes.encode())).decode()
         except Exception:

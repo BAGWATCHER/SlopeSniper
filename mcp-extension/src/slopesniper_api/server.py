@@ -139,21 +139,12 @@ async def root():
 
 
 # ============================================================================
-# Public Config Endpoints (with obfuscation)
+# Config Endpoints (DEPRECATED - use GitHub-hosted config)
 # ============================================================================
 
-# Jupiter API key - bundled for user convenience
-# Obfuscated to prevent casual scraping - not truly secure but deters abuse
-_BUNDLED_JUP_KEY = "a25c375a-7d13-4425-bbc9-f8d8bf408f11"
-_OBFUSCATION_KEY = "slopesniper2024"  # XOR key for light obfuscation
-
-
-def _xor_obfuscate(data: str, key: str) -> str:
-    """Simple XOR obfuscation - not cryptographically secure, just deters casual access."""
-    import base64
-    key_bytes = (key * ((len(data) // len(key)) + 1))[:len(data)]
-    xored = bytes(a ^ b for a, b in zip(data.encode(), key_bytes.encode()))
-    return base64.b64encode(xored).decode()
+# NOTE: Jupiter API key is now served from GitHub, not this server.
+# This endpoint is kept for backwards compatibility but requires env var.
+# Config URL: https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/jup.json
 
 
 @app.get("/config/jup")
@@ -161,23 +152,16 @@ async def get_jupiter_config(
     x_slopesniper_client: str = Header(None, alias="X-SlopeSniper-Client")
 ):
     """
-    Get Jupiter API configuration.
+    DEPRECATED: Config is now hosted on GitHub.
 
-    This endpoint provides the bundled Jupiter API key for SlopeSniper users.
-    Key is XOR-obfuscated to prevent casual scraping.
-
-    Requires X-SlopeSniper-Client header to identify legitimate clients.
+    This endpoint redirects to the GitHub-hosted config.
+    Direct your client to fetch from:
+    https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/jup.json
     """
-    # Require client identifier header
-    if not x_slopesniper_client or not x_slopesniper_client.startswith("slopesniper/"):
-        return {
-            "error": "Invalid client",
-            "message": "This endpoint is for SlopeSniper clients only"
-        }
-
     return {
-        "k": _xor_obfuscate(_BUNDLED_JUP_KEY, _OBFUSCATION_KEY),
-        "v": 1,  # Version for future changes
+        "error": "deprecated",
+        "message": "Config moved to GitHub",
+        "config_url": "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/jup.json",
     }
 
 
