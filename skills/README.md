@@ -74,6 +74,10 @@ Bot: Hot tokens right now:
 - **Safety checks** - Rugcheck integration blocks scam tokens
 - **Multiple strategies** - Conservative to degen modes
 - **Opportunity scanning** - Find trending tokens
+- **Encrypted wallets** - Private keys encrypted at rest
+- **PnL tracking** - Track your profit/loss
+- **Export/backup** - `slopesniper export` reveals key for backup
+- **Self-update** - `slopesniper update` keeps you current
 
 ## Commands
 
@@ -81,7 +85,12 @@ Bot: Hot tokens right now:
 |---------|--------|
 | `buy $X of TOKEN` | Purchase tokens |
 | `sell $X of TOKEN` | Sell tokens |
-| `check status` | View wallet & settings |
+| `sell all TOKEN` | Exit entire position |
+| `check status` | View wallet & holdings |
+| `show wallet` | View all token balances |
+| `export key` | Backup private key |
+| `what's my PnL` | Show profit/loss |
+| `trade history` | Show recent trades |
 | `set aggressive mode` | Change strategy |
 | `what's trending` | Scan for opportunities |
 | `is TOKEN safe` | Run safety check |
