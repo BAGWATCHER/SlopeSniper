@@ -1,0 +1,24 @@
+{
+  "manifest_version": "0.4",
+  "name": "slopesniper",
+  "version": "0.1.0",
+  "description": "Safe Solana token trading with policy-enforced two-step swaps via Jupiter aggregator",
+  "author": {
+    "name": "SlopeSniper",
+    "url": "https://github.com/BAGWATCHER/SlopeSniper"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BAGWATCHER/SlopeSniper"
+  },
+  "server": {
+    "type": "uv",
+    "entry_point": "server/main.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "server/main.py"],
+      "env": {}
+    }
+  }
+}
