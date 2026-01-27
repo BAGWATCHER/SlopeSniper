@@ -30,6 +30,60 @@ A Claude Code skill that provides **policy-enforced, two-step token swaps** on S
 
 ## 📦 Installation
 
+### Clawdbot (Recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash
+```
+
+Then add your wallet key to `~/.clawdbot/clawdbot.json`:
+
+```json
+{
+  "skills": {
+    "entries": {
+      "slopesniper": {
+        "apiKey": "your_solana_private_key"
+      }
+    }
+  }
+}
+```
+
+### Claude Desktop (MCP Extension)
+
+```bash
+cd mcp-extension && ./install.sh
+```
+
+Or manually add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "slopesniper": {
+      "command": "uv",
+      "args": ["run", "--directory", "/path/to/SlopeSniper/mcp-extension", "python", "-m", "slopesniper_mcp.server"],
+      "env": { "SOLANA_PRIVATE_KEY": "your_key" }
+    }
+  }
+}
+```
+
+### Claude Cowork (Web API)
+
+Deploy the API server and access via WebFetch:
+
+```bash
+cd mcp-extension
+export SOLANA_PRIVATE_KEY="your_key"
+docker-compose up -d
+```
+
+See [COWORK.md](mcp-extension/COWORK.md) for usage.
+
+### Python Package
+
 ```bash
 pip install slopesniper-skill
 ```
