@@ -1,8 +1,7 @@
 ---
 name: slopesniper
 description: Trade Solana tokens via Jupiter DEX with policy-enforced safety limits
-version: 0.1.0
-metadata: {"clawdbot":{"requires":{"bins":["uv"],"env":["SOLANA_PRIVATE_KEY"]}}}
+metadata: {"clawdbot":{"requires":{"bins":["uv"],"env":["SOLANA_PRIVATE_KEY"]},"emoji":"🎯","primaryEnv":"SOLANA_PRIVATE_KEY","install":[{"id":"uv","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper-mcp"],"label":"Install SlopeSniper (uv)"}]}}
 user-invocable: true
 homepage: https://github.com/BAGWATCHER/SlopeSniper
 ---
@@ -49,14 +48,14 @@ Run the SlopeSniper server and call tools:
 
 ```bash
 # Check status
-uv run --directory /path/to/slopesniper python -c "
+uv run --directory {baseDir} python -c "
 import asyncio
 from slopesniper_skill import get_status
 print(asyncio.run(get_status()))
 "
 
 # Quick trade
-uv run --directory /path/to/slopesniper python -c "
+uv run --directory {baseDir} python -c "
 import asyncio
 from slopesniper_skill import quick_trade
 print(asyncio.run(quick_trade('buy', 'BONK', 25)))
