@@ -13,6 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
+slopesniper = "slopesniper_skill.cli:main"
 slopesniper-mcp = "slopesniper_mcp.server:main"
 slopesniper-api = "slopesniper_api.server:main"
 

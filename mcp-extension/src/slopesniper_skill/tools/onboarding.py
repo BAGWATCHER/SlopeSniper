@@ -44,17 +44,24 @@ async def get_status() -> dict:
 
     sol_balance = None
     if wallet_configured:
-        # Get balance from Jupiter holdings API
+        # Get balance from Solana RPC (no API key needed)
         try:
-            from ..sdk.jupiter_ultra_client import JupiterUltraClient
-
-            client = JupiterUltraClient()
-            holdings = await client.get_holdings(wallet_address)
-            # Find SOL balance
-            for token in holdings.get("tokens", []):
-                if token.get("symbol") == "SOL":
-                    sol_balance = float(token.get("balance", 0))
-                    break
+            import aiohttp
+            rpc_url = get_rpc_url()
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    rpc_url,
+                    json={
+                        "jsonrpc": "2.0",
+                        "id": 1,
+                        "method": "getBalance",
+                        "params": [wallet_address],
+                    },
+                ) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        lamports = data.get("result", {}).get("value", 0)
+                        sol_balance = lamports / 1_000_000_000  # Convert lamports to SOL
         except Exception:
             sol_balance = None
 

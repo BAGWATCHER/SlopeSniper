@@ -54,14 +54,15 @@ class JupiterUltraClient:
         self.logger = Utils.setup_logger("JupiterUltraClient")
         self.max_retries = max_retries
 
-        # Get API key from parameter, env var, or None (free tier)
+        # Get API key from parameter or env var - REQUIRED as of Jan 2025
         self.api_key = api_key or os.environ.get("JUPITER_API_KEY")
 
         if self.api_key:
             self.logger.info("[__init__] JupiterUltraClient initialized with API key")
         else:
-            self.logger.info(
-                "[__init__] JupiterUltraClient initialized (free tier - rate limited)"
+            self.logger.warning(
+                "[__init__] No JUPITER_API_KEY found! "
+                "Get a FREE key at https://portal.jup.ag"
             )
 
     async def _make_request(

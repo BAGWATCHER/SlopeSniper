@@ -1,73 +1,135 @@
 ---
 name: slopesniper
-description: Trade Solana tokens via Jupiter DEX with policy-enforced safety limits
-metadata: {"clawdbot":{"requires":{"bins":["uv"],"env":["SOLANA_PRIVATE_KEY"]},"emoji":"🎯","primaryEnv":"SOLANA_PRIVATE_KEY","install":[{"id":"uv","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper-mcp"],"label":"Install SlopeSniper (uv)"}]}}
+description: Trade Solana tokens via Jupiter DEX with auto-execution and safety limits
+metadata: {"clawdbot":{"requires":{"bins":["slopesniper"],"env":["SOLANA_PRIVATE_KEY","JUPITER_API_KEY"]},"emoji":"🎯","primaryEnv":"SOLANA_PRIVATE_KEY","homepage":"https://github.com/maddefientist/SlopeSniper","install":[{"id":"uv-install","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper"],"label":"Install SlopeSniper via uv"}]}}
 user-invocable: true
 homepage: https://github.com/maddefientist/SlopeSniper
 ---
 
 # SlopeSniper - Solana Trading Assistant
 
-You can trade Solana tokens directly. Use natural language - I'll handle the rest.
+Trade Solana meme coins and tokens using natural language. Just tell me what you want to do.
 
-## Quick Commands
+## Examples
 
-| Say | Action |
-|-----|--------|
-| "Check my status" | Verify wallet setup |
-| "Buy $20 of BONK" | Purchase tokens |
-| "Sell $50 of WIF" | Sell tokens |
-| "What's trending?" | Find opportunities |
-| "Is POPCAT safe?" | Safety check |
+| You say | What happens |
+|---------|--------------|
+| "Check my status" | Shows wallet balance and current strategy |
+| "Buy $25 of BONK" | Purchases BONK tokens |
+| "Sell half my WIF" | Sells 50% of WIF position |
+| "What's pumping?" | Scans for opportunities |
+| "Is POPCAT safe?" | Runs rugcheck analysis |
+| "Set aggressive mode" | Changes trading strategy |
 
-## How to Trade
+## Getting Started
 
-1. **First, check status**: Always verify wallet is configured
-2. **For buys**: Specify amount in USD and token name
-3. **For sells**: Same format - amount and token
+1. **Set your wallet key** in Clawdbot config:
+   ```json
+   {
+     "skills": {
+       "entries": {
+         "slopesniper": {
+           "apiKey": "your_solana_private_key_here"
+         }
+       }
+     }
+   }
+   ```
+
+2. **Say "check my status"** to verify setup
+
+3. **Start trading!** Just describe what you want in plain English
 
 ## Trading Strategies
 
-- **Conservative**: $25 max, safety checks required
-- **Balanced**: $100 max, moderate limits
-- **Aggressive**: $500 max, faster execution
-- **Degen**: $1000 max, no safety checks
+| Strategy | Max Trade | Auto-Execute | Safety Checks |
+|----------|-----------|--------------|---------------|
+| Conservative | $25 | Under $10 | Required |
+| Balanced | $100 | Under $25 | Required |
+| Aggressive | $500 | Under $50 | Optional |
+| Degen | $1000 | Under $100 | None |
 
-Say "set aggressive mode" to change.
+Say "set conservative mode" or "use aggressive strategy" to change.
 
-## Safety Features
+## How It Works
 
-- Two-step swaps (quote → confirm)
-- Rugcheck integration blocks scam tokens
-- Auto-execute only for small trades
-- Policy limits enforced
-
-## Tool Usage
-
-Run the SlopeSniper server and call tools:
-
-```bash
-# Check status
-uv run --directory {baseDir} python -c "
-import asyncio
-from slopesniper_skill import get_status
-print(asyncio.run(get_status()))
-"
-
-# Quick trade
-uv run --directory {baseDir} python -c "
-import asyncio
-from slopesniper_skill import quick_trade
-print(asyncio.run(quick_trade('buy', 'BONK', 25)))
-"
+```
+You: "Buy $20 of BONK"
+     ↓
+[1] Resolve BONK → mint address
+[2] Check rugcheck score
+[3] Get Jupiter quote
+[4] Auto-execute (under threshold)
+     ↓
+Result: "Bought 1.2M BONK for $20. Tx: solscan.io/tx/..."
 ```
 
-## Environment Variables
+For trades above your auto-execute threshold, you'll be asked to confirm first.
 
-- `SOLANA_PRIVATE_KEY` - Your wallet private key (required)
-- `SOLANA_RPC_URL` - Custom RPC endpoint (optional)
-- `JUPITER_API_KEY` - For higher rate limits (optional)
+## Available Commands
+
+### Trading
+- `buy $X of TOKEN` - Purchase tokens
+- `sell $X of TOKEN` - Sell tokens
+- `sell X% of TOKEN` - Sell percentage of holdings
+
+### Information
+- `check status` / `am I ready?` - Wallet and config status
+- `price of TOKEN` - Current price
+- `search TOKEN` - Find token by name
+- `check TOKEN` / `is TOKEN safe?` - Safety analysis
+
+### Strategy
+- `set MODE strategy` - Change trading mode
+- `what's my strategy?` - View current limits
+
+### Scanning
+- `what's trending?` - Find hot tokens
+- `scan for opportunities` - Look for trades
+- `watch TOKEN` - Add to watchlist
+
+## CLI Commands
+
+Use the `slopesniper` CLI for direct execution:
+
+```bash
+slopesniper status              # Check wallet and trading readiness
+slopesniper price SOL           # Get token price
+slopesniper price BONK          # Get meme coin price
+slopesniper buy BONK 25         # Buy $25 of BONK
+slopesniper sell WIF 50         # Sell $50 of WIF
+slopesniper check POPCAT        # Safety check (rugcheck)
+slopesniper search "dog"        # Search for tokens
+slopesniper strategy            # View current strategy
+slopesniper strategy aggressive # Set aggressive mode
+slopesniper scan                # Scan for opportunities
+```
+
+All commands output JSON for easy parsing.
 
 ## Security
 
-⚠️ Use a **dedicated trading wallet** - only fund with amounts you're willing to risk!
+- **Use a dedicated wallet** - Only fund with amounts you're willing to lose
+- **Start with conservative mode** - Get comfortable before increasing limits
+- **Rugcheck integration** - Automatic scam token detection
+- **Two-step confirmation** - Large trades require explicit approval
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SOLANA_PRIVATE_KEY` | Yes | Your wallet's base58 private key |
+| `JUPITER_API_KEY` | Yes | Get FREE key at https://portal.jup.ag |
+| `SOLANA_RPC_URL` | No | Custom RPC (defaults to public) |
+
+### Getting a Jupiter API Key
+
+1. Go to https://portal.jup.ag
+2. Connect via email
+3. Generate an API key (free tier available)
+4. Add to your config
+
+## Support
+
+- GitHub: https://github.com/maddefientist/SlopeSniper
+- Issues: https://github.com/maddefientist/SlopeSniper/issues

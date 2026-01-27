@@ -1,7 +1,7 @@
 ---
 name: slopesniper
 description: Trade Solana tokens via Jupiter DEX with auto-execution and safety limits
-metadata: {"clawdbot":{"requires":{"bins":["uv"],"env":["SOLANA_PRIVATE_KEY"]},"emoji":"🎯","primaryEnv":"SOLANA_PRIVATE_KEY","homepage":"https://github.com/maddefientist/SlopeSniper","install":[{"id":"uv-install","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper-mcp","slopesniper-api"],"label":"Install SlopeSniper via uv"}]}}
+metadata: {"clawdbot":{"requires":{"bins":["slopesniper"],"env":["SOLANA_PRIVATE_KEY","JUPITER_API_KEY"]},"emoji":"🎯","primaryEnv":"SOLANA_PRIVATE_KEY","homepage":"https://github.com/maddefientist/SlopeSniper","install":[{"id":"uv-install","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper"],"label":"Install SlopeSniper via uv"}]}}
 user-invocable: true
 homepage: https://github.com/maddefientist/SlopeSniper
 ---
@@ -88,23 +88,24 @@ For trades above your auto-execute threshold, you'll be asked to confirm first.
 - `scan for opportunities` - Look for trades
 - `watch TOKEN` - Add to watchlist
 
-## Tool Reference
+## CLI Commands
 
-For direct tool invocation:
+Use the `slopesniper` CLI for direct execution:
 
 ```bash
-# Check status
-uv run --directory {baseDir}/../mcp-extension python -c "
-from slopesniper_skill import get_status
-import asyncio; print(asyncio.run(get_status()))
-"
-
-# Quick trade
-uv run --directory {baseDir}/../mcp-extension python -c "
-from slopesniper_skill import quick_trade
-import asyncio; print(asyncio.run(quick_trade('buy', 'BONK', 25)))
-"
+slopesniper status              # Check wallet and trading readiness
+slopesniper price SOL           # Get token price
+slopesniper price BONK          # Get meme coin price
+slopesniper buy BONK 25         # Buy $25 of BONK
+slopesniper sell WIF 50         # Sell $50 of WIF
+slopesniper check POPCAT        # Safety check (rugcheck)
+slopesniper search "dog"        # Search for tokens
+slopesniper strategy            # View current strategy
+slopesniper strategy aggressive # Set aggressive mode
+slopesniper scan                # Scan for opportunities
 ```
+
+All commands output JSON for easy parsing.
 
 ## Security
 
@@ -118,8 +119,15 @@ import asyncio; print(asyncio.run(quick_trade('buy', 'BONK', 25)))
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `SOLANA_PRIVATE_KEY` | Yes | Your wallet's base58 private key |
+| `JUPITER_API_KEY` | Yes | Get FREE key at https://portal.jup.ag |
 | `SOLANA_RPC_URL` | No | Custom RPC (defaults to public) |
-| `JUPITER_API_KEY` | No | For higher rate limits |
+
+### Getting a Jupiter API Key
+
+1. Go to https://portal.jup.ag
+2. Connect via email
+3. Generate an API key (free tier available)
+4. Add to your config
 
 ## Support
 
