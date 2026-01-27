@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  slopesniper-api:
+    build: .
+    container_name: slopesniper-api
+    ports:
+      - "8420:8420"
+    environment:
+      - SOLANA_PRIVATE_KEY=${SOLANA_PRIVATE_KEY}
+      - SLOPESNIPER_API_KEY=${SLOPESNIPER_API_KEY:-}
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8420/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
