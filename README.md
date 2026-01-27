@@ -136,11 +136,18 @@ For trades above your auto-execute threshold, you'll be asked to confirm first.
 ### CLI Reference
 
 ```bash
+# Account & Wallet
+slopesniper status              # Full status: wallet, holdings, strategy
+slopesniper wallet              # Show wallet address and token balances
+slopesniper export              # Export private key for backup
+slopesniper pnl                 # Show portfolio profit/loss
+slopesniper history             # Show recent trade history
+
 # Trading
-slopesniper status              # Check wallet and trading readiness
 slopesniper price SOL           # Get current token price
 slopesniper buy BONK 25         # Buy $25 of BONK
 slopesniper sell WIF 50         # Sell $50 worth of WIF
+slopesniper sell WIF all        # Sell entire position
 
 # Discovery
 slopesniper search "dog"        # Search for tokens
