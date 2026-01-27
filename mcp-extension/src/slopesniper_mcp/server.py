@@ -8,12 +8,12 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from .slopesniper_skill import (
-    solana_get_price,
-    solana_search_token,
+from slopesniper_skill import (
     solana_check_token,
+    solana_get_price,
     solana_get_wallet,
     solana_quote,
+    solana_search_token,
     solana_swap_confirm,
 )
 
@@ -119,5 +119,10 @@ async def swap_confirm(intent_id: str) -> dict:
     return await solana_swap_confirm(intent_id)
 
 
-if __name__ == "__main__":
+def main():
+    """Run the MCP server."""
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()

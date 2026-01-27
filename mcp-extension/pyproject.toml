@@ -10,6 +10,12 @@ dependencies = [
     "base58>=2.1.0",
 ]
 
+[project.scripts]
+slopesniper-mcp = "slopesniper_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/slopesniper_mcp", "src/slopesniper_skill"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

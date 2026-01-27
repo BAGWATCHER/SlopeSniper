@@ -1,5 +1,5 @@
 """SlopeSniper MCP Server."""
 
-from .main import mcp
+from .server import mcp
 
 __all__ = ["mcp"]

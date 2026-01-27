@@ -14,10 +14,10 @@
   },
   "server": {
     "type": "uv",
-    "entry_point": "server/main.py",
+    "entry_point": "src/slopesniper_mcp/server.py",
     "mcp_config": {
       "command": "uv",
-      "args": ["run", "server/main.py"],
+      "args": ["run", "--", "python", "-m", "slopesniper_mcp.server"],
       "env": {}
     }
   }
