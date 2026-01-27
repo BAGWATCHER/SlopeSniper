@@ -12,6 +12,8 @@ Usage:
     slopesniper resolve <token>     Get mint address from symbol
     slopesniper strategy [name]     View or set strategy
     slopesniper scan [filter]       Scan for opportunities (trending/new/graduated/pumping)
+    slopesniper update              Update to latest version
+    slopesniper version             Show current version
 """
 
 from __future__ import annotations
@@ -93,6 +95,84 @@ async def cmd_scan(filter_type: str = "all") -> None:
     print_json(result)
 
 
+def cmd_version() -> None:
+    """Show current version."""
+    from . import __version__
+    print_json({
+        "version": __version__,
+        "package": "slopesniper-mcp",
+        "repo": "https://github.com/maddefientist/SlopeSniper",
+    })
+
+
+def cmd_update() -> None:
+    """Update to latest version from GitHub."""
+    import subprocess
+
+    print("Updating SlopeSniper...")
+    print("")
+
+    # Try uv tool first (preferred for CLI tools)
+    try:
+        result = subprocess.run(
+            [
+                "uv", "tool", "install",
+                "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension",
+                "--force"
+            ],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            print("Updated successfully via uv tool!")
+            print("")
+            print("Run 'slopesniper version' to verify.")
+            return
+    except FileNotFoundError:
+        pass
+
+    # Fallback to uv pip
+    try:
+        result = subprocess.run(
+            [
+                "uv", "pip", "install", "--force-reinstall",
+                "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
+            ],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            print("Updated successfully via uv pip!")
+            print("")
+            print("Run 'slopesniper version' to verify.")
+            return
+    except FileNotFoundError:
+        pass
+
+    # Final fallback to pip
+    try:
+        result = subprocess.run(
+            [
+                "pip", "install", "--force-reinstall",
+                "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
+            ],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            print("Updated successfully via pip!")
+            print("")
+            print("Run 'slopesniper version' to verify.")
+            return
+    except FileNotFoundError:
+        pass
+
+    print_json({
+        "error": "Update failed",
+        "suggestion": "Try manually: uv tool install 'slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension' --force"
+    })
+
+
 def print_help() -> None:
     """Print usage help."""
     print(__doc__)
@@ -155,6 +235,12 @@ def main() -> None:
         elif cmd == "scan":
             filter_type = args[1] if len(args) > 1 else "all"
             asyncio.run(cmd_scan(filter_type))
+
+        elif cmd == "version":
+            cmd_version()
+
+        elif cmd == "update":
+            cmd_update()
 
         else:
             print(f"Unknown command: {cmd}")
