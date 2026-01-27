@@ -35,7 +35,7 @@ SlopeSniper handles token resolution, safety checks, quotes, and execution—all
 
 | Platform | Status | Description |
 |----------|--------|-------------|
-| **Clawdbot** | ✅ Beta | Natural language trading via Claude Code |
+| **Clawdbot** | ✅ Beta | Natural language trading via Clawdbot |
 | Claude Desktop (MCP) | 🔜 Coming Soon | Direct integration with Claude Desktop |
 | Web API | 🔜 Coming Soon | REST API for custom integrations |
 
