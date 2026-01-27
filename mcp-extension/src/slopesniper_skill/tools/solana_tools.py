@@ -80,7 +80,7 @@ async def _get_sol_price_async() -> float:
     try:
         data_client = JupiterDataClient(api_key=get_jupiter_api_key())
         price_data = await data_client.get_price(SYMBOL_TO_MINT["SOL"])
-        return float(price_data.get("price", 0)) if price_data else 0
+        return float(price_data.get("usdPrice", 0)) if price_data else 0
     except Exception:
         return 0
 
@@ -195,7 +195,7 @@ async def solana_get_price(token: str) -> dict[str, Any]:
     result: dict[str, Any] = {
         "mint": mint,
         "symbol": token_info.get("symbol") if token_info else None,
-        "price_usd": float(price_data.get("price", 0)),
+        "price_usd": float(price_data.get("usdPrice", 0)),
     }
 
     if token_info and "mcap" in token_info:
@@ -326,22 +326,74 @@ async def solana_get_wallet(address: Optional[str] = None) -> dict[str, Any]:
     holdings = await ultra_client.get_holdings(address)
 
     # Parse holdings response
+    # Holdings API returns: { amount, uiAmount, tokens: { mint: [{ account, amount, uiAmount, ... }] } }
     sol_balance = holdings.get("uiAmount", 0)
     tokens_data = holdings.get("tokens", {})
 
+    # Get SOL price for USD calculation
+    sol_price = await _get_sol_price_async()
+    sol_value_usd = sol_balance * sol_price if sol_price > 0 else None
+
+    # Collect all mints to fetch prices and info in batch
+    mints = list(tokens_data.keys())
+
+    # Get token info and prices
+    data_client = JupiterDataClient(api_key=get_jupiter_api_key())
+    token_prices = {}
+    token_symbols = {}
+
+    if mints:
+        try:
+            # Get prices for all tokens
+            prices = await data_client.get_prices(mints)
+            for mint, price_data in prices.items():
+                token_prices[mint] = float(price_data.get("usdPrice", 0))
+        except Exception:
+            pass  # Continue without prices
+
+        # Get symbols from known list or search
+        for mint in mints:
+            # Check known symbols first
+            symbol = None
+            for sym, m in SYMBOL_TO_MINT.items():
+                if m == mint:
+                    symbol = sym
+                    break
+            if not symbol:
+                try:
+                    info = await data_client.get_token_info(mint)
+                    symbol = info.get("symbol", mint[:8]) if info else mint[:8]
+                except Exception:
+                    symbol = mint[:8]
+            token_symbols[mint] = symbol
+
+    # Build tokens list
     tokens = []
-    for mint, token_info in tokens_data.items():
-        tokens.append({
-            "mint": mint,
-            "symbol": token_info.get("symbol", ""),
-            "amount": token_info.get("uiAmount", 0),
-            "value_usd": token_info.get("usdValue"),
-        })
+    for mint, token_accounts in tokens_data.items():
+        # Sum up uiAmount from all token accounts for this mint
+        total_amount = 0.0
+        if isinstance(token_accounts, list):
+            for account in token_accounts:
+                total_amount += float(account.get("uiAmount", 0))
+        elif isinstance(token_accounts, dict):
+            # Fallback if response format is different
+            total_amount = float(token_accounts.get("uiAmount", 0))
+
+        if total_amount > 0:
+            price = token_prices.get(mint, 0)
+            value_usd = total_amount * price if price > 0 else None
+
+            tokens.append({
+                "mint": mint,
+                "symbol": token_symbols.get(mint, mint[:8]),
+                "amount": total_amount,
+                "value_usd": value_usd,
+            })
 
     return {
         "address": address,
         "sol_balance": sol_balance,
-        "sol_value_usd": holdings.get("usdValue"),
+        "sol_value_usd": sol_value_usd,
         "tokens": tokens,
     }
 
@@ -395,7 +447,7 @@ async def solana_quote(
     data_client = JupiterDataClient(api_key=get_jupiter_api_key())
     price_data = await data_client.get_price(from_mint)
     if price_data:
-        price_usd = float(price_data.get("price", 0))
+        price_usd = float(price_data.get("usdPrice", 0))
         amount_usd = amount_float * price_usd
     else:
         # If we can't get price, assume $0 (will pass USD check)
@@ -681,10 +733,10 @@ async def quick_trade(
     data_client = JupiterDataClient(api_key=get_jupiter_api_key())
     price_data = await data_client.get_price(from_mint)
 
-    if not price_data or not price_data.get("price"):
+    if not price_data or not price_data.get("usdPrice"):
         return {"error": f"Could not get price for {from_mint}"}
 
-    price_usd = float(price_data.get("price", 0))
+    price_usd = float(price_data.get("usdPrice", 0))
     if price_usd <= 0:
         return {"error": "Invalid price data"}
 
