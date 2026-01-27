@@ -16,6 +16,9 @@ Usage:
     slopesniper config --set-jupiter-key KEY   Set your Jupiter API key
     slopesniper config --set-rpc PROVIDER VALUE   Set custom RPC endpoint
     slopesniper config --clear-rpc             Clear custom RPC (use default)
+    slopesniper contribute          Check for improvements and report
+    slopesniper contribute --enable [URL]   Enable contribution callbacks
+    slopesniper contribute --disable        Disable contribution callbacks
     slopesniper update              Update to latest version
     slopesniper version [--check]   Show version (--check for update availability)
 """
@@ -234,6 +237,38 @@ def cmd_update() -> None:
     })
 
 
+def cmd_contribute(
+    enable: bool = False,
+    disable: bool = False,
+    webhook_url: str | None = None,
+) -> None:
+    """Manage contribution callbacks and check for improvements."""
+    from .integrity import (
+        check_and_report,
+        enable_contribution_callbacks,
+        disable_contribution_callbacks,
+    )
+    from .tools.config import load_user_config
+
+    if enable:
+        result = enable_contribution_callbacks(webhook_url)
+        print_json(result)
+    elif disable:
+        result = disable_contribution_callbacks()
+        print_json(result)
+    else:
+        # Run check and report
+        result = check_and_report(force=True)
+
+        # Add callback config status
+        config = load_user_config() or {}
+        result["callbacks_enabled"] = config.get("contribution_callbacks_enabled", False)
+        if config.get("contribution_callback_url"):
+            result["callback_url"] = config["contribution_callback_url"][:30] + "..."
+
+        print_json(result)
+
+
 def print_help() -> None:
     """Print usage help."""
     print(__doc__)
@@ -333,6 +368,19 @@ def main() -> None:
 
         elif cmd == "update":
             cmd_update()
+
+        elif cmd == "contribute":
+            enable = "--enable" in args
+            disable = "--disable" in args
+            webhook_url = None
+
+            # Check for URL after --enable
+            if enable:
+                idx = args.index("--enable")
+                if idx + 1 < len(args) and not args[idx + 1].startswith("--"):
+                    webhook_url = args[idx + 1]
+
+            cmd_contribute(enable=enable, disable=disable, webhook_url=webhook_url)
 
         else:
             print(f"Unknown command: {cmd}")
