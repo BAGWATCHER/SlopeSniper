@@ -16,7 +16,8 @@ from .config import (
     get_rpc_url,
     get_secret,
     get_or_create_wallet,
-    WALLET_FILE,
+    WALLET_FILE_ENCRYPTED,
+    SLOPESNIPER_DIR,
 )
 from .strategies import get_active_strategy
 
@@ -112,7 +113,8 @@ async def get_status() -> dict:
             "1. SAVE THE PRIVATE KEY ABOVE - it will NOT be shown again!\n"
             "2. Send SOL to your wallet address to start trading\n"
             "3. Keep your private key secure - anyone with it can access your funds\n\n"
-            f"Wallet stored at: {WALLET_FILE}"
+            f"Wallet stored (encrypted) at: {SLOPESNIPER_DIR}\n"
+            "The wallet is encrypted with a machine-specific key for security."
         )
     elif (sol_balance or 0) < 0.01:
         result["needs_funding"] = True

@@ -2,24 +2,33 @@
 Configuration and Secret Management.
 
 Handles secure retrieval of secrets with gateway -> env fallback.
-Supports auto-generation and local storage of wallet keys.
+Supports auto-generation and encrypted local storage of wallet keys.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import platform
+import secrets
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
 import base58
+from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from solders.keypair import Keypair
 
 
 # Local wallet storage
 SLOPESNIPER_DIR = Path.home() / ".slopesniper"
 WALLET_FILE = SLOPESNIPER_DIR / "wallet.json"
+WALLET_FILE_ENCRYPTED = SLOPESNIPER_DIR / "wallet.enc"
+MACHINE_KEY_FILE = SLOPESNIPER_DIR / ".machine_key"
 
 
 @dataclass
@@ -38,6 +47,111 @@ class PolicyConfig:
 def _ensure_wallet_dir() -> None:
     """Create wallet directory if it doesn't exist."""
     SLOPESNIPER_DIR.mkdir(parents=True, exist_ok=True)
+    # Set restrictive permissions on the directory
+    os.chmod(SLOPESNIPER_DIR, 0o700)
+
+
+def _get_machine_id() -> str:
+    """
+    Get a machine-specific identifier for encryption key derivation.
+
+    Combines multiple sources to create a stable machine fingerprint.
+    """
+    components = []
+
+    # Platform info
+    components.append(platform.node())
+    components.append(platform.machine())
+    components.append(platform.system())
+
+    # Try to get hardware UUID (macOS)
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["ioreg", "-d2", "-c", "IOPlatformExpertDevice"],
+            capture_output=True, text=True, timeout=5
+        )
+        if "IOPlatformUUID" in result.stdout:
+            for line in result.stdout.split("\n"):
+                if "IOPlatformUUID" in line:
+                    uuid_part = line.split('"')[-2]
+                    components.append(uuid_part)
+                    break
+    except Exception:
+        pass
+
+    # Try to get machine-id (Linux)
+    try:
+        machine_id_path = Path("/etc/machine-id")
+        if machine_id_path.exists():
+            components.append(machine_id_path.read_text().strip())
+    except Exception:
+        pass
+
+    # Combine all components
+    combined = "|".join(components)
+    return hashlib.sha256(combined.encode()).hexdigest()
+
+
+def _get_or_create_machine_key() -> bytes:
+    """
+    Get or create a machine-specific encryption key.
+
+    The key is derived from:
+    1. Machine-specific identifier (hardware/OS fingerprint)
+    2. A random salt stored locally
+
+    This ensures:
+    - Wallet files are encrypted at rest
+    - Wallet files are tied to this machine
+    - Key survives updates (salt is persistent)
+    """
+    _ensure_wallet_dir()
+
+    # Load or generate salt
+    if MACHINE_KEY_FILE.exists():
+        try:
+            key_data = json.loads(MACHINE_KEY_FILE.read_text())
+            salt = bytes.fromhex(key_data["salt"])
+        except Exception:
+            # Corrupted key file, regenerate
+            salt = secrets.token_bytes(32)
+            key_data = {"salt": salt.hex(), "version": 1}
+            MACHINE_KEY_FILE.write_text(json.dumps(key_data))
+            os.chmod(MACHINE_KEY_FILE, 0o600)
+    else:
+        salt = secrets.token_bytes(32)
+        key_data = {"salt": salt.hex(), "version": 1}
+        MACHINE_KEY_FILE.write_text(json.dumps(key_data))
+        os.chmod(MACHINE_KEY_FILE, 0o600)
+
+    # Derive key from machine ID + salt
+    machine_id = _get_machine_id()
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100_000,
+    )
+    key = kdf.derive(machine_id.encode())
+
+    # Fernet requires URL-safe base64 encoded key
+    import base64
+    return base64.urlsafe_b64encode(key)
+
+
+def _encrypt_data(data: str) -> bytes:
+    """Encrypt data using machine-specific key."""
+    key = _get_or_create_machine_key()
+    f = Fernet(key)
+    return f.encrypt(data.encode())
+
+
+def _decrypt_data(encrypted: bytes) -> str:
+    """Decrypt data using machine-specific key."""
+    key = _get_or_create_machine_key()
+    f = Fernet(key)
+    return f.decrypt(encrypted).decode()
 
 
 def generate_wallet() -> tuple[str, str]:
@@ -54,33 +168,79 @@ def generate_wallet() -> tuple[str, str]:
 
 
 def save_wallet(private_key: str, address: str) -> None:
-    """Save wallet to local storage."""
+    """
+    Save wallet to encrypted local storage.
+
+    The wallet is encrypted with a machine-specific key,
+    meaning it can only be decrypted on this machine.
+    """
     _ensure_wallet_dir()
+
     wallet_data = {
         "private_key": private_key,
         "address": address,
-        "version": 1,
+        "version": 2,  # v2 = encrypted
     }
-    WALLET_FILE.write_text(json.dumps(wallet_data, indent=2))
-    # Secure the file
-    os.chmod(WALLET_FILE, 0o600)
+
+    # Encrypt the wallet data
+    encrypted = _encrypt_data(json.dumps(wallet_data))
+
+    # Save encrypted wallet
+    WALLET_FILE_ENCRYPTED.write_bytes(encrypted)
+    os.chmod(WALLET_FILE_ENCRYPTED, 0o600)
+
+    # Remove old plaintext wallet if it exists
+    if WALLET_FILE.exists():
+        WALLET_FILE.unlink()
+
+
+def _migrate_plaintext_wallet() -> Optional[dict]:
+    """
+    Migrate old plaintext wallet to encrypted format.
+
+    Returns the wallet data if migration was successful.
+    """
+    if not WALLET_FILE.exists():
+        return None
+
+    try:
+        data = json.loads(WALLET_FILE.read_text())
+        if "private_key" in data and "address" in data:
+            # Migrate to encrypted format
+            save_wallet(data["private_key"], data["address"])
+            return data
+    except Exception:
+        pass
+
+    return None
 
 
 def load_local_wallet() -> Optional[dict]:
     """
-    Load wallet from local storage.
+    Load wallet from encrypted local storage.
 
     Returns:
         dict with private_key and address, or None if not found
     """
-    if not WALLET_FILE.exists():
-        return None
-    try:
-        data = json.loads(WALLET_FILE.read_text())
-        if "private_key" in data and "address" in data:
-            return data
-    except Exception:
-        pass
+    # Check for encrypted wallet first
+    if WALLET_FILE_ENCRYPTED.exists():
+        try:
+            encrypted = WALLET_FILE_ENCRYPTED.read_bytes()
+            decrypted = _decrypt_data(encrypted)
+            data = json.loads(decrypted)
+            if "private_key" in data and "address" in data:
+                return data
+        except InvalidToken:
+            # Key mismatch - wallet from different machine or corrupted
+            return None
+        except Exception:
+            pass
+
+    # Try to migrate old plaintext wallet
+    migrated = _migrate_plaintext_wallet()
+    if migrated:
+        return migrated
+
     return None
 
 
