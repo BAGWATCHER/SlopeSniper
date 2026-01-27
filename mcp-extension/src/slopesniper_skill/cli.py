@@ -4,13 +4,14 @@ SlopeSniper CLI - Simple command interface for Clawdbot agents.
 
 Usage:
     slopesniper status              Check wallet and trading readiness
-    slopesniper price <token>       Get token price
+    slopesniper price <token>       Get token price (symbol or mint)
     slopesniper buy <token> <usd>   Buy tokens
     slopesniper sell <token> <usd>  Sell tokens
-    slopesniper check <token>       Safety check (rugcheck)
-    slopesniper search <query>      Search for tokens
+    slopesniper check <token>       Safety check (symbol or mint)
+    slopesniper search <query>      Search for tokens (returns mint addresses)
+    slopesniper resolve <token>     Get mint address from symbol
     slopesniper strategy [name]     View or set strategy
-    slopesniper scan                Scan for opportunities
+    slopesniper scan [filter]       Scan for opportunities (trending/new/graduated/pumping)
 """
 
 from __future__ import annotations
@@ -67,6 +68,13 @@ async def cmd_search(query: str) -> None:
     print_json(result)
 
 
+async def cmd_resolve(token: str) -> None:
+    """Resolve token symbol to mint address."""
+    from . import solana_resolve_token
+    result = await solana_resolve_token(token)
+    print_json(result)
+
+
 async def cmd_strategy(name: str | None = None) -> None:
     """View or set trading strategy."""
     if name:
@@ -78,10 +86,10 @@ async def cmd_strategy(name: str | None = None) -> None:
     print_json(result)
 
 
-async def cmd_scan() -> None:
+async def cmd_scan(filter_type: str = "all") -> None:
     """Scan for trading opportunities."""
     from . import scan_opportunities
-    result = await scan_opportunities()
+    result = await scan_opportunities(filter_type)
     print_json(result)
 
 
@@ -134,12 +142,19 @@ def main() -> None:
                 sys.exit(1)
             asyncio.run(cmd_search(args[1]))
 
+        elif cmd == "resolve":
+            if len(args) < 2:
+                print("Error: resolve requires <token>")
+                sys.exit(1)
+            asyncio.run(cmd_resolve(args[1]))
+
         elif cmd == "strategy":
             name = args[1] if len(args) > 1 else None
             asyncio.run(cmd_strategy(name))
 
         elif cmd == "scan":
-            asyncio.run(cmd_scan())
+            filter_type = args[1] if len(args) > 1 else "all"
+            asyncio.run(cmd_scan(filter_type))
 
         else:
             print(f"Unknown command: {cmd}")

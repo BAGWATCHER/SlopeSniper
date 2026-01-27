@@ -67,6 +67,80 @@ def get_token_decimals(mint: str) -> int:
     return TOKEN_DECIMALS.get(mint, DEFAULT_DECIMALS)
 
 
+async def solana_resolve_token(token: str) -> dict[str, Any]:
+    """
+    Resolve a token symbol or name to its mint address.
+
+    Useful for finding the mint address of any token before trading.
+
+    Args:
+        token: Token symbol (e.g., "BONK", "POPCAT") or partial name
+
+    Returns:
+        Dict with symbol, name, mint, verified status.
+        For ambiguous searches, returns top matches.
+    """
+    # First check if it's already a valid mint address
+    if Utils.is_valid_solana_address(token):
+        data_client = JupiterDataClient()
+        info = await data_client.get_token_info(token)
+        return {
+            "mint": token,
+            "symbol": info.get("symbol", "???") if info else "???",
+            "name": info.get("name", "Unknown") if info else "Unknown",
+            "verified": info.get("verified", False) if info else False,
+            "found": True,
+        }
+
+    # Check known symbols
+    upper = token.upper()
+    if upper in SYMBOL_TO_MINT:
+        mint = SYMBOL_TO_MINT[upper]
+        return {
+            "mint": mint,
+            "symbol": upper,
+            "name": upper,  # Known tokens
+            "verified": True,
+            "found": True,
+        }
+
+    # Search for the token
+    data_client = JupiterDataClient()
+    results = await data_client.search_token(token)
+
+    if not results:
+        return {
+            "found": False,
+            "error": f"No tokens found matching '{token}'",
+            "suggestion": "Try a different search term or use the full mint address",
+        }
+
+    # Return best match + alternatives
+    # Jupiter API uses "id" for mint address, not "address"
+    best = results[0]
+    response = {
+        "mint": best.get("id") or best.get("address"),
+        "symbol": best.get("symbol", ""),
+        "name": best.get("name", ""),
+        "verified": best.get("isVerified", False),
+        "found": True,
+    }
+
+    # Include alternatives if ambiguous
+    if len(results) > 1:
+        response["alternatives"] = [
+            {
+                "mint": r.get("id") or r.get("address"),
+                "symbol": r.get("symbol", ""),
+                "name": r.get("name", ""),
+            }
+            for r in results[1:5]  # Up to 4 alternatives
+        ]
+        response["note"] = "Multiple matches found. Using best match. See 'alternatives' for other options."
+
+    return response
+
+
 async def solana_get_price(token: str) -> dict[str, Any]:
     """
     Get current USD price for a token.
@@ -85,7 +159,8 @@ async def solana_get_price(token: str) -> dict[str, Any]:
         data_client = JupiterDataClient()
         results = await data_client.search_token(token)
         if results:
-            mint = results[0].get("address")
+            # Jupiter API uses "id" for mint address
+            mint = results[0].get("id") or results[0].get("address")
         else:
             return {"error": f"Token not found: {token}"}
 
@@ -126,33 +201,64 @@ async def solana_search_token(query: str) -> list[dict[str, Any]]:
 
     tokens = []
     for token in results[:10]:  # Limit to top 10
+        # Jupiter API uses "id" for mint address
         tokens.append({
             "symbol": token.get("symbol", ""),
             "name": token.get("name", ""),
-            "mint": token.get("address", ""),
-            "verified": token.get("verified", False),
+            "mint": token.get("id") or token.get("address", ""),
+            "verified": token.get("isVerified", False),
             "liquidity": token.get("liquidity"),
+            "market_cap": token.get("mcap"),
+            "price_usd": token.get("usdPrice"),
         })
 
     return tokens
 
 
-async def solana_check_token(mint_address: str) -> dict[str, Any]:
+async def solana_check_token(token: str) -> dict[str, Any]:
     """
     Run rugcheck safety analysis on a token.
 
     Args:
-        mint_address: Token mint address (NOT symbol)
+        token: Token mint address OR symbol (e.g., "BONK", "POPCAT")
 
     Returns:
-        Dict with is_safe, score, risk_factors, and reason
+        Dict with mint, symbol, is_safe, score, risk_factors, and reason
     """
+    # Try to resolve symbol to mint
+    mint_address = resolve_token(token)
+    resolved_symbol = None
+
+    if not mint_address:
+        # Not a known symbol or valid address - try searching
+        data_client = JupiterDataClient()
+        results = await data_client.search_token(token)
+        if results:
+            # Jupiter API uses "id" for mint address
+            mint_address = results[0].get("id") or results[0].get("address")
+            resolved_symbol = results[0].get("symbol", token)
+        else:
+            return {"error": f"Token not found: {token}. Try searching first."}
+    else:
+        # Check if we resolved from a known symbol
+        upper = token.upper()
+        if upper in SYMBOL_TO_MINT:
+            resolved_symbol = upper
+
     if not Utils.is_valid_solana_address(mint_address):
-        return {"error": "Invalid mint address. Must be a Solana address, not a symbol."}
+        return {"error": f"Could not resolve to valid mint address: {token}"}
+
+    # Get symbol if we don't have it yet
+    if not resolved_symbol:
+        data_client = JupiterDataClient()
+        info = await data_client.get_token_info(mint_address)
+        resolved_symbol = info.get("symbol", mint_address[:8]) if info else mint_address[:8]
 
     # Known safe tokens always pass
     if is_known_safe_mint(mint_address):
         return {
+            "mint": mint_address,
+            "symbol": resolved_symbol,
             "is_safe": True,
             "score": 0,
             "risk_factors": [],
@@ -170,6 +276,8 @@ async def solana_check_token(mint_address: str) -> dict[str, Any]:
             risk_factors.append(f"[{level.upper()}] {name}")
 
     return {
+        "mint": mint_address,
+        "symbol": resolved_symbol,
         "is_safe": result.get("is_safe", False),
         "score": result.get("score"),
         "risk_factors": risk_factors,
@@ -485,7 +593,8 @@ async def quick_trade(
         data_client = JupiterDataClient()
         results = await data_client.search_token(token)
         if results:
-            mint = results[0].get("address")
+            # Jupiter API uses "id" for mint address
+            mint = results[0].get("id") or results[0].get("address")
             token_symbol = results[0].get("symbol", token)
         else:
             return {"error": f"Token not found: {token}"}

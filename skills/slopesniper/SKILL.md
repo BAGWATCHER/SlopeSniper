@@ -75,9 +75,10 @@ For trades above your auto-execute threshold, you'll be asked to confirm first.
 
 ### Information
 - `check status` / `am I ready?` - Wallet and config status
-- `price of TOKEN` - Current price
-- `search TOKEN` - Find token by name
-- `check TOKEN` / `is TOKEN safe?` - Safety analysis
+- `price of TOKEN` - Current price (symbol or mint)
+- `search TOKEN` - Find token by name (returns mint addresses)
+- `resolve TOKEN` - Get mint address from symbol
+- `check TOKEN` / `is TOKEN safe?` - Safety analysis (symbol or mint)
 
 ### Strategy
 - `set MODE strategy` - Change trading mode
@@ -94,18 +95,22 @@ Use the `slopesniper` CLI for direct execution:
 
 ```bash
 slopesniper status              # Check wallet and trading readiness
-slopesniper price SOL           # Get token price
+slopesniper price SOL           # Get token price (works with symbols)
 slopesniper price BONK          # Get meme coin price
 slopesniper buy BONK 25         # Buy $25 of BONK
 slopesniper sell WIF 50         # Sell $50 of WIF
-slopesniper check POPCAT        # Safety check (rugcheck)
-slopesniper search "dog"        # Search for tokens
+slopesniper check POPCAT        # Safety check (works with symbols!)
+slopesniper search "dog"        # Search for tokens (returns mint addresses)
+slopesniper resolve BONK        # Get mint address from symbol
 slopesniper strategy            # View current strategy
 slopesniper strategy aggressive # Set aggressive mode
-slopesniper scan                # Scan for opportunities
+slopesniper scan                # Scan for all opportunities
+slopesniper scan trending       # Scan trending tokens only
+slopesniper scan new            # Scan new pairs only
+slopesniper scan pumping        # Scan tokens with price increases
 ```
 
-All commands output JSON for easy parsing.
+All commands output JSON with mint addresses included for easy chaining.
 
 ## Security
 
