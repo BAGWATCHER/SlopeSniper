@@ -459,13 +459,24 @@ async def solana_quote(
         rugcheck = RugCheckClient()
         rugcheck_result = await rugcheck.check_token(to_mint)
 
-    # Run policy checks
+    # Get active strategy to use its limits for policy checks
+    from .strategies import get_active_strategy
+    from .config import PolicyConfig
+
+    strategy = get_active_strategy()
+    policy_config = PolicyConfig(
+        MAX_SLIPPAGE_BPS=strategy.slippage_bps * 2,  # Allow up to 2x strategy slippage
+        MAX_TRADE_USD=strategy.max_trade_usd,  # Use strategy's trade limit
+    )
+
+    # Run policy checks with strategy-aware config
     policy_result = check_policy(
         from_mint=from_mint,
         to_mint=to_mint,
         amount_usd=amount_usd,
         slippage_bps=slippage_bps,
         rugcheck_result=rugcheck_result,
+        config=policy_config,
     )
 
     if not policy_result.allowed:
@@ -656,7 +667,7 @@ async def solana_swap_confirm(intent_id: str) -> dict[str, Any]:
 async def quick_trade(
     action: str,
     token: str,
-    amount_usd: float,
+    amount_usd: float | str,
 ) -> dict[str, Any]:
     """
     One-step trade with smart defaults and auto-execution.
@@ -670,7 +681,7 @@ async def quick_trade(
     Args:
         action: "buy" or "sell"
         token: Token symbol (e.g., "BONK") or mint address
-        amount_usd: USD amount to trade (e.g., 25.0 for $25)
+        amount_usd: USD amount to trade (e.g., 25.0 for $25), or "all"/"max" to sell entire position
 
     Returns:
         If auto-executed: execution result with signature
@@ -679,6 +690,7 @@ async def quick_trade(
     Example:
         quick_trade("buy", "BONK", 20)  # Buy $20 worth of BONK
         quick_trade("sell", "WIF", 50)  # Sell $50 worth of WIF
+        quick_trade("sell", "WIF", "all")  # Sell entire WIF position
     """
     from .strategies import get_active_strategy
 
@@ -686,17 +698,18 @@ async def quick_trade(
     if action not in ("buy", "sell"):
         return {"error": "Action must be 'buy' or 'sell'"}
 
+    # Handle "all"/"max" for selling
+    sell_all = False
+    if isinstance(amount_usd, str) and amount_usd.lower() in ("all", "max", "100%"):
+        if action != "sell":
+            return {"error": "'all'/'max' only works with sell action"}
+        sell_all = True
+        amount_usd = 0.0  # Will be calculated from holdings
+    else:
+        amount_usd = float(amount_usd)
+
     # Get current strategy for limits
     strategy = get_active_strategy()
-
-    # Check trade limit
-    if amount_usd > strategy.max_trade_usd:
-        return {
-            "error": f"Trade exceeds limit",
-            "amount_usd": amount_usd,
-            "max_trade_usd": strategy.max_trade_usd,
-            "suggestion": f"Reduce amount to ${strategy.max_trade_usd} or change strategy",
-        }
 
     # Resolve token to mint address
     mint = resolve_token(token)
@@ -729,19 +742,101 @@ async def quick_trade(
         from_mint = mint
         to_mint = sol_mint
 
-    # Get price to calculate amount
-    data_client = JupiterDataClient(api_key=get_jupiter_api_key())
-    price_data = await data_client.get_price(from_mint)
+    # For sells, check holdings and validate amount
+    if action == "sell":
+        # Get user's holdings for this token
+        ultra_client = JupiterUltraClient(api_key=get_jupiter_api_key())
+        wallet_address = get_wallet_address()
+        if not wallet_address:
+            return {"error": "No wallet configured"}
 
-    if not price_data or not price_data.get("usdPrice"):
-        return {"error": f"Could not get price for {from_mint}"}
+        holdings = await ultra_client.get_holdings(wallet_address)
+        tokens_data = holdings.get("tokens", {})
 
-    price_usd = float(price_data.get("usdPrice", 0))
-    if price_usd <= 0:
-        return {"error": "Invalid price data"}
+        # Find this token in holdings
+        token_holding = None
+        if mint in tokens_data:
+            token_accounts = tokens_data[mint]
+            if isinstance(token_accounts, list) and token_accounts:
+                # Sum all token accounts
+                total_amount = sum(float(acc.get("uiAmount", 0)) for acc in token_accounts)
+                token_holding = {"amount": total_amount}
+            elif isinstance(token_accounts, dict):
+                token_holding = {"amount": float(token_accounts.get("uiAmount", 0))}
 
-    # Calculate token amount from USD
-    token_amount = amount_usd / price_usd
+        if not token_holding or token_holding["amount"] <= 0:
+            return {
+                "error": f"No {token_symbol} holdings found in wallet",
+                "suggestion": "Check your wallet balance with get_wallet()",
+            }
+
+        user_token_balance = token_holding["amount"]
+
+        # Get token price
+        data_client = JupiterDataClient(api_key=get_jupiter_api_key())
+        price_data = await data_client.get_price(mint)
+
+        if not price_data or not price_data.get("usdPrice"):
+            return {"error": f"Could not get price for {token_symbol}"}
+
+        price_usd = float(price_data.get("usdPrice", 0))
+        if price_usd <= 0:
+            return {"error": "Invalid price data"}
+
+        # Calculate holdings value
+        holdings_value_usd = user_token_balance * price_usd
+
+        if sell_all:
+            # Sell entire position
+            token_amount = user_token_balance
+            amount_usd = holdings_value_usd
+        else:
+            # Calculate token amount from USD
+            token_amount = amount_usd / price_usd
+
+            # Check if user has enough tokens
+            if token_amount > user_token_balance:
+                return {
+                    "error": "Insufficient token balance",
+                    "requested_tokens": token_amount,
+                    "available_tokens": user_token_balance,
+                    "requested_usd": amount_usd,
+                    "available_usd": holdings_value_usd,
+                    "suggestion": f"Use 'all' to sell entire position (${holdings_value_usd:.2f}), or reduce amount",
+                }
+
+        # Check trade limit (after we know the actual amount)
+        if amount_usd > strategy.max_trade_usd:
+            return {
+                "error": f"Trade exceeds limit",
+                "amount_usd": amount_usd,
+                "max_trade_usd": strategy.max_trade_usd,
+                "suggestion": f"Reduce amount to ${strategy.max_trade_usd} or change strategy",
+            }
+
+    else:  # buy
+        # Check trade limit first for buys
+        if amount_usd > strategy.max_trade_usd:
+            return {
+                "error": f"Trade exceeds limit",
+                "amount_usd": amount_usd,
+                "max_trade_usd": strategy.max_trade_usd,
+                "suggestion": f"Reduce amount to ${strategy.max_trade_usd} or change strategy",
+            }
+
+        # Get SOL price to calculate amount
+        data_client = JupiterDataClient(api_key=get_jupiter_api_key())
+        price_data = await data_client.get_price(sol_mint)
+
+        if not price_data or not price_data.get("usdPrice"):
+            return {"error": "Could not get SOL price"}
+
+        price_usd = float(price_data.get("usdPrice", 0))
+        if price_usd <= 0:
+            return {"error": "Invalid price data"}
+
+        # Calculate SOL amount from USD
+        token_amount = amount_usd / price_usd
 
     # Run safety check if required and buying (not for known safe tokens)
     if action == "buy" and strategy.require_rugcheck and not is_known_safe_mint(to_mint):
