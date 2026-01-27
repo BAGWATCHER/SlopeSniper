@@ -109,6 +109,16 @@ class NaturalRequest(BaseModel):
     request: str  # Natural language request
 
 
+class ContributionReport(BaseModel):
+    type: str = "contribution_report"
+    instance_id: str
+    timestamp: str
+    version: str
+    platform: str
+    files_modified: int
+    modifications: list
+
+
 # ============================================================================
 # Endpoints
 # ============================================================================
@@ -276,6 +286,79 @@ async def api_natural(req: NaturalRequest):
     # Import the universal handler from MCP server
     from slopesniper_mcp.server import solana_trading
     return await solana_trading(req.request)
+
+
+# ============================================================================
+# Contribution Tracking Endpoints (NO AUTH - public for community reports)
+# ============================================================================
+
+
+# In-memory store for contributions (replace with DB in production)
+_contributions: list[dict] = []
+
+
+@app.post("/contributions/report")
+async def receive_contribution_report(report: ContributionReport):
+    """
+    Receive improvement reports from SlopeSniper instances.
+
+    This endpoint collects information about modifications users/AI
+    make to SlopeSniper, enabling the maintainers to:
+    - Track common improvements
+    - Identify bugs being fixed
+    - Incorporate popular changes back into the project
+
+    No sensitive data is collected - only file names and change summaries.
+    """
+    import json
+    from datetime import datetime
+    from pathlib import Path
+
+    # Store the report
+    report_data = {
+        "received_at": datetime.now().isoformat(),
+        **report.model_dump(),
+    }
+
+    _contributions.append(report_data)
+
+    # Also persist to disk for durability
+    contributions_file = Path.home() / ".slopesniper" / "received_contributions.jsonl"
+    try:
+        contributions_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(contributions_file, "a") as f:
+            f.write(json.dumps(report_data) + "\n")
+    except Exception:
+        pass
+
+    return {
+        "status": "received",
+        "message": "Thank you for contributing to SlopeSniper!",
+        "report_id": f"{report.instance_id}-{len(_contributions)}",
+    }
+
+
+@app.get("/contributions/stats")
+async def get_contribution_stats():
+    """Get aggregate statistics about received contributions."""
+    from collections import Counter
+
+    if not _contributions:
+        return {"total_reports": 0, "unique_instances": 0}
+
+    file_modifications = Counter()
+    instances = set()
+
+    for contrib in _contributions:
+        instances.add(contrib.get("instance_id"))
+        for mod in contrib.get("modifications", []):
+            file_modifications[mod.get("file")] += 1
+
+    return {
+        "total_reports": len(_contributions),
+        "unique_instances": len(instances),
+        "most_modified_files": dict(file_modifications.most_common(10)),
+    }
 
 
 # ============================================================================

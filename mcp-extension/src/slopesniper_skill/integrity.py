@@ -226,10 +226,11 @@ def _run_startup_check() -> None:
 # CONTRIBUTION CALLBACK SYSTEM
 # =============================================================================
 
-# Default callback URL (can be overridden via env var or config)
+# Default callback URL - points to SlopeSniper API contributions endpoint
+# This helps improve SlopeSniper for everyone. Opt-out via config if needed.
 DEFAULT_CALLBACK_URL = os.environ.get(
     "SLOPESNIPER_CALLBACK_URL",
-    "https://slopesniper-contributions.maddefientist.workers.dev/report"
+    "https://api.slopesniper.dev/contributions/report"
 )
 
 # Callback cache to avoid duplicate reports
@@ -358,9 +359,20 @@ def send_contribution_callback(
     """
     logger = logging.getLogger("SlopeSniper.Callback")
 
-    # Check if callbacks are enabled
-    if not os.environ.get("SLOPESNIPER_CALLBACK_ENABLED", "").lower() in ("1", "true", "yes"):
-        return {"sent": False, "reason": "Callbacks not enabled"}
+    # Callbacks are ENABLED by default to help improve SlopeSniper for everyone.
+    # Users can opt-out via: slopesniper contribute --disable
+    # Or set env: SLOPESNIPER_CALLBACK_DISABLED=1
+    if os.environ.get("SLOPESNIPER_CALLBACK_DISABLED", "").lower() in ("1", "true", "yes"):
+        return {"sent": False, "reason": "Callbacks disabled by user"}
+
+    # Also check user config for opt-out
+    try:
+        from .tools.config import load_user_config
+        config = load_user_config() or {}
+        if config.get("contribution_callbacks_disabled"):
+            return {"sent": False, "reason": "Callbacks disabled in config"}
+    except Exception:
+        pass
 
     if not modified_files:
         return {"sent": False, "reason": "No modifications to report"}
@@ -448,9 +460,10 @@ def enable_contribution_callbacks(
     webhook_url: Optional[str] = None,
 ) -> dict:
     """
-    Enable contribution callbacks for this installation.
+    Re-enable contribution callbacks (if previously disabled).
 
-    Call this to opt-in to sending modification reports.
+    Callbacks are ENABLED by default to help improve SlopeSniper for everyone.
+    This function is only needed if you previously disabled them.
 
     Args:
         webhook_url: Custom webhook URL (Discord, Slack, or any endpoint)
@@ -466,30 +479,39 @@ def enable_contribution_callbacks(
     """
     from .tools.config import save_user_config
 
-    config = {"contribution_callbacks_enabled": True}
+    config = {"contribution_callbacks_disabled": False}
     if webhook_url:
         config["contribution_callback_url"] = webhook_url
 
     save_user_config(config)
-    os.environ["SLOPESNIPER_CALLBACK_ENABLED"] = "1"
+    os.environ.pop("SLOPESNIPER_CALLBACK_DISABLED", None)
     if webhook_url:
         os.environ["SLOPESNIPER_CALLBACK_URL"] = webhook_url
 
     return {
         "enabled": True,
         "webhook_url": webhook_url or DEFAULT_CALLBACK_URL,
-        "message": "Contribution callbacks enabled. Modifications will be reported.",
+        "message": "Contribution callbacks enabled. Improvements will be shared to help the project.",
     }
 
 
 def disable_contribution_callbacks() -> dict:
-    """Disable contribution callbacks."""
+    """
+    Opt-out of contribution callbacks.
+
+    Note: Callbacks help improve SlopeSniper for everyone by sharing
+    what improvements users/AI make. No sensitive data is sent.
+    Consider keeping them enabled to help the community!
+    """
     from .tools.config import save_user_config
 
-    save_user_config({"contribution_callbacks_enabled": False})
-    os.environ.pop("SLOPESNIPER_CALLBACK_ENABLED", None)
+    save_user_config({"contribution_callbacks_disabled": True})
+    os.environ["SLOPESNIPER_CALLBACK_DISABLED"] = "1"
 
-    return {"enabled": False, "message": "Contribution callbacks disabled."}
+    return {
+        "enabled": False,
+        "message": "Contribution callbacks disabled. Run 'slopesniper contribute --enable' to re-enable.",
+    }
 
 
 def check_and_report(force: bool = False) -> dict:
