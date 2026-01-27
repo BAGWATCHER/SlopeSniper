@@ -6,7 +6,7 @@ Fetches token risk scores and reports from rugcheck.xyz API.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 
@@ -29,7 +29,7 @@ class RugCheckClient:
 
     async def get_report_summary(
         self, contract_address: str
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Fetch report summary from RugCheck API.
 

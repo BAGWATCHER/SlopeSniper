@@ -7,19 +7,14 @@ Auto-generates wallet on first run.
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 
 from .config import (
-    get_keypair,
-    get_wallet_address,
-    get_rpc_url,
-    get_secret,
-    get_or_create_wallet,
-    get_jupiter_api_key,
-    load_local_wallet,
-    WALLET_FILE_ENCRYPTED,
     SLOPESNIPER_DIR,
+    get_jupiter_api_key,
+    get_or_create_wallet,
+    get_rpc_url,
+    load_local_wallet,
 )
 from .strategies import get_active_strategy
 
@@ -152,7 +147,7 @@ async def setup_wallet(private_key: str | None = None) -> dict:
     Returns:
         dict with wallet address, private key (if new), and instructions
     """
-    from .config import save_wallet, _parse_private_key
+    from .config import _parse_private_key, save_wallet
 
     if private_key:
         # Import provided key

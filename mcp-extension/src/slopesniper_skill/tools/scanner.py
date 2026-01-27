@@ -11,17 +11,14 @@ Multi-source scanner using:
 from __future__ import annotations
 
 import asyncio
-import json
 import sqlite3
-from dataclasses import dataclass, asdict
-from datetime import datetime
-from pathlib import Path
-from typing import Literal, Optional
+from dataclasses import dataclass
+from typing import Literal
 
-from ..sdk.jupiter_data_client import JupiterDataClient
-from ..sdk.rugcheck_client import RugCheckClient
 from ..sdk.dexscreener_client import DexScreenerClient
+from ..sdk.jupiter_data_client import JupiterDataClient
 from ..sdk.pumpfun_client import PumpFunClient
+from ..sdk.rugcheck_client import RugCheckClient
 from .config import get_jupiter_api_key
 from .strategies import _get_config_db_path, _init_db
 
@@ -38,27 +35,27 @@ class TokenOpportunity:
 
     # Price data
     price_usd: float
-    price_change_5m: Optional[float] = None
-    price_change_1h: Optional[float] = None
-    price_change_24h: Optional[float] = None
+    price_change_5m: float | None = None
+    price_change_1h: float | None = None
+    price_change_24h: float | None = None
 
     # Volume & Liquidity
-    volume_24h_usd: Optional[float] = None
-    liquidity_usd: Optional[float] = None
+    volume_24h_usd: float | None = None
+    liquidity_usd: float | None = None
 
     # Age & Activity
-    age: Optional[str] = None
-    buys_24h: Optional[int] = None
-    sells_24h: Optional[int] = None
+    age: str | None = None
+    buys_24h: int | None = None
+    sells_24h: int | None = None
 
     # Safety
-    risk_score: Optional[int] = None
-    is_safe: Optional[bool] = None
+    risk_score: int | None = None
+    is_safe: bool | None = None
 
     # Metadata
-    dex: Optional[str] = None
-    pair_address: Optional[str] = None
-    url: Optional[str] = None
+    dex: str | None = None
+    pair_address: str | None = None
+    url: str | None = None
     boosted: bool = False
 
     # Recommendation

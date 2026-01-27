@@ -12,7 +12,7 @@ Note: Pump.fun's API is unofficial and may change.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 
@@ -36,7 +36,7 @@ class PumpFunClient:
     async def _request(
         self,
         url: str,
-        params: Optional[dict] = None,
+        params: dict | None = None,
         timeout: int = 15
     ) -> Any:
         """Make API request."""
@@ -69,7 +69,7 @@ class PumpFunClient:
         These are tokens that filled their bonding curve and
         migrated to Raydium for open trading.
         """
-        self.logger.info(f"[get_graduated_tokens] Fetching graduated tokens")
+        self.logger.info("[get_graduated_tokens] Fetching graduated tokens")
 
         # Try the graduated coins endpoint
         data = await self._request(
@@ -99,7 +99,7 @@ class PumpFunClient:
 
         These are brand new tokens still in bonding curve phase.
         """
-        self.logger.info(f"[get_latest_tokens] Fetching latest tokens")
+        self.logger.info("[get_latest_tokens] Fetching latest tokens")
 
         data = await self._request(
             f"{self.BASE_URL}/coins",
@@ -112,7 +112,7 @@ class PumpFunClient:
 
         return []
 
-    async def get_token(self, mint: str) -> Optional[dict]:
+    async def get_token(self, mint: str) -> dict | None:
         """Get detailed info for a specific token."""
         self.logger.info(f"[get_token] Fetching {mint[:8]}...")
 
