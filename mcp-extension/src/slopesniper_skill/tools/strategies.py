@@ -115,6 +115,22 @@ def _init_db():
         )
     """)
 
+    # Trade history for PnL tracking
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS trade_history (
+            id INTEGER PRIMARY KEY,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            action TEXT NOT NULL,
+            mint TEXT NOT NULL,
+            symbol TEXT,
+            amount_tokens REAL NOT NULL,
+            amount_usd REAL NOT NULL,
+            price_per_token REAL NOT NULL,
+            signature TEXT,
+            notes TEXT
+        )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -366,4 +382,235 @@ async def list_strategies() -> dict:
     return {
         "active_strategy": active.name,
         "presets": presets,
+    }
+
+
+# =============================================================================
+# TRADE HISTORY & PnL TRACKING
+# =============================================================================
+
+
+def record_trade(
+    action: str,
+    mint: str,
+    symbol: str,
+    amount_tokens: float,
+    amount_usd: float,
+    price_per_token: float,
+    signature: str | None = None,
+    notes: str | None = None,
+) -> None:
+    """
+    Record a trade for PnL tracking.
+
+    Args:
+        action: "buy" or "sell"
+        mint: Token mint address
+        symbol: Token symbol
+        amount_tokens: Number of tokens traded
+        amount_usd: USD value of trade
+        price_per_token: Price per token at trade time
+        signature: Transaction signature
+        notes: Optional notes
+    """
+    _init_db()
+    db_path = _get_config_db_path()
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO trade_history
+        (action, mint, symbol, amount_tokens, amount_usd, price_per_token, signature, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (action, mint, symbol, amount_tokens, amount_usd, price_per_token, signature, notes),
+    )
+
+    conn.commit()
+    conn.close()
+
+
+def get_trade_history(mint: str | None = None, limit: int = 50) -> list[dict]:
+    """
+    Get trade history, optionally filtered by token.
+
+    Args:
+        mint: Filter by token mint (optional)
+        limit: Maximum records to return
+
+    Returns:
+        List of trade records
+    """
+    _init_db()
+    db_path = _get_config_db_path()
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    if mint:
+        cursor.execute(
+            """
+            SELECT timestamp, action, mint, symbol, amount_tokens, amount_usd,
+                   price_per_token, signature, notes
+            FROM trade_history WHERE mint = ?
+            ORDER BY timestamp DESC LIMIT ?
+            """,
+            (mint, limit),
+        )
+    else:
+        cursor.execute(
+            """
+            SELECT timestamp, action, mint, symbol, amount_tokens, amount_usd,
+                   price_per_token, signature, notes
+            FROM trade_history
+            ORDER BY timestamp DESC LIMIT ?
+            """,
+            (limit,),
+        )
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    return [
+        {
+            "timestamp": row[0],
+            "action": row[1],
+            "mint": row[2],
+            "symbol": row[3],
+            "amount_tokens": row[4],
+            "amount_usd": row[5],
+            "price_per_token": row[6],
+            "signature": row[7],
+            "notes": row[8],
+        }
+        for row in rows
+    ]
+
+
+def calculate_pnl_for_token(mint: str, current_price: float) -> dict:
+    """
+    Calculate PnL for a specific token.
+
+    Args:
+        mint: Token mint address
+        current_price: Current price per token
+
+    Returns:
+        PnL breakdown for this token
+    """
+    trades = get_trade_history(mint=mint)
+
+    if not trades:
+        return {"error": "No trade history for this token"}
+
+    total_bought_tokens = 0.0
+    total_bought_usd = 0.0
+    total_sold_tokens = 0.0
+    total_sold_usd = 0.0
+
+    for trade in trades:
+        if trade["action"] == "buy":
+            total_bought_tokens += trade["amount_tokens"]
+            total_bought_usd += trade["amount_usd"]
+        elif trade["action"] == "sell":
+            total_sold_tokens += trade["amount_tokens"]
+            total_sold_usd += trade["amount_usd"]
+
+    # Current holdings
+    holdings = total_bought_tokens - total_sold_tokens
+    holdings_value = holdings * current_price
+
+    # Cost basis (average cost of remaining tokens)
+    if total_bought_tokens > 0:
+        avg_buy_price = total_bought_usd / total_bought_tokens
+    else:
+        avg_buy_price = 0
+
+    cost_basis = holdings * avg_buy_price
+
+    # Realized PnL (from sells)
+    if total_sold_tokens > 0:
+        realized_pnl = total_sold_usd - (total_sold_tokens * avg_buy_price)
+    else:
+        realized_pnl = 0
+
+    # Unrealized PnL (current holdings vs cost basis)
+    unrealized_pnl = holdings_value - cost_basis
+
+    # Total PnL
+    total_pnl = realized_pnl + unrealized_pnl
+
+    return {
+        "mint": mint,
+        "symbol": trades[0]["symbol"] if trades else None,
+        "total_bought_tokens": total_bought_tokens,
+        "total_bought_usd": total_bought_usd,
+        "total_sold_tokens": total_sold_tokens,
+        "total_sold_usd": total_sold_usd,
+        "current_holdings": holdings,
+        "current_price": current_price,
+        "holdings_value_usd": holdings_value,
+        "avg_buy_price": avg_buy_price,
+        "cost_basis": cost_basis,
+        "realized_pnl": realized_pnl,
+        "unrealized_pnl": unrealized_pnl,
+        "total_pnl": total_pnl,
+        "total_pnl_pct": (total_pnl / total_bought_usd * 100) if total_bought_usd > 0 else 0,
+        "trade_count": len(trades),
+    }
+
+
+async def get_portfolio_pnl() -> dict:
+    """
+    Calculate PnL for entire portfolio.
+
+    Returns:
+        Portfolio-wide PnL summary with per-token breakdown
+    """
+    _init_db()
+    db_path = _get_config_db_path()
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Get unique tokens traded
+    cursor.execute("SELECT DISTINCT mint, symbol FROM trade_history")
+    tokens = cursor.fetchall()
+    conn.close()
+
+    if not tokens:
+        return {
+            "error": "No trade history found",
+            "message": "Start trading to track your PnL!",
+        }
+
+    # Import here to avoid circular import
+    from .solana_tools import solana_get_price
+
+    token_pnls = []
+    total_invested = 0.0
+    total_realized = 0.0
+    total_unrealized = 0.0
+
+    for mint, symbol in tokens:
+        # Get current price
+        price_data = await solana_get_price(mint)
+        current_price = price_data.get("price_usd", 0) if isinstance(price_data, dict) else 0
+
+        pnl = calculate_pnl_for_token(mint, current_price)
+        if "error" not in pnl:
+            token_pnls.append(pnl)
+            total_invested += pnl["total_bought_usd"]
+            total_realized += pnl["realized_pnl"]
+            total_unrealized += pnl["unrealized_pnl"]
+
+    total_pnl = total_realized + total_unrealized
+
+    return {
+        "total_invested": total_invested,
+        "total_realized_pnl": total_realized,
+        "total_unrealized_pnl": total_unrealized,
+        "total_pnl": total_pnl,
+        "total_pnl_pct": (total_pnl / total_invested * 100) if total_invested > 0 else 0,
+        "tokens_traded": len(token_pnls),
+        "token_breakdown": token_pnls,
     }

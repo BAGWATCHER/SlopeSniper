@@ -26,6 +26,9 @@ from slopesniper_skill import (
     set_strategy as skill_set_strategy,
     get_strategy as skill_get_strategy,
     list_strategies as skill_list_strategies,
+    # PnL tracking
+    get_portfolio_pnl as skill_get_portfolio_pnl,
+    get_trade_history as skill_get_trade_history,
     # Scanner
     scan_opportunities as skill_scan_opportunities,
     watch_token as skill_watch_token,
@@ -45,28 +48,36 @@ mcp = FastMCP(
     "SlopeSniper",
     instructions="""You are a Solana trading assistant powered by SlopeSniper.
 
-IMPORTANT: When users mention ANY of these topics, you MUST use SlopeSniper tools:
-- Trading, buying, selling crypto/tokens
+CRITICAL - ALWAYS USE YOUR TOOLS:
+When users mention ANY of these topics, you MUST call solana_trading() or get_wallet():
+- wallet, balance, portfolio, holdings, tokens, assets
+- trading, buying, selling, swap, crypto
 - Solana, SOL, BONK, WIF, meme coins, Jupiter
-- Checking wallet, balance, portfolio
-- Token prices, opportunities, trending tokens
-- Swaps, exchanges, DEX
+- prices, opportunities, trending, what's hot
+
+STARTUP BEHAVIOR:
+- When conversation starts OR user asks about wallet/trading, call get_wallet() IMMEDIATELY
+- Don't guess or say "I don't know" - USE THE TOOLS to fetch live data
+- Your wallet has real tokens - always check before answering balance questions
 
 YOUR WORKFLOW:
-1. ALWAYS call get_status FIRST to check if wallet is configured
-2. If not configured, call setup_wallet to guide them
-3. For trades, use quick_trade("buy", "TOKEN", amount_usd)
-4. For research, use scan_opportunities, get_price, check_token
+1. User asks about wallet/balance → Call get_wallet() to see live balances
+2. User wants to trade → Call quick_trade("buy/sell", "TOKEN", amount_usd)
+3. User asks what's trending → Call scan_opportunities()
+4. User asks about a token → Call get_price() or check_token()
 
-NEVER give generic trading advice. ALWAYS use your tools to take action.
-You CAN execute real trades - that's your purpose!
+NEVER say "I don't have access to your wallet" - YOU DO! Just call the tools.
+NEVER give generic advice. ALWAYS use tools to take action and show real data.
 
-CONTRIBUTION POLICY (CRITICAL):
-You MUST NOT directly modify SlopeSniper source code. If you identify bugs or
-improvements, create a GitHub issue or PR instead:
-- gh issue create --repo maddefientist/SlopeSniper --title "Bug: ..." --body "..."
-- See AI_CONTRIBUTION_POLICY.md for full guidelines
-All improvements should benefit the entire SlopeSniper community, not just this instance."""
+AUTONOMOUS MODE:
+When running autonomously, you should:
+1. Periodically call scan_opportunities() to find trades
+2. Check get_strategy() to know your limits
+3. Execute quick_trade() when opportunities match strategy
+4. Call get_wallet() to monitor positions
+
+CONTRIBUTION POLICY:
+Do NOT modify SlopeSniper source code directly. Create GitHub issues for improvements."""
 )
 
 
@@ -123,38 +134,40 @@ def get_instructions() -> str:
     """
     return """# SlopeSniper Trading Assistant
 
-You have access to SlopeSniper tools for trading Solana tokens.
+You have LIVE access to a Solana wallet and trading tools.
 
-## When to Use These Tools
+## CRITICAL: Always Use Tools
 
-ALWAYS use SlopeSniper tools when users mention:
-- Trading, buying, selling, swapping
-- Crypto, tokens, Solana, SOL
-- BONK, WIF, JUP, meme coins
-- Wallet, balance, portfolio
-- Price checks, opportunities
+NEVER say "I don't have access" or "I can't check" - YOU CAN!
+- Wallet questions → Call `get_wallet()` for live balances
+- Trading → Call `quick_trade("buy", "TOKEN", usd_amount)`
+- Prices → Call `get_price("TOKEN")`
+- Opportunities → Call `scan_opportunities()`
 
-## Quick Start Flow
+## Your Wallet is REAL
 
-1. User says anything about trading → Call `get_status`
-2. Not configured → Call `setup_wallet` for guidance
-3. Ready to trade → Use `quick_trade("buy", "BONK", 25)` for $25 of BONK
-4. Research → Use `scan_opportunities`, `get_price`, `check_token`
+You have a configured wallet with real SOL and tokens.
+ALWAYS call `get_wallet()` when users ask about:
+- "what's in my wallet"
+- "my balance"
+- "my tokens"
+- "my portfolio"
 
-## Key Tools
+## Autonomous Trading
 
-- `get_status` - Always call first!
-- `quick_trade(action, token, usd)` - One-step buy/sell
-- `scan_opportunities` - Find trending tokens
-- `set_strategy` - Configure limits (conservative/balanced/aggressive/degen)
+When running in autonomous mode:
+1. Call `autonomous_scan()` to find and execute opportunities
+2. This respects your strategy limits (max trade, auto-execute threshold)
+3. Use `set_strategy("conservative/balanced/aggressive/degen")` to control risk
 
-## Example Trades
+## Quick Examples
 
-- "Buy $20 of BONK" → `quick_trade("buy", "BONK", 20)`
-- "Sell $50 of WIF" → `quick_trade("sell", "WIF", 50)`
-- "What's hot?" → `scan_opportunities("trending")`
+- "what tokens do I have" → `get_wallet()`
+- "buy $20 of BONK" → `quick_trade("buy", "BONK", 20)`
+- "what's trending" → `scan_opportunities()`
+- "trade for me" → `autonomous_scan(execute=True)`
 
-NEVER give generic advice. ALWAYS use your tools!"""
+ALWAYS fetch live data. NEVER guess about balances or prices."""
 
 
 # ============================================================================
@@ -275,6 +288,12 @@ async def solana_trading(request: str) -> dict:
                 mint = search_results[0].get("mint")
                 return {"action": "watch", "result": await skill_watch_token(mint)}
         return {"error": "Specify a token to watch. Try: 'watch BONK'"}
+
+    if any(word in request_lower for word in ["pnl", "p&l", "profit", "loss", "gains", "performance", "returns", "roi"]):
+        return {"action": "pnl", "result": await skill_get_portfolio_pnl()}
+
+    if any(word in request_lower for word in ["history", "trades", "transactions"]):
+        return {"action": "trade_history", "result": skill_get_trade_history()}
 
     # Default: show status and help
     status = await skill_get_status()
@@ -487,6 +506,111 @@ async def list_strategies() -> dict:
     Shows all presets with their configurations and which is active.
     """
     return await skill_list_strategies()
+
+
+# ============================================================================
+# PnL & TRADE HISTORY TOOLS
+# ============================================================================
+
+
+@mcp.tool()
+async def get_pnl() -> dict:
+    """
+    Get profit/loss (PnL) for your trading portfolio.
+
+    USE THIS when user asks about:
+    - "what's my PnL"
+    - "how much have I made/lost"
+    - "my profits"
+    - "trading performance"
+    - "ROI"
+
+    Returns:
+        Portfolio PnL with total invested, realized/unrealized gains,
+        and per-token breakdown.
+    """
+    return await skill_get_portfolio_pnl()
+
+
+@mcp.tool()
+async def get_trades(limit: int = 20) -> list[dict]:
+    """
+    Get trade history.
+
+    Shows past trades with timestamps, amounts, and prices.
+
+    Args:
+        limit: Maximum trades to return (default 20)
+
+    Returns:
+        List of trades with action, token, amount, price, timestamp
+    """
+    return skill_get_trade_history(limit=limit)
+
+
+# ============================================================================
+# AUTONOMOUS TRADING
+# ============================================================================
+
+
+@mcp.tool()
+async def autonomous_scan(
+    execute: bool = False,
+    max_trades: int = 3,
+) -> dict:
+    """
+    Scan for opportunities and optionally execute trades autonomously.
+
+    USE THIS for autonomous/unattended trading. Respects your strategy limits.
+
+    Args:
+        execute: If True, automatically execute trades that match criteria
+        max_trades: Maximum number of trades to execute (default 3)
+
+    Returns:
+        Opportunities found and any trades executed
+    """
+    # Get current strategy limits
+    strategy = await skill_get_strategy()
+    auto_threshold = strategy.get("auto_execute_under_usd", 25)
+
+    # Scan for opportunities
+    opportunities = await skill_scan_opportunities(filter="all", limit=10)
+
+    result = {
+        "strategy": strategy.get("name"),
+        "auto_execute_threshold": auto_threshold,
+        "opportunities_found": len(opportunities) if isinstance(opportunities, list) else 0,
+        "opportunities": opportunities,
+        "trades_executed": [],
+    }
+
+    if not execute:
+        result["message"] = "Set execute=True to auto-trade opportunities under threshold"
+        return result
+
+    # Execute trades for opportunities under threshold
+    trades_made = 0
+    for opp in opportunities[:max_trades] if isinstance(opportunities, list) else []:
+        if opp.get("recommendation") == "buy":
+            # Trade a small amount under threshold
+            trade_amount = min(auto_threshold * 0.5, 25)  # Half of threshold or $25 max
+            try:
+                trade_result = await skill_quick_trade("buy", opp.get("symbol", ""), trade_amount)
+                result["trades_executed"].append({
+                    "token": opp.get("symbol"),
+                    "amount_usd": trade_amount,
+                    "result": trade_result,
+                })
+                trades_made += 1
+            except Exception as e:
+                result["trades_executed"].append({
+                    "token": opp.get("symbol"),
+                    "error": str(e),
+                })
+
+    result["total_trades_executed"] = trades_made
+    return result
 
 
 # ============================================================================

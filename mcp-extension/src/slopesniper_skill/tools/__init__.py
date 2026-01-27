@@ -30,6 +30,11 @@ from .strategies import (
     get_active_strategy,
     TradingStrategy,
     STRATEGY_PRESETS,
+    # PnL tracking
+    record_trade,
+    get_trade_history,
+    calculate_pnl_for_token,
+    get_portfolio_pnl,
 )
 
 from .scanner import (
@@ -93,6 +98,11 @@ __all__ = [
     "get_active_strategy",
     "TradingStrategy",
     "STRATEGY_PRESETS",
+    # PnL tracking
+    "record_trade",
+    "get_trade_history",
+    "calculate_pnl_for_token",
+    "get_portfolio_pnl",
     # Scanner
     "scan_opportunities",
     "watch_token",

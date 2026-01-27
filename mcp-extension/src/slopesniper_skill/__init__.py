@@ -45,6 +45,10 @@ from .tools import (
     set_strategy,
     get_strategy,
     list_strategies,
+    # PnL tracking
+    record_trade,
+    get_trade_history,
+    get_portfolio_pnl,
     # Scanner
     scan_opportunities,
     watch_token,
@@ -75,6 +79,10 @@ __all__ = [
     "set_strategy",
     "get_strategy",
     "list_strategies",
+    # PnL tracking
+    "record_trade",
+    "get_trade_history",
+    "get_portfolio_pnl",
     # Scanner
     "scan_opportunities",
     "watch_token",
