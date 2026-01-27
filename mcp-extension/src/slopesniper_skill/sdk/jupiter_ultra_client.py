@@ -54,16 +54,46 @@ class JupiterUltraClient:
         self.logger = Utils.setup_logger("JupiterUltraClient")
         self.max_retries = max_retries
 
-        # Get API key from parameter or env var - REQUIRED as of Jan 2025
-        self.api_key = api_key or os.environ.get("JUPITER_API_KEY")
+        # Get API key: user override > env var > bundled default
+        # Users can provide their own key for higher rate limits
+        self.api_key = api_key or os.environ.get("JUPITER_API_KEY") or self._get_bundled_key()
 
-        if self.api_key:
-            self.logger.info("[__init__] JupiterUltraClient initialized with API key")
+        if os.environ.get("JUPITER_API_KEY"):
+            self.logger.info("[__init__] JupiterUltraClient initialized with custom API key")
         else:
-            self.logger.warning(
-                "[__init__] No JUPITER_API_KEY found! "
-                "Get a FREE key at https://portal.jup.ag"
-            )
+            self.logger.info("[__init__] JupiterUltraClient initialized with bundled API key")
+
+    def _get_bundled_key(self) -> str:
+        """Get bundled Jupiter API key from remote endpoint."""
+        # Fetch from SlopeSniper API - key is centrally managed
+        # Fallback to embedded key if endpoint unreachable
+        config_url = os.environ.get(
+            "SLOPESNIPER_CONFIG_URL",
+            "https://slopesniper.maddefientist.com/config/jup"
+        )
+
+        try:
+            import urllib.request
+            import json
+
+            req = urllib.request.Request(config_url, headers={"User-Agent": "SlopeSniper"})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read().decode())
+                key = data.get("key", "")
+                if key:
+                    self.logger.debug("[_get_bundled_key] Fetched key from config endpoint")
+                    return key
+        except Exception as e:
+            self.logger.debug(f"[_get_bundled_key] Could not fetch from endpoint: {e}")
+
+        # Fallback to embedded key (base64 obfuscated)
+        import base64
+        _k = "YTI1YzM3NWEtN2QxMy00NDI1LWJiYzktZjhkOGJmNDA4ZjEx"
+        try:
+            self.logger.debug("[_get_bundled_key] Using fallback embedded key")
+            return base64.b64decode(_k).decode()
+        except Exception:
+            return ""
 
     async def _make_request(
         self,

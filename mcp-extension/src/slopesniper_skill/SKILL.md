@@ -1,7 +1,7 @@
 ---
 name: slopesniper
 description: Trade Solana tokens via Jupiter DEX with auto-execution and safety limits
-metadata: {"clawdbot":{"requires":{"bins":["slopesniper"],"env":["SOLANA_PRIVATE_KEY","JUPITER_API_KEY"]},"emoji":"🎯","primaryEnv":"SOLANA_PRIVATE_KEY","homepage":"https://github.com/maddefientist/SlopeSniper","install":[{"id":"uv-install","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper"],"label":"Install SlopeSniper via uv"}]}}
+metadata: {"clawdbot":{"requires":{"bins":["slopesniper"],"env":["SOLANA_PRIVATE_KEY"]},"emoji":"🎯","primaryEnv":"SOLANA_PRIVATE_KEY","homepage":"https://github.com/maddefientist/SlopeSniper","install":[{"id":"uv-install","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper"],"label":"Install SlopeSniper via uv"}]}}
 user-invocable: true
 homepage: https://github.com/maddefientist/SlopeSniper
 ---
@@ -119,15 +119,8 @@ All commands output JSON for easy parsing.
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `SOLANA_PRIVATE_KEY` | Yes | Your wallet's base58 private key |
-| `JUPITER_API_KEY` | Yes | Get FREE key at https://portal.jup.ag |
 | `SOLANA_RPC_URL` | No | Custom RPC (defaults to public) |
-
-### Getting a Jupiter API Key
-
-1. Go to https://portal.jup.ag
-2. Connect via email
-3. Generate an API key (free tier available)
-4. Add to your config
+| `JUPITER_API_KEY` | No | Override bundled key for higher limits |
 
 ## Support
 

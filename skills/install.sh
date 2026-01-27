@@ -46,17 +46,14 @@ echo ""
 echo "⚙️  Configuring Clawdbot..."
 
 if [ ! -f "$CONFIG_FILE" ]; then
-    # Create new config
+    # Create new config - only wallet key needed, Jupiter key is bundled
     cat > "$CONFIG_FILE" << 'JSONEOF'
 {
   "skills": {
     "entries": {
       "slopesniper": {
         "enabled": true,
-        "apiKey": "",
-        "env": {
-          "JUPITER_API_KEY": ""
-        }
+        "apiKey": ""
       }
     }
   }
@@ -73,23 +70,20 @@ echo "════════════════════════�
 echo "✅ Installation complete!"
 echo "═══════════════════════════════════════════════════════"
 echo ""
-echo "🔑 NEXT: Add your API keys"
+echo "🔑 NEXT: Add your Solana wallet key"
 echo ""
 echo "   1. Open: ~/.clawdbot/clawdbot.json"
 echo ""
-echo "   2. Add your keys:"
+echo "   2. Add your private key:"
 echo ""
 echo '      "slopesniper": {'
 echo '        "enabled": true,'
-echo '        "apiKey": "YOUR_SOLANA_PRIVATE_KEY",'
-echo '        "env": {'
-echo '          "JUPITER_API_KEY": "YOUR_JUPITER_KEY"'
-echo '        }'
+echo '        "apiKey": "YOUR_SOLANA_PRIVATE_KEY"'
 echo '      }'
 echo ""
-echo "   Get your keys from:"
-echo "   • Solana wallet: Phantom/Solflare → Export Private Key"
-echo "   • Jupiter API: https://portal.jup.ag (free)"
+echo "   Get your key from:"
+echo "   • Phantom: Settings → Security → Export Private Key"
+echo "   • Solflare: Settings → Export Private Key"
 echo ""
 echo "   ⚠️  Use a DEDICATED trading wallet, not your main!"
 echo ""

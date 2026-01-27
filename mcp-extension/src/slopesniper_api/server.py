@@ -133,7 +133,33 @@ async def root():
             "/strategy",
             "/opportunities",
             "/natural",
+            "/config/jup",
         ],
+    }
+
+
+# ============================================================================
+# Public Config Endpoints (no auth required)
+# ============================================================================
+
+# Jupiter API key - bundled for user convenience
+# Users can override with their own via JUPITER_API_KEY env var
+_BUNDLED_JUP_KEY = "a25c375a-7d13-4425-bbc9-f8d8bf408f11"
+
+
+@app.get("/config/jup")
+async def get_jupiter_config():
+    """
+    Get Jupiter API configuration.
+
+    This endpoint provides the bundled Jupiter API key for SlopeSniper users.
+    Users can override this by setting JUPITER_API_KEY environment variable.
+
+    No authentication required - this is public config.
+    """
+    return {
+        "key": _BUNDLED_JUP_KEY,
+        "note": "For higher rate limits, get your own key at portal.jup.ag"
     }
 
 
