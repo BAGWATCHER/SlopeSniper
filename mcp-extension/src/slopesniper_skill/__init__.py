@@ -25,12 +25,26 @@ Example:
 __version__ = "0.1.0"
 
 from .tools import (
+    # Core trading tools
     solana_get_price,
     solana_search_token,
     solana_check_token,
     solana_get_wallet,
     solana_quote,
     solana_swap_confirm,
+    quick_trade,
+    # Onboarding
+    get_status,
+    setup_wallet,
+    # Strategies
+    set_strategy,
+    get_strategy,
+    list_strategies,
+    # Scanner
+    scan_opportunities,
+    watch_token,
+    get_watchlist,
+    remove_from_watchlist,
 )
 
 from .tools.config import PolicyConfig, get_policy_config
@@ -39,13 +53,26 @@ from .tools.policy import check_policy, PolicyResult, KNOWN_SAFE_MINTS
 __all__ = [
     # Version
     "__version__",
-    # Tools
+    # Core Tools
     "solana_get_price",
     "solana_search_token",
     "solana_check_token",
     "solana_get_wallet",
     "solana_quote",
     "solana_swap_confirm",
+    "quick_trade",
+    # Onboarding
+    "get_status",
+    "setup_wallet",
+    # Strategies
+    "set_strategy",
+    "get_strategy",
+    "list_strategies",
+    # Scanner
+    "scan_opportunities",
+    "watch_token",
+    "get_watchlist",
+    "remove_from_watchlist",
     # Config
     "PolicyConfig",
     "get_policy_config",

@@ -431,3 +431,148 @@ async def solana_swap_confirm(intent_id: str) -> dict[str, Any]:
             "to_mint": intent.to_mint,
             "in_amount": intent.amount,
         }
+
+
+async def quick_trade(
+    action: str,
+    token: str,
+    amount_usd: float,
+) -> dict[str, Any]:
+    """
+    One-step trade with smart defaults and auto-execution.
+
+    This is the easiest way to trade. Just say "buy" or "sell", the token,
+    and how much in USD. The tool handles everything else.
+
+    Auto-executes if amount is under your strategy's auto_execute_under_usd.
+    Otherwise returns a quote for you to confirm with swap_confirm().
+
+    Args:
+        action: "buy" or "sell"
+        token: Token symbol (e.g., "BONK") or mint address
+        amount_usd: USD amount to trade (e.g., 25.0 for $25)
+
+    Returns:
+        If auto-executed: execution result with signature
+        If manual needed: quote with intent_id for confirmation
+
+    Example:
+        quick_trade("buy", "BONK", 20)  # Buy $20 worth of BONK
+        quick_trade("sell", "WIF", 50)  # Sell $50 worth of WIF
+    """
+    from .strategies import get_active_strategy
+
+    action = action.lower()
+    if action not in ("buy", "sell"):
+        return {"error": "Action must be 'buy' or 'sell'"}
+
+    # Get current strategy for limits
+    strategy = get_active_strategy()
+
+    # Check trade limit
+    if amount_usd > strategy.max_trade_usd:
+        return {
+            "error": f"Trade exceeds limit",
+            "amount_usd": amount_usd,
+            "max_trade_usd": strategy.max_trade_usd,
+            "suggestion": f"Reduce amount to ${strategy.max_trade_usd} or change strategy",
+        }
+
+    # Resolve token to mint address
+    mint = resolve_token(token)
+    if not mint:
+        # Try searching
+        data_client = JupiterDataClient()
+        results = await data_client.search_token(token)
+        if results:
+            mint = results[0].get("address")
+            token_symbol = results[0].get("symbol", token)
+        else:
+            return {"error": f"Token not found: {token}"}
+    else:
+        # Get symbol for display
+        token_symbol = token.upper() if len(token) < 10 else None
+        if not token_symbol:
+            data_client = JupiterDataClient()
+            info = await data_client.get_token_info(mint)
+            token_symbol = info.get("symbol", mint[:8]) if info else mint[:8]
+
+    # SOL mint for trading pairs
+    sol_mint = SYMBOL_TO_MINT["SOL"]
+
+    # Set up trade direction
+    if action == "buy":
+        from_mint = sol_mint
+        to_mint = mint
+    else:  # sell
+        from_mint = mint
+        to_mint = sol_mint
+
+    # Get price to calculate amount
+    data_client = JupiterDataClient()
+    price_data = await data_client.get_price(from_mint)
+
+    if not price_data or not price_data.get("price"):
+        return {"error": f"Could not get price for {from_mint}"}
+
+    price_usd = float(price_data.get("price", 0))
+    if price_usd <= 0:
+        return {"error": "Invalid price data"}
+
+    # Calculate token amount from USD
+    token_amount = amount_usd / price_usd
+
+    # Run safety check if required and buying (not for known safe tokens)
+    if action == "buy" and strategy.require_rugcheck and not is_known_safe_mint(to_mint):
+        rugcheck = RugCheckClient()
+        check_result = await rugcheck.check_token(to_mint)
+
+        if not check_result.get("is_safe", False):
+            return {
+                "error": "Safety check failed",
+                "token": token_symbol,
+                "risk_score": check_result.get("score"),
+                "reason": check_result.get("reason", "Token failed rugcheck"),
+                "suggestion": "Use set_strategy to disable rugcheck if you want to proceed",
+            }
+
+    # Get quote
+    quote_result = await solana_quote(
+        from_mint=from_mint,
+        to_mint=to_mint,
+        amount=str(token_amount),
+        slippage_bps=strategy.slippage_bps,
+    )
+
+    if "error" in quote_result:
+        return quote_result
+
+    # Determine if we auto-execute
+    should_auto_execute = amount_usd <= strategy.auto_execute_under_usd
+
+    if should_auto_execute:
+        # Auto-execute the trade
+        exec_result = await solana_swap_confirm(quote_result["intent_id"])
+
+        return {
+            "auto_executed": True,
+            "action": action,
+            "token": token_symbol,
+            "amount_usd": amount_usd,
+            **exec_result,
+        }
+    else:
+        # Return quote for manual confirmation
+        return {
+            "auto_executed": False,
+            "action": action,
+            "token": token_symbol,
+            "amount_usd": amount_usd,
+            "requires_confirmation": True,
+            "message": (
+                f"Trade of ${amount_usd} exceeds auto-execute threshold "
+                f"(${strategy.auto_execute_under_usd}). "
+                f"Call swap_confirm('{quote_result['intent_id']}') to execute."
+            ),
+            **quote_result,
+        }

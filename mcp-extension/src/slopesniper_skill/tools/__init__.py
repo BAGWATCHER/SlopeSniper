@@ -11,8 +11,30 @@ from .solana_tools import (
     solana_get_wallet,
     solana_quote,
     solana_swap_confirm,
+    quick_trade,
     resolve_token,
     SYMBOL_TO_MINT,
+)
+
+from .onboarding import (
+    get_status,
+    setup_wallet,
+)
+
+from .strategies import (
+    set_strategy,
+    get_strategy,
+    list_strategies,
+    get_active_strategy,
+    TradingStrategy,
+    STRATEGY_PRESETS,
+)
+
+from .scanner import (
+    scan_opportunities,
+    watch_token,
+    get_watchlist,
+    remove_from_watchlist,
 )
 
 from .config import (
@@ -44,15 +66,31 @@ from .intents import (
 )
 
 __all__ = [
-    # Tools
+    # Core Tools
     "solana_get_price",
     "solana_search_token",
     "solana_check_token",
     "solana_get_wallet",
     "solana_quote",
     "solana_swap_confirm",
+    "quick_trade",
     "resolve_token",
     "SYMBOL_TO_MINT",
+    # Onboarding
+    "get_status",
+    "setup_wallet",
+    # Strategies
+    "set_strategy",
+    "get_strategy",
+    "list_strategies",
+    "get_active_strategy",
+    "TradingStrategy",
+    "STRATEGY_PRESETS",
+    # Scanner
+    "scan_opportunities",
+    "watch_token",
+    "get_watchlist",
+    "remove_from_watchlist",
     # Config
     "get_secret",
     "get_keypair",
