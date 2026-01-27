@@ -20,6 +20,7 @@ from .solana_tools import (
 from .onboarding import (
     get_status,
     setup_wallet,
+    export_wallet,
 )
 
 from .strategies import (
@@ -81,6 +82,7 @@ __all__ = [
     # Onboarding
     "get_status",
     "setup_wallet",
+    "export_wallet",
     # Strategies
     "set_strategy",
     "get_strategy",

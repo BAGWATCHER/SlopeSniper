@@ -17,6 +17,7 @@ from .config import (
     get_secret,
     get_or_create_wallet,
     get_jupiter_api_key,
+    load_local_wallet,
     WALLET_FILE_ENCRYPTED,
     SLOPESNIPER_DIR,
 )
@@ -196,3 +197,40 @@ async def setup_wallet(private_key: str | None = None) -> dict:
         result["next_step"] = "Check balance with 'slopesniper status'"
 
     return result
+
+
+async def export_wallet() -> dict:
+    """
+    Export wallet private key for backup purposes.
+
+    SECURITY: This reveals the private key. Only use for:
+    - Creating a backup
+    - Importing into another wallet (Phantom, Solflare, etc.)
+    - Disaster recovery
+
+    Returns:
+        dict with private_key, address, and security warnings
+    """
+    wallet = load_local_wallet()
+
+    if not wallet:
+        return {
+            "success": False,
+            "error": "No wallet found",
+            "hint": "Run 'slopesniper status' to create a wallet first.",
+        }
+
+    return {
+        "success": True,
+        "address": wallet["address"],
+        "private_key": wallet["private_key"],
+        "format": "base58",
+        "WARNING": (
+            "YOUR PRIVATE KEY IS SHOWN ABOVE.\n\n"
+            "- Anyone with this key can STEAL ALL YOUR FUNDS\n"
+            "- Never share it with anyone\n"
+            "- Never paste it into websites\n"
+            "- Store backups in secure, offline locations\n\n"
+            "Compatible with: Phantom, Solflare, Backpack, and other Solana wallets."
+        ),
+    }

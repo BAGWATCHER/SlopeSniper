@@ -21,6 +21,7 @@ from slopesniper_skill import (
     # Onboarding
     get_status as skill_get_status,
     setup_wallet as skill_setup_wallet,
+    export_wallet as skill_export_wallet,
     # Strategies
     set_strategy as skill_set_strategy,
     get_strategy as skill_get_strategy,
@@ -223,6 +224,9 @@ async def solana_trading(request: str) -> dict:
             return {"action": "price", "result": await solana_get_price(token)}
         return {"action": "price", "result": await solana_get_price("SOL")}
 
+    if any(word in request_lower for word in ["export", "backup", "private key", "recover"]):
+        return {"action": "export_wallet", "result": await skill_export_wallet()}
+
     if any(word in request_lower for word in ["wallet", "balance", "holdings", "portfolio"]):
         return {"action": "wallet", "result": await solana_get_wallet()}
 
@@ -265,6 +269,7 @@ async def solana_trading(request: str) -> dict:
             "sell $X of TOKEN - Sell tokens",
             "what's trending - Find opportunities",
             "check my wallet - View balances",
+            "export my wallet - Backup private key",
             "is TOKEN safe - Safety check",
             "set aggressive/balanced/conservative - Change strategy",
             "watch TOKEN - Add to watchlist",
@@ -313,6 +318,27 @@ async def setup_wallet(private_key: str | None = None) -> dict:
         Setup status and instructions
     """
     return await skill_setup_wallet(private_key)
+
+
+@mcp.tool()
+async def export_wallet() -> dict:
+    """
+    Export wallet private key for backup or recovery.
+
+    USE THIS when user needs to:
+    - Backup their wallet before reinstalling
+    - Import their wallet into Phantom/Solflare
+    - Recover access to their funds
+
+    SECURITY: This reveals the private key. Warn users to:
+    - Never share it with anyone
+    - Never paste it into websites
+    - Store backups securely offline
+
+    Returns:
+        Wallet address, private key (base58), and security warnings
+    """
+    return await skill_export_wallet()
 
 
 # ============================================================================
