@@ -67,6 +67,27 @@ def get_token_decimals(mint: str) -> int:
     return TOKEN_DECIMALS.get(mint, DEFAULT_DECIMALS)
 
 
+async def get_token_decimals_async(mint: str) -> int:
+    """Get decimals for a token, fetching from API if not known."""
+    # Check cache first
+    if mint in TOKEN_DECIMALS:
+        return TOKEN_DECIMALS[mint]
+
+    # Fetch from Jupiter API
+    try:
+        data_client = JupiterDataClient(api_key=get_jupiter_api_key())
+        info = await data_client.get_token_info(mint)
+        if info and "decimals" in info:
+            decimals = int(info["decimals"])
+            # Cache for future use
+            TOKEN_DECIMALS[mint] = decimals
+            return decimals
+    except Exception:
+        pass
+
+    return DEFAULT_DECIMALS
+
+
 def _get_symbol_for_mint(mint: str) -> str:
     """Get symbol for a mint address from known tokens."""
     for symbol, m in SYMBOL_TO_MINT.items():
@@ -435,8 +456,8 @@ async def solana_quote(
 
     taker = str(keypair.pubkey())
 
-    # Convert amount to atomic units
-    decimals = get_token_decimals(from_mint)
+    # Convert amount to atomic units - fetch decimals from API for unknown tokens
+    decimals = await get_token_decimals_async(from_mint)
     try:
         amount_float = float(amount)
         amount_atomic = int(amount_float * (10**decimals))
@@ -507,7 +528,7 @@ async def solana_quote(
         return {"error": "No transaction returned from quote"}
 
     # Calculate output amount in UI units
-    out_decimals = get_token_decimals(to_mint)
+    out_decimals = await get_token_decimals_async(to_mint)
     out_amount_atomic = int(order.get("outAmount", 0))
     out_amount_ui = out_amount_atomic / (10**out_decimals)
 
@@ -598,7 +619,7 @@ async def solana_swap_confirm(intent_id: str) -> dict[str, Any]:
 
     if status == "Success":
         # Calculate actual output amount
-        out_decimals = get_token_decimals(intent.to_mint)
+        out_decimals = await get_token_decimals_async(intent.to_mint)
         out_amount_atomic = int(result.get("outputAmountResult", 0))
         out_amount_ui = out_amount_atomic / (10**out_decimals)
 
