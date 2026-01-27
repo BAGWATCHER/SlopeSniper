@@ -5,9 +5,32 @@
 set -e
 
 SKILL_NAME="slopesniper"
-SKILLS_DIR="${HOME}/.clawdbot/skills"
 REPO_URL="https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/skills/slopesniper"
 PACKAGE_URL="slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
+
+# Detect Clawdbot skills directory
+detect_skills_dir() {
+    # Check common locations
+    local possible_dirs=(
+        "$(npm root -g 2>/dev/null)/clawdbot/skills"
+        "$(dirname $(which clawdbot 2>/dev/null) 2>/dev/null)/../lib/node_modules/clawdbot/skills"
+        "${HOME}/.clawdbot/skills"
+        "/usr/local/lib/node_modules/clawdbot/skills"
+        "/usr/lib/node_modules/clawdbot/skills"
+    )
+
+    for dir in "${possible_dirs[@]}"; do
+        if [ -d "$dir" ] 2>/dev/null; then
+            echo "$dir"
+            return 0
+        fi
+    done
+
+    # Fallback to ~/.clawdbot/skills
+    echo "${HOME}/.clawdbot/skills"
+}
+
+SKILLS_DIR=$(detect_skills_dir)
 
 # Detect if this is an update or fresh install
 IS_UPDATE=false
@@ -24,6 +47,8 @@ else
 fi
 echo "==============================================================="
 echo ""
+echo "Skills directory: ${SKILLS_DIR}"
+echo ""
 
 # Create directories
 mkdir -p "${SKILLS_DIR}/${SKILL_NAME}"
@@ -31,7 +56,7 @@ mkdir -p "${SKILLS_DIR}/${SKILL_NAME}"
 # Download SKILL.md (always update to get latest docs)
 echo "Downloading skill definition..."
 curl -fsSL "${REPO_URL}/SKILL.md" -o "${SKILLS_DIR}/${SKILL_NAME}/SKILL.md"
-echo "   Done: ~/.clawdbot/skills/slopesniper/SKILL.md"
+echo "   Done: ${SKILLS_DIR}/${SKILL_NAME}/SKILL.md"
 
 # Check for uv
 if ! command -v uv &> /dev/null; then

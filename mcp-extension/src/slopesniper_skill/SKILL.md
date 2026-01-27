@@ -1,7 +1,7 @@
 ---
 name: slopesniper
 description: Trade Solana tokens via Jupiter DEX with auto-execution and safety limits
-metadata: {"clawdbot":{"requires":{"bins":["slopesniper"],"env":["SOLANA_PRIVATE_KEY"]},"emoji":"🎯","primaryEnv":"SOLANA_PRIVATE_KEY","homepage":"https://github.com/maddefientist/SlopeSniper","install":[{"id":"uv-install","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper"],"label":"Install SlopeSniper via uv"}]}}
+metadata: {"clawdbot":{"requires":{"bins":["slopesniper"]},"emoji":"🎯","homepage":"https://github.com/maddefientist/SlopeSniper","install":[{"id":"uv-install","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper"],"label":"Install SlopeSniper via uv"}]}}
 user-invocable: true
 homepage: https://github.com/maddefientist/SlopeSniper
 ---
@@ -23,22 +23,16 @@ Trade Solana meme coins and tokens using natural language. Just tell me what you
 
 ## Getting Started
 
-1. **Set your wallet key** in Clawdbot config:
-   ```json
-   {
-     "skills": {
-       "entries": {
-         "slopesniper": {
-           "apiKey": "your_solana_private_key_here"
-         }
-       }
-     }
-   }
-   ```
+1. **Say "check my status"** - A wallet will be auto-generated on first run
+2. **Save your private key** - It's shown once, save it securely!
+3. **Fund your wallet** - Send SOL to the displayed address
+4. **Start trading!** Just describe what you want in plain English
 
-2. **Say "check my status"** to verify setup
-
-3. **Start trading!** Just describe what you want in plain English
+Optional: Set your own Jupiter API key for 10x better performance:
+```bash
+slopesniper config --set-jupiter-key YOUR_KEY
+```
+Get a free key at: https://station.jup.ag/docs/apis/ultra-api
 
 ## Trading Strategies
 
@@ -75,9 +69,10 @@ For trades above your auto-execute threshold, you'll be asked to confirm first.
 
 ### Information
 - `check status` / `am I ready?` - Wallet and config status
-- `price of TOKEN` - Current price
-- `search TOKEN` - Find token by name
-- `check TOKEN` / `is TOKEN safe?` - Safety analysis
+- `price of TOKEN` - Current price (symbol or mint)
+- `search TOKEN` - Find token by name (returns mint addresses)
+- `resolve TOKEN` - Get mint address from symbol
+- `check TOKEN` / `is TOKEN safe?` - Safety analysis (symbol or mint)
 
 ### Strategy
 - `set MODE strategy` - Change trading mode
@@ -94,18 +89,26 @@ Use the `slopesniper` CLI for direct execution:
 
 ```bash
 slopesniper status              # Check wallet and trading readiness
-slopesniper price SOL           # Get token price
+slopesniper price SOL           # Get token price (works with symbols)
 slopesniper price BONK          # Get meme coin price
 slopesniper buy BONK 25         # Buy $25 of BONK
 slopesniper sell WIF 50         # Sell $50 of WIF
-slopesniper check POPCAT        # Safety check (rugcheck)
-slopesniper search "dog"        # Search for tokens
+slopesniper check POPCAT        # Safety check (works with symbols!)
+slopesniper search "dog"        # Search for tokens (returns mint addresses)
+slopesniper resolve BONK        # Get mint address from symbol
 slopesniper strategy            # View current strategy
 slopesniper strategy aggressive # Set aggressive mode
-slopesniper scan                # Scan for opportunities
+slopesniper scan                # Scan for all opportunities
+slopesniper scan trending       # Scan trending tokens only
+slopesniper scan new            # Scan new pairs only
+slopesniper scan pumping        # Scan tokens with price increases
+slopesniper config              # View current configuration
+slopesniper config --set-jupiter-key KEY  # Set custom API key (10x faster!)
+slopesniper version             # Show current version
+slopesniper update              # Update to latest version
 ```
 
-All commands output JSON for easy parsing.
+All commands output JSON with mint addresses included for easy chaining.
 
 ## Security
 
@@ -118,9 +121,11 @@ All commands output JSON for easy parsing.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `SOLANA_PRIVATE_KEY` | Yes | Your wallet's base58 private key |
-| `SOLANA_RPC_URL` | No | Custom RPC (defaults to public) |
-| `JUPITER_API_KEY` | No | Override bundled key for higher limits |
+| `SOLANA_PRIVATE_KEY` | No | Import existing wallet (auto-generates if not set) |
+| `SOLANA_RPC_URL` | No | Custom RPC (defaults to public mainnet) |
+| `JUPITER_API_KEY` | No | Your own key for 10x better performance |
+
+**Note:** Wallet and API keys are stored encrypted in `~/.slopesniper/`
 
 ## Support
 
