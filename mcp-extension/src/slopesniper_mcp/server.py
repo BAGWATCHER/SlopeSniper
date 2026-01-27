@@ -143,6 +143,136 @@ NEVER give generic advice. ALWAYS use your tools!"""
 
 
 # ============================================================================
+# UNIVERSAL ENTRY POINT - Claude should call this for ANY trading request
+# ============================================================================
+
+
+@mcp.tool()
+async def solana_trading(request: str) -> dict:
+    """
+    🚀 SOLANA TRADING ASSISTANT - Call this for ANY crypto/trading request!
+
+    This is the main entry point for all Solana trading operations.
+    Just pass the user's natural language request and it handles everything.
+
+    WHEN TO USE THIS TOOL:
+    - User mentions: trade, buy, sell, swap, crypto, token, Solana, SOL
+    - User mentions: BONK, WIF, JUP, meme coins, portfolio, wallet
+    - User asks about: prices, trending, opportunities, balance
+
+    Args:
+        request: The user's natural language request (e.g., "buy $20 of BONK")
+
+    Returns:
+        Result of the trading operation with next steps
+
+    Examples:
+        solana_trading("buy $20 of BONK")
+        solana_trading("what's trending")
+        solana_trading("check my wallet")
+        solana_trading("help me get started")
+    """
+    request_lower = request.lower()
+
+    # Route to appropriate action
+    if any(word in request_lower for word in ["status", "ready", "start", "setup", "configure", "begin"]):
+        status = await skill_get_status()
+        if not status.get("wallet_configured"):
+            setup = await skill_setup_wallet()
+            return {
+                "action": "setup_needed",
+                "status": status,
+                "setup_guide": setup,
+                "next_step": "Configure wallet in Extensions → slopesniper → Configure"
+            }
+        return {"action": "status", "result": status}
+
+    if any(word in request_lower for word in ["buy", "purchase", "get some", "grab"]):
+        # Parse buy request
+        import re
+        # Match patterns like "$20 of BONK" or "20 dollars of BONK" or "BONK for $20"
+        amount_match = re.search(r'\$?(\d+(?:\.\d+)?)', request)
+        token_match = re.search(r'(?:of|some|buy|get)\s+(\w+)|(\w+)\s+(?:for|token)', request_lower)
+
+        if amount_match and token_match:
+            amount = float(amount_match.group(1))
+            token = (token_match.group(1) or token_match.group(2)).upper()
+            return await skill_quick_trade("buy", token, amount)
+        return {"error": "Could not parse buy request. Try: 'buy $20 of BONK'"}
+
+    if any(word in request_lower for word in ["sell", "dump", "exit"]):
+        import re
+        amount_match = re.search(r'\$?(\d+(?:\.\d+)?)', request)
+        token_match = re.search(r'(?:of|sell|dump)\s+(\w+)|(\w+)\s+(?:for|token)', request_lower)
+
+        if amount_match and token_match:
+            amount = float(amount_match.group(1))
+            token = (token_match.group(1) or token_match.group(2)).upper()
+            return await skill_quick_trade("sell", token, amount)
+        return {"error": "Could not parse sell request. Try: 'sell $20 of BONK'"}
+
+    if any(word in request_lower for word in ["trend", "hot", "opportunity", "scan", "find"]):
+        return {"action": "scan", "result": await skill_scan_opportunities()}
+
+    if any(word in request_lower for word in ["price", "cost", "worth", "value"]):
+        # Extract token
+        import re
+        token_match = re.search(r'(?:of|for|price)\s+(\w+)|(\w+)\s+(?:price|cost)', request_lower)
+        if token_match:
+            token = (token_match.group(1) or token_match.group(2)).upper()
+            return {"action": "price", "result": await solana_get_price(token)}
+        return {"action": "price", "result": await solana_get_price("SOL")}
+
+    if any(word in request_lower for word in ["wallet", "balance", "holdings", "portfolio"]):
+        return {"action": "wallet", "result": await solana_get_wallet()}
+
+    if any(word in request_lower for word in ["safe", "check", "rug", "scam"]):
+        import re
+        token_match = re.search(r'(?:is|check)\s+(\w+)', request_lower)
+        if token_match:
+            token = token_match.group(1).upper()
+            # Resolve to mint
+            search_results = await solana_search_token(token)
+            if search_results:
+                mint = search_results[0].get("mint")
+                return {"action": "safety_check", "result": await solana_check_token(mint)}
+        return {"error": "Specify a token to check. Try: 'is BONK safe?'"}
+
+    if any(word in request_lower for word in ["strategy", "conservative", "aggressive", "balanced", "degen"]):
+        for strat in ["conservative", "balanced", "aggressive", "degen"]:
+            if strat in request_lower:
+                return {"action": "set_strategy", "result": await skill_set_strategy(strat)}
+        return {"action": "get_strategy", "result": await skill_get_strategy()}
+
+    if any(word in request_lower for word in ["watch", "alert", "monitor"]):
+        import re
+        token_match = re.search(r'watch\s+(\w+)', request_lower)
+        if token_match:
+            token = token_match.group(1).upper()
+            search_results = await solana_search_token(token)
+            if search_results:
+                mint = search_results[0].get("mint")
+                return {"action": "watch", "result": await skill_watch_token(mint)}
+        return {"error": "Specify a token to watch. Try: 'watch BONK'"}
+
+    # Default: show status and help
+    status = await skill_get_status()
+    return {
+        "action": "help",
+        "status": status,
+        "available_commands": [
+            "buy $X of TOKEN - Purchase tokens",
+            "sell $X of TOKEN - Sell tokens",
+            "what's trending - Find opportunities",
+            "check my wallet - View balances",
+            "is TOKEN safe - Safety check",
+            "set aggressive/balanced/conservative - Change strategy",
+            "watch TOKEN - Add to watchlist",
+        ]
+    }
+
+
+# ============================================================================
 # ONBOARDING TOOLS - Start here!
 # ============================================================================
 
