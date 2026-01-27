@@ -67,6 +67,24 @@ def get_token_decimals(mint: str) -> int:
     return TOKEN_DECIMALS.get(mint, DEFAULT_DECIMALS)
 
 
+def _get_symbol_for_mint(mint: str) -> str:
+    """Get symbol for a mint address from known tokens."""
+    for symbol, m in SYMBOL_TO_MINT.items():
+        if m == mint:
+            return symbol
+    return mint[:8]  # Fallback to truncated mint
+
+
+async def _get_sol_price_async() -> float:
+    """Get current SOL price in USD."""
+    try:
+        data_client = JupiterDataClient(api_key=get_jupiter_api_key())
+        price_data = await data_client.get_price(SYMBOL_TO_MINT["SOL"])
+        return float(price_data.get("price", 0)) if price_data else 0
+    except Exception:
+        return 0
+
+
 async def solana_resolve_token(token: str) -> dict[str, Any]:
     """
     Resolve a token symbol or name to its mint address.
@@ -520,6 +538,48 @@ async def solana_swap_confirm(intent_id: str) -> dict[str, Any]:
         out_decimals = get_token_decimals(intent.to_mint)
         out_amount_atomic = int(result.get("outputAmountResult", 0))
         out_amount_ui = out_amount_atomic / (10**out_decimals)
+
+        # Record trade for PnL tracking
+        try:
+            from .strategies import record_trade
+
+            sol_mint = SYMBOL_TO_MINT["SOL"]
+
+            # Determine if this is a buy or sell based on SOL direction
+            if intent.from_mint == sol_mint:
+                # Buying token with SOL
+                action = "buy"
+                trade_mint = intent.to_mint
+                trade_amount_tokens = out_amount_ui
+                # Estimate USD value: input SOL * SOL price
+                sol_price = await _get_sol_price_async()
+                trade_amount_usd = float(intent.amount) * sol_price
+            else:
+                # Selling token for SOL
+                action = "sell"
+                trade_mint = intent.from_mint
+                trade_amount_tokens = float(intent.amount)
+                # Estimate USD value: output SOL * SOL price
+                sol_price = await _get_sol_price_async()
+                trade_amount_usd = out_amount_ui * sol_price
+
+            # Get symbol for the traded token
+            symbol = _get_symbol_for_mint(trade_mint)
+
+            # Calculate price per token
+            price_per_token = trade_amount_usd / trade_amount_tokens if trade_amount_tokens > 0 else 0
+
+            record_trade(
+                action=action,
+                mint=trade_mint,
+                symbol=symbol,
+                amount_tokens=trade_amount_tokens,
+                amount_usd=trade_amount_usd,
+                price_per_token=price_per_token,
+                signature=signature,
+            )
+        except Exception:
+            pass  # Don't fail the trade if recording fails
 
         return {
             "success": True,
