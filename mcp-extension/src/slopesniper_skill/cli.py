@@ -6,6 +6,8 @@ Usage:
     slopesniper status              Full status: wallet, holdings, strategy, config
     slopesniper wallet              Show wallet address and all token holdings
     slopesniper export              Export private key for backup/recovery
+    slopesniper export --list-backups    List all backed up wallets
+    slopesniper export --backup TIMESTAMP    Export a specific backup
     slopesniper pnl                 Show profit/loss for your portfolio
     slopesniper history [limit]     Show trade history (default: 20 trades)
     slopesniper price <token>       Get token price (symbol or mint)
@@ -24,6 +26,7 @@ Usage:
     slopesniper contribute --disable      Disable contribution callbacks
     slopesniper update              Update to latest version
     slopesniper version [--check]   Show version (--check for update availability)
+    slopesniper uninstall           Clean uninstall (removes CLI and optionally data)
 """
 
 from __future__ import annotations
@@ -80,11 +83,23 @@ async def cmd_wallet() -> None:
     print_json(result)
 
 
-async def cmd_export() -> None:
+async def cmd_export(
+    list_backups: bool = False,
+    backup_timestamp: str | None = None,
+) -> None:
     """Export private key for backup/recovery."""
-    from . import export_wallet
-    result = await export_wallet()
-    print_json(result)
+    if list_backups:
+        from .tools.onboarding import list_backup_wallets
+        result = await list_backup_wallets()
+        print_json(result)
+    elif backup_timestamp:
+        from .tools.onboarding import export_backup
+        result = await export_backup(backup_timestamp)
+        print_json(result)
+    else:
+        from . import export_wallet
+        result = await export_wallet(include_backups=True)
+        print_json(result)
 
 
 async def cmd_pnl() -> None:
@@ -376,6 +391,122 @@ def cmd_update() -> None:
     print("")
 
 
+def cmd_uninstall(keep_data: bool = False, confirm: bool = False) -> None:
+    """Clean uninstall SlopeSniper."""
+    import shutil
+    import subprocess
+
+    from .tools.config import SLOPESNIPER_DIR
+
+    print("")
+    print("=" * 50)
+    print("  SlopeSniper Uninstall")
+    print("=" * 50)
+    print("")
+
+    # Check for wallet
+    wallet_exists = (SLOPESNIPER_DIR / "wallet.enc").exists()
+
+    if wallet_exists:
+        print("WARNING: You have a wallet configured!")
+        print("")
+        # Try to show the address
+        try:
+            from .tools.config import load_local_wallet
+            wallet = load_local_wallet()
+            if wallet:
+                print(f"  Wallet address: {wallet['address']}")
+                print("")
+        except Exception:
+            pass
+
+        print("IMPORTANT: Before uninstalling, make sure you have:")
+        print("  1. Exported your private key: slopesniper export")
+        print("  2. Saved it in a secure location")
+        print("  3. Transferred any remaining funds")
+        print("")
+        print("If you lose your private key, YOUR FUNDS WILL BE LOST FOREVER.")
+        print("")
+
+    if not confirm:
+        print("To proceed with uninstall, add --confirm flag:")
+        print("")
+        print("  slopesniper uninstall --confirm            # Remove everything")
+        print("  slopesniper uninstall --confirm --keep-data  # Keep wallet/config")
+        print("")
+        return
+
+    # Double-check if wallet exists and not keeping data
+    if wallet_exists and not keep_data:
+        print("=" * 50)
+        print("  FINAL WARNING: WALLET WILL BE DELETED")
+        print("=" * 50)
+        print("")
+        try:
+            response = input("Type 'DELETE MY WALLET' to confirm: ")
+            if response.strip() != "DELETE MY WALLET":
+                print("")
+                print("Uninstall cancelled.")
+                return
+        except (EOFError, KeyboardInterrupt):
+            print("")
+            print("Uninstall cancelled.")
+            return
+
+    # Remove CLI tool
+    print("Removing SlopeSniper CLI...")
+    success = False
+
+    # Try uv tool uninstall
+    try:
+        result = subprocess.run(
+            ["uv", "tool", "uninstall", "slopesniper-mcp"],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            success = True
+            print("   Removed via uv tool")
+    except FileNotFoundError:
+        pass
+
+    # Fallback to pip
+    if not success:
+        try:
+            result = subprocess.run(
+                ["pip", "uninstall", "-y", "slopesniper-mcp"],
+                capture_output=True, text=True
+            )
+            if result.returncode == 0:
+                success = True
+                print("   Removed via pip")
+        except FileNotFoundError:
+            pass
+
+    if not success:
+        print("   Warning: Could not remove CLI package")
+
+    print("")
+
+    # Handle data directory
+    if SLOPESNIPER_DIR.exists():
+        if keep_data:
+            print(f"Keeping data directory: {SLOPESNIPER_DIR}")
+            print("Your wallet and config are preserved.")
+        else:
+            print(f"Removing data directory: {SLOPESNIPER_DIR}")
+            try:
+                shutil.rmtree(SLOPESNIPER_DIR)
+                print("   Removed successfully")
+            except Exception as e:
+                print(f"   Error: {e}")
+
+    print("")
+    print("=" * 50)
+    print("  Uninstall complete!")
+    print("=" * 50)
+    print("")
+
+
 def cmd_contribute(
     enable: bool = False,
     disable: bool = False,
@@ -432,7 +563,13 @@ def main() -> None:
             asyncio.run(cmd_wallet())
 
         elif cmd == "export":
-            asyncio.run(cmd_export())
+            list_backups = "--list-backups" in args or "-l" in args
+            backup_timestamp = None
+            if "--backup" in args:
+                idx = args.index("--backup")
+                if idx + 1 < len(args):
+                    backup_timestamp = args[idx + 1]
+            asyncio.run(cmd_export(list_backups=list_backups, backup_timestamp=backup_timestamp))
 
         elif cmd == "pnl":
             asyncio.run(cmd_pnl())
@@ -529,6 +666,11 @@ def main() -> None:
             enable = "--enable" in args
             disable = "--disable" in args
             cmd_contribute(enable=enable, disable=disable)
+
+        elif cmd == "uninstall":
+            confirm = "--confirm" in args or "-y" in args
+            keep_data = "--keep-data" in args
+            cmd_uninstall(keep_data=keep_data, confirm=confirm)
 
         else:
             print(f"Unknown command: {cmd}")
