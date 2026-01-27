@@ -6,48 +6,94 @@ set -e
 
 SKILL_NAME="slopesniper"
 SKILLS_DIR="${HOME}/.clawdbot/skills"
+CONFIG_FILE="${HOME}/.clawdbot/clawdbot.json"
 REPO_URL="https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/skills/slopesniper"
 
-echo "🎯 Installing SlopeSniper skill for Clawdbot..."
+echo ""
+echo "🎯 ═══════════════════════════════════════════════════"
+echo "   SlopeSniper - Solana Trading for Clawdbot"
+echo "═══════════════════════════════════════════════════════"
+echo ""
 
-# Create skills directory if needed
+# Create directories
 mkdir -p "${SKILLS_DIR}/${SKILL_NAME}"
+mkdir -p "${HOME}/.clawdbot"
 
 # Download SKILL.md
-echo "📥 Downloading skill definition..."
+echo "📥 Downloading skill..."
 curl -fsSL "${REPO_URL}/SKILL.md" -o "${SKILLS_DIR}/${SKILL_NAME}/SKILL.md"
+echo "   ✓ Skill installed to ~/.clawdbot/skills/slopesniper"
 
 # Check for uv
 if ! command -v uv &> /dev/null; then
-    echo "⚠️  'uv' not found. Installing..."
+    echo ""
+    echo "📦 Installing uv package manager..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="$HOME/.local/bin:$PATH"
+    echo "   ✓ uv installed"
 fi
 
-# Install Python package
-echo "📦 Installing SlopeSniper package..."
-uv pip install --system "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension" 2>/dev/null || \
-uv pip install "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
+# Install Python package using uv tool
+echo ""
+echo "📦 Installing SlopeSniper Python package..."
+uv tool install "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension" --force 2>/dev/null || \
+uv tool install "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension" --reinstall 2>/dev/null || \
+echo "   (Package may already be installed)"
+echo "   ✓ Python package ready"
 
+# Configure clawdbot.json
 echo ""
-echo "✅ SlopeSniper installed!"
+echo "⚙️  Configuring Clawdbot..."
+
+if [ ! -f "$CONFIG_FILE" ]; then
+    # Create new config
+    cat > "$CONFIG_FILE" << 'JSONEOF'
+{
+  "skills": {
+    "entries": {
+      "slopesniper": {
+        "enabled": true,
+        "apiKey": ""
+      }
+    }
+  }
+}
+JSONEOF
+    echo "   ✓ Created ~/.clawdbot/clawdbot.json"
+else
+    echo "   ✓ Config file exists (you may need to add slopesniper entry manually)"
+fi
+
+# Success message with next steps
 echo ""
-echo "📝 Next steps:"
+echo "═══════════════════════════════════════════════════════"
+echo "✅ Installation complete!"
+echo "═══════════════════════════════════════════════════════"
 echo ""
-echo "1. Add your wallet key to ~/.clawdbot/clawdbot.json:"
+echo "🔑 NEXT: Add your Solana wallet key"
 echo ""
-echo '   {
-     "skills": {
-       "entries": {
-         "slopesniper": {
-           "apiKey": "YOUR_SOLANA_PRIVATE_KEY"
-         }
-       }
-     }
-   }'
+echo "   1. Open: ~/.clawdbot/clawdbot.json"
 echo ""
-echo "2. Restart Clawdbot gateway"
+echo "   2. Replace the empty apiKey with your private key:"
 echo ""
-echo "3. Say 'check my status' to verify setup"
+echo '      "slopesniper": {'
+echo '        "enabled": true,'
+echo '        "apiKey": "YOUR_BASE58_PRIVATE_KEY"'
+echo '      }'
+echo ""
+echo "   Get your key from:"
+echo "   • Phantom: Settings → Security → Export Private Key"
+echo "   • Solflare: Settings → Export Private Key"
+echo ""
+echo "   ⚠️  Use a DEDICATED trading wallet, not your main!"
+echo ""
+echo "═══════════════════════════════════════════════════════"
+echo ""
+echo "🚀 Once configured, talk to Clawdbot:"
+echo ""
+echo '   "Check my trading status"'
+echo '   "Buy $20 of BONK"'
+echo '   "What tokens are trending?"'
 echo ""
 echo "🎯 Happy trading!"
+echo ""
