@@ -3,7 +3,11 @@
 SlopeSniper CLI - Simple command interface for Clawdbot agents.
 
 Usage:
-    slopesniper status              Check wallet and trading readiness
+    slopesniper status              Full status: wallet, holdings, strategy, config
+    slopesniper wallet              Show wallet address and all token holdings
+    slopesniper export              Export private key for backup/recovery
+    slopesniper pnl                 Show profit/loss for your portfolio
+    slopesniper history [limit]     Show trade history (default: 20 trades)
     slopesniper price <token>       Get token price (symbol or mint)
     slopesniper buy <token> <usd>   Buy tokens
     slopesniper sell <token> <usd>  Sell tokens
@@ -13,12 +17,11 @@ Usage:
     slopesniper strategy [name]     View or set strategy
     slopesniper scan [filter]       Scan for opportunities (trending/new/graduated/pumping)
     slopesniper config              View current configuration
-    slopesniper config --set-jupiter-key KEY   Set your Jupiter API key
-    slopesniper config --set-rpc PROVIDER VALUE   Set custom RPC endpoint
-    slopesniper config --clear-rpc             Clear custom RPC (use default)
-    slopesniper contribute          Check for improvements and report
-    slopesniper contribute --enable [URL]   Enable contribution callbacks
-    slopesniper contribute --disable        Disable contribution callbacks
+    slopesniper config --set KEY VALUE   Set config (jupiter-key, rpc-provider, rpc-url)
+    slopesniper config --clear KEY       Clear config (rpc)
+    slopesniper contribute          Check for improvements and report to GitHub
+    slopesniper contribute --enable       Enable contribution callbacks
+    slopesniper contribute --disable      Disable contribution callbacks
     slopesniper update              Update to latest version
     slopesniper version [--check]   Show version (--check for update availability)
 """
@@ -36,10 +39,66 @@ def print_json(data: dict) -> None:
 
 
 async def cmd_status() -> None:
-    """Check trading status."""
-    from . import get_status
-    result = await get_status()
+    """Full status: wallet, holdings, strategy, and config."""
+    from . import get_status, solana_get_wallet, get_strategy
+    from .tools.config import get_config_status
+
+    # Get all status info
+    status = await get_status()
+    wallet = await solana_get_wallet() if status.get("wallet_configured") else {}
+    strategy = await get_strategy()
+    config = get_config_status()
+
+    result = {
+        "wallet": {
+            "configured": status.get("wallet_configured", False),
+            "address": status.get("wallet_address"),
+            "sol_balance": wallet.get("sol_balance"),
+            "sol_value_usd": wallet.get("sol_value_usd"),
+            "tokens": wallet.get("tokens", []),
+        },
+        "strategy": {
+            "name": strategy.get("name"),
+            "max_trade_usd": strategy.get("max_trade_usd"),
+            "auto_execute_under_usd": strategy.get("auto_execute_under_usd"),
+            "slippage_bps": strategy.get("slippage_bps"),
+            "require_rugcheck": strategy.get("require_rugcheck"),
+        },
+        "config": {
+            "jupiter_api_key": config.get("jupiter_api_key_status"),
+            "rpc": config.get("rpc"),
+        },
+        "ready_to_trade": status.get("ready_to_trade", False),
+    }
     print_json(result)
+
+
+async def cmd_wallet() -> None:
+    """Show wallet address and holdings."""
+    from . import solana_get_wallet
+    result = await solana_get_wallet()
+    print_json(result)
+
+
+async def cmd_export() -> None:
+    """Export private key for backup/recovery."""
+    from . import export_wallet
+    result = await export_wallet()
+    print_json(result)
+
+
+async def cmd_pnl() -> None:
+    """Show portfolio profit/loss."""
+    from . import get_portfolio_pnl
+    result = await get_portfolio_pnl()
+    print_json(result)
+
+
+def cmd_history(limit: int = 20) -> None:
+    """Show trade history."""
+    from . import get_trade_history
+    result = get_trade_history(limit=limit)
+    print_json({"trades": result, "count": len(result)})
 
 
 async def cmd_price(token: str) -> None:
@@ -103,10 +162,9 @@ async def cmd_scan(filter_type: str = "all") -> None:
 
 
 def cmd_config(
-    set_jupiter_key: str | None = None,
-    set_rpc_provider: str | None = None,
-    set_rpc_value: str | None = None,
-    clear_rpc: bool = False,
+    set_key: str | None = None,
+    set_value: str | None = None,
+    clear_key: str | None = None,
 ) -> None:
     """View or update configuration."""
     from .tools.config import (
@@ -116,15 +174,32 @@ def cmd_config(
         clear_rpc_config,
     )
 
-    if set_jupiter_key:
-        result = set_jupiter_api_key(set_jupiter_key)
+    if set_key and set_value:
+        key_lower = set_key.lower().replace("-", "_").replace(" ", "_")
+
+        if key_lower in ("jupiter_key", "jupiter_api_key", "jup_key", "jup"):
+            result = set_jupiter_api_key(set_value)
+        elif key_lower in ("rpc_provider", "rpc_type"):
+            # For provider, we need a second value - assume custom URL
+            result = set_rpc_config(set_value, set_value)
+        elif key_lower in ("rpc_url", "rpc", "solana_rpc"):
+            result = set_rpc_config("custom", set_value)
+        elif key_lower in ("helius", "quicknode", "alchemy"):
+            result = set_rpc_config(key_lower, set_value)
+        else:
+            result = {"error": f"Unknown config key: {set_key}", "valid_keys": [
+                "jupiter-key", "rpc-url", "helius", "quicknode", "alchemy"
+            ]}
         print_json(result)
-    elif set_rpc_provider and set_rpc_value:
-        result = set_rpc_config(set_rpc_provider, set_rpc_value)
-        print_json(result)
-    elif clear_rpc:
-        result = clear_rpc_config()
-        print_json(result)
+
+    elif clear_key:
+        key_lower = clear_key.lower()
+        if key_lower in ("rpc", "rpc_url", "rpc_provider"):
+            result = clear_rpc_config()
+            print_json(result)
+        else:
+            print_json({"error": f"Cannot clear: {clear_key}", "clearable": ["rpc"]})
+
     else:
         result = get_config_status()
         print_json(result)
@@ -240,7 +315,6 @@ def cmd_update() -> None:
 def cmd_contribute(
     enable: bool = False,
     disable: bool = False,
-    webhook_url: str | None = None,
 ) -> None:
     """Manage contribution callbacks and check for improvements."""
     from .integrity import (
@@ -251,7 +325,10 @@ def cmd_contribute(
     from .tools.config import load_user_config
 
     if enable:
-        result = enable_contribution_callbacks(webhook_url)
+        # No URL needed - contributions go to GitHub Issues
+        result = enable_contribution_callbacks()
+        result["method"] = "GitHub Issues"
+        result["repo"] = "maddefientist/SlopeSniper"
         print_json(result)
     elif disable:
         result = disable_contribution_callbacks()
@@ -262,9 +339,8 @@ def cmd_contribute(
 
         # Add callback config status
         config = load_user_config() or {}
-        result["callbacks_enabled"] = config.get("contribution_callbacks_enabled", False)
-        if config.get("contribution_callback_url"):
-            result["callback_url"] = config["contribution_callback_url"][:30] + "..."
+        result["contribution_method"] = "GitHub Issues"
+        result["callbacks_enabled"] = not config.get("contribution_callbacks_disabled", False)
 
         print_json(result)
 
@@ -287,6 +363,19 @@ def main() -> None:
     try:
         if cmd == "status":
             asyncio.run(cmd_status())
+
+        elif cmd == "wallet":
+            asyncio.run(cmd_wallet())
+
+        elif cmd == "export":
+            asyncio.run(cmd_export())
+
+        elif cmd == "pnl":
+            asyncio.run(cmd_pnl())
+
+        elif cmd == "history":
+            limit = int(args[1]) if len(args) > 1 else 20
+            cmd_history(limit)
 
         elif cmd == "price":
             if len(args) < 2:
@@ -333,34 +422,37 @@ def main() -> None:
             asyncio.run(cmd_scan(filter_type))
 
         elif cmd == "config":
-            # Parse config flags
-            jupiter_key = None
-            rpc_provider = None
-            rpc_value = None
-            clear_rpc = False
+            # Parse config flags: --set KEY VALUE or --clear KEY
+            set_key = None
+            set_value = None
+            clear_key = None
 
-            i = 0
+            i = 1  # Skip 'config'
             while i < len(args):
                 arg = args[i]
-                if arg == "--set-jupiter-key" and i + 1 < len(args):
-                    jupiter_key = args[i + 1]
+                if arg == "--set" and i + 2 < len(args):
+                    set_key = args[i + 1]
+                    set_value = args[i + 2]
+                    i += 3
+                elif arg == "--clear" and i + 1 < len(args):
+                    clear_key = args[i + 1]
+                    i += 2
+                # Legacy support
+                elif arg == "--set-jupiter-key" and i + 1 < len(args):
+                    set_key = "jupiter-key"
+                    set_value = args[i + 1]
                     i += 2
                 elif arg == "--set-rpc" and i + 2 < len(args):
-                    rpc_provider = args[i + 1]
-                    rpc_value = args[i + 2]
+                    set_key = args[i + 1]  # provider name
+                    set_value = args[i + 2]
                     i += 3
                 elif arg == "--clear-rpc":
-                    clear_rpc = True
+                    clear_key = "rpc"
                     i += 1
                 else:
                     i += 1
 
-            cmd_config(
-                set_jupiter_key=jupiter_key,
-                set_rpc_provider=rpc_provider,
-                set_rpc_value=rpc_value,
-                clear_rpc=clear_rpc,
-            )
+            cmd_config(set_key=set_key, set_value=set_value, clear_key=clear_key)
 
         elif cmd == "version":
             check_latest = "--check" in args or "-c" in args
@@ -372,15 +464,7 @@ def main() -> None:
         elif cmd == "contribute":
             enable = "--enable" in args
             disable = "--disable" in args
-            webhook_url = None
-
-            # Check for URL after --enable
-            if enable:
-                idx = args.index("--enable")
-                if idx + 1 < len(args) and not args[idx + 1].startswith("--"):
-                    webhook_url = args[idx + 1]
-
-            cmd_contribute(enable=enable, disable=disable, webhook_url=webhook_url)
+            cmd_contribute(enable=enable, disable=disable)
 
         else:
             print(f"Unknown command: {cmd}")
