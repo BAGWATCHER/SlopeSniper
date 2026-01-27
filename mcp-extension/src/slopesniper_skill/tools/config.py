@@ -24,11 +24,12 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from solders.keypair import Keypair
 
 
-# Local wallet storage
+# Local storage paths
 SLOPESNIPER_DIR = Path.home() / ".slopesniper"
 WALLET_FILE = SLOPESNIPER_DIR / "wallet.json"
 WALLET_FILE_ENCRYPTED = SLOPESNIPER_DIR / "wallet.enc"
 MACHINE_KEY_FILE = SLOPESNIPER_DIR / ".machine_key"
+USER_CONFIG_FILE = SLOPESNIPER_DIR / "config.enc"
 
 
 @dataclass
@@ -371,14 +372,133 @@ def get_rpc_url() -> str:
     return get_secret("SOLANA_RPC_URL") or "https://api.mainnet-beta.solana.com"
 
 
-def get_jupiter_api_key() -> Optional[str]:
+def save_user_config(config: dict) -> None:
     """
-    Get Jupiter API key for higher rate limits.
+    Save user configuration (encrypted).
+
+    Args:
+        config: Dict with user settings (e.g., jupiter_api_key, rpc_url)
+    """
+    _ensure_wallet_dir()
+
+    # Merge with existing config
+    existing = load_user_config() or {}
+    existing.update(config)
+
+    encrypted = _encrypt_data(json.dumps(existing))
+    USER_CONFIG_FILE.write_bytes(encrypted)
+    os.chmod(USER_CONFIG_FILE, 0o600)
+
+
+def load_user_config() -> Optional[dict]:
+    """
+    Load user configuration (encrypted).
 
     Returns:
-        API key or None (free tier)
+        Dict with user settings or None if not found
     """
-    return get_secret("JUPITER_API_KEY")
+    if not USER_CONFIG_FILE.exists():
+        return None
+
+    try:
+        encrypted = USER_CONFIG_FILE.read_bytes()
+        decrypted = _decrypt_data(encrypted)
+        return json.loads(decrypted)
+    except Exception:
+        return None
+
+
+def set_jupiter_api_key(api_key: str) -> dict:
+    """
+    Save user's Jupiter API key for improved performance.
+
+    Args:
+        api_key: Jupiter Ultra API key
+
+    Returns:
+        Status dict
+    """
+    if not api_key or len(api_key) < 10:
+        return {"success": False, "error": "Invalid API key format"}
+
+    save_user_config({"jupiter_api_key": api_key})
+
+    return {
+        "success": True,
+        "message": "Jupiter API key saved (encrypted)",
+        "benefits": [
+            "Higher rate limits",
+            "Faster quote responses",
+            "Priority routing",
+        ],
+    }
+
+
+def get_jupiter_api_key() -> Optional[str]:
+    """
+    Get Jupiter API key with priority: env var > local config > None.
+
+    Priority:
+    1. JUPITER_API_KEY environment variable
+    2. User's saved config (~/.slopesniper/config.enc)
+    3. None (will use bundled key from GitHub)
+
+    Returns:
+        API key or None
+    """
+    # Check env var first
+    env_key = get_secret("JUPITER_API_KEY")
+    if env_key:
+        return env_key
+
+    # Check user's saved config
+    config = load_user_config()
+    if config and config.get("jupiter_api_key"):
+        return config["jupiter_api_key"]
+
+    return None
+
+
+def get_config_status() -> dict:
+    """
+    Get current configuration status.
+
+    Returns:
+        Dict with config status and recommendations
+    """
+    config = load_user_config() or {}
+    env_key = os.environ.get("JUPITER_API_KEY")
+
+    has_custom_key = bool(env_key or config.get("jupiter_api_key"))
+    key_source = None
+    if env_key:
+        key_source = "environment"
+    elif config.get("jupiter_api_key"):
+        key_source = "local_config"
+
+    result = {
+        "jupiter_api_key": {
+            "configured": has_custom_key,
+            "source": key_source,
+        },
+        "rpc_url": get_rpc_url(),
+        "wallet_configured": WALLET_FILE_ENCRYPTED.exists(),
+        "config_dir": str(SLOPESNIPER_DIR),
+    }
+
+    if not has_custom_key:
+        result["recommendation"] = {
+            "message": "Using shared API key. For better performance, set your own Jupiter API key.",
+            "benefits": [
+                "10x higher rate limits",
+                "Faster quote responses",
+                "Priority transaction routing",
+            ],
+            "how_to": "Run: slopesniper config --set-jupiter-key YOUR_KEY",
+            "get_key": "Get a free key at: https://station.jup.ag/docs/apis/ultra-api",
+        }
+
+    return result
 
 
 def get_policy_config() -> PolicyConfig:

@@ -12,6 +12,8 @@ Usage:
     slopesniper resolve <token>     Get mint address from symbol
     slopesniper strategy [name]     View or set strategy
     slopesniper scan [filter]       Scan for opportunities (trending/new/graduated/pumping)
+    slopesniper config              View current configuration
+    slopesniper config --set-jupiter-key KEY   Set your Jupiter API key
     slopesniper update              Update to latest version
     slopesniper version [--check]   Show version (--check for update availability)
 """
@@ -93,6 +95,18 @@ async def cmd_scan(filter_type: str = "all") -> None:
     from . import scan_opportunities
     result = await scan_opportunities(filter_type)
     print_json(result)
+
+
+def cmd_config(set_jupiter_key: str | None = None) -> None:
+    """View or update configuration."""
+    from .tools.config import get_config_status, set_jupiter_api_key
+
+    if set_jupiter_key:
+        result = set_jupiter_api_key(set_jupiter_key)
+        print_json(result)
+    else:
+        result = get_config_status()
+        print_json(result)
 
 
 def cmd_version(check_latest: bool = False) -> None:
@@ -259,6 +273,15 @@ def main() -> None:
         elif cmd == "scan":
             filter_type = args[1] if len(args) > 1 else "all"
             asyncio.run(cmd_scan(filter_type))
+
+        elif cmd == "config":
+            # Check for --set-jupiter-key flag
+            jupiter_key = None
+            for i, arg in enumerate(args):
+                if arg == "--set-jupiter-key" and i + 1 < len(args):
+                    jupiter_key = args[i + 1]
+                    break
+            cmd_config(set_jupiter_key=jupiter_key)
 
         elif cmd == "version":
             check_latest = "--check" in args or "-c" in args

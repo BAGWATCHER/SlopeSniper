@@ -16,6 +16,7 @@ from .config import (
     get_rpc_url,
     get_secret,
     get_or_create_wallet,
+    get_jupiter_api_key,
     WALLET_FILE_ENCRYPTED,
     SLOPESNIPER_DIR,
 )
@@ -122,6 +123,17 @@ async def get_status() -> dict:
             f"Send SOL to your wallet address: {wallet_address}\n"
             "You need at least 0.01 SOL to start trading."
         )
+
+    # Check if user has their own Jupiter API key
+    has_custom_key = get_jupiter_api_key() is not None
+    result["jupiter_api_key"] = "custom" if has_custom_key else "shared"
+
+    if not has_custom_key:
+        result["performance_tip"] = {
+            "message": "Using shared API key. Set your own for 10x better performance!",
+            "command": "slopesniper config --set-jupiter-key YOUR_KEY",
+            "get_key": "https://station.jup.ag/docs/apis/ultra-api",
+        }
 
     return result
 
