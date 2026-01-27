@@ -1,0 +1,69 @@
+name: Handle Contribution Reports
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  process-contribution:
+    if: contains(github.event.issue.labels.*.name, 'contribution')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Process Contribution
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+
+            console.log(`Processing contribution from issue #${issue.number}`);
+
+            // Add additional labels based on content
+            const labels = ['contribution', 'auto-generated'];
+
+            // Check which files were modified
+            const body = issue.body || '';
+            if (body.includes('jupiter_data_client.py') || body.includes('jupiter_ultra_client.py')) {
+              labels.push('sdk');
+            }
+            if (body.includes('solana_tools.py')) {
+              labels.push('tools');
+            }
+            if (body.includes('config.py') || body.includes('policy.py')) {
+              labels.push('config');
+            }
+
+            // Update labels
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: labels
+            });
+
+            // Add a comment acknowledging receipt
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: `Thanks for this contribution report! 🎯\n\nA maintainer will review these modifications and consider incorporating useful improvements into the project.\n\n---\n*Processed automatically by SlopeSniper contribution handler*`
+            });
+
+            console.log('Contribution processed successfully');
+
+      - name: Notify Discord (optional)
+        if: ${{ vars.DISCORD_WEBHOOK_URL }}
+        env:
+          DISCORD_WEBHOOK: ${{ vars.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "content": "New SlopeSniper contribution received!",
+              "embeds": [{
+                "title": "Issue #${{ github.event.issue.number }}",
+                "url": "${{ github.event.issue.html_url }}",
+                "description": "${{ github.event.issue.title }}",
+                "color": 5814783
+              }]
+            }'

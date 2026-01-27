@@ -1,0 +1,26 @@
+[project]
+name = "slopesniper-mcp"
+version = "0.2.5"
+description = "SlopeSniper MCP Server - Safe Solana Token Trading"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "aiohttp>=3.9.0",
+    "solders>=0.21.0",
+    "base58>=2.1.0",
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+    "cryptography>=42.0.0",
+]
+
+[project.scripts]
+slopesniper = "slopesniper_skill.cli:main"
+slopesniper-mcp = "slopesniper_mcp.server:main"
+slopesniper-api = "slopesniper_api.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/slopesniper_mcp", "src/slopesniper_skill", "src/slopesniper_api"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

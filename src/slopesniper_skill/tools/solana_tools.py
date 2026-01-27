@@ -82,7 +82,7 @@ async def solana_get_price(token: str) -> dict[str, Any]:
 
     if not mint:
         # Try searching for the token
-        data_client = JupiterDataClient()
+        data_client = JupiterDataClient(api_key=get_jupiter_api_key())
         results = await data_client.search_token(token)
         if results:
             mint = results[0].get("address")
@@ -90,7 +90,7 @@ async def solana_get_price(token: str) -> dict[str, Any]:
             return {"error": f"Token not found: {token}"}
 
     # Get price
-    data_client = JupiterDataClient()
+    data_client = JupiterDataClient(api_key=get_jupiter_api_key())
     price_data = await data_client.get_price(mint)
 
     if not price_data:
@@ -121,7 +121,7 @@ async def solana_search_token(query: str) -> list[dict[str, Any]]:
     Returns:
         List of matching tokens with symbol, name, mint, verified, liquidity
     """
-    data_client = JupiterDataClient()
+    data_client = JupiterDataClient(api_key=get_jupiter_api_key())
     results = await data_client.search_token(query)
 
     tokens = []
@@ -266,7 +266,7 @@ async def solana_quote(
         return {"error": f"Invalid amount: {amount}"}
 
     # Get price of from_token to calculate USD value
-    data_client = JupiterDataClient()
+    data_client = JupiterDataClient(api_key=get_jupiter_api_key())
     price_data = await data_client.get_price(from_mint)
     if price_data:
         price_usd = float(price_data.get("price", 0))
