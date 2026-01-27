@@ -10,6 +10,46 @@ from __future__ import annotations
 from mcp.server.fastmcp import FastMCP
 
 from slopesniper_skill import (
+    export_wallet as skill_export_wallet,
+)
+from slopesniper_skill import (
+    # PnL tracking
+    get_portfolio_pnl as skill_get_portfolio_pnl,
+)
+from slopesniper_skill import (
+    # Onboarding
+    get_status as skill_get_status,
+)
+from slopesniper_skill import (
+    get_strategy as skill_get_strategy,
+)
+from slopesniper_skill import (
+    get_trade_history as skill_get_trade_history,
+)
+from slopesniper_skill import (
+    get_watchlist as skill_get_watchlist,
+)
+from slopesniper_skill import (
+    list_strategies as skill_list_strategies,
+)
+from slopesniper_skill import (
+    quick_trade as skill_quick_trade,
+)
+from slopesniper_skill import (
+    remove_from_watchlist as skill_remove_from_watchlist,
+)
+from slopesniper_skill import (
+    # Scanner
+    scan_opportunities as skill_scan_opportunities,
+)
+from slopesniper_skill import (
+    # Strategies
+    set_strategy as skill_set_strategy,
+)
+from slopesniper_skill import (
+    setup_wallet as skill_setup_wallet,
+)
+from slopesniper_skill import (
     # Core trading
     solana_check_token,
     solana_get_price,
@@ -17,30 +57,16 @@ from slopesniper_skill import (
     solana_quote,
     solana_search_token,
     solana_swap_confirm,
-    quick_trade as skill_quick_trade,
-    # Onboarding
-    get_status as skill_get_status,
-    setup_wallet as skill_setup_wallet,
-    export_wallet as skill_export_wallet,
-    # Strategies
-    set_strategy as skill_set_strategy,
-    get_strategy as skill_get_strategy,
-    list_strategies as skill_list_strategies,
-    # PnL tracking
-    get_portfolio_pnl as skill_get_portfolio_pnl,
-    get_trade_history as skill_get_trade_history,
-    # Scanner
-    scan_opportunities as skill_scan_opportunities,
+)
+from slopesniper_skill import (
     watch_token as skill_watch_token,
-    get_watchlist as skill_get_watchlist,
-    remove_from_watchlist as skill_remove_from_watchlist,
 )
 
 # Import config functions directly
 from slopesniper_skill.tools.config import (
-    set_rpc_config,
     clear_rpc_config,
     get_rpc_config_status,
+    set_rpc_config,
 )
 
 # Create MCP server with instructions

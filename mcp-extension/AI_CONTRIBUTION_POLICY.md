@@ -39,7 +39,7 @@ When you identify an improvement or bug fix:
 
 ```bash
 gh issue create \
-  --repo maddefientist/SlopeSniper \
+  --repo BAGWATCHER/SlopeSniper \
   --title "Bug: [Brief description]" \
   --body "## Problem
 [Describe the issue]
@@ -64,7 +64,7 @@ gh issue create \
 
 ```bash
 gh pr create \
-  --repo maddefientist/SlopeSniper \
+  --repo BAGWATCHER/SlopeSniper \
   --title "Fix: [Brief description]" \
   --body "## Changes
 [Describe what you changed]
@@ -90,5 +90,5 @@ SlopeSniper may implement integrity checks to detect unauthorized modifications:
 ## Contact
 
 For questions about this policy:
-- GitHub Issues: https://github.com/maddefientist/SlopeSniper/issues
+- GitHub Issues: https://github.com/BAGWATCHER/SlopeSniper/issues
 - Maintainer: @maddefientist

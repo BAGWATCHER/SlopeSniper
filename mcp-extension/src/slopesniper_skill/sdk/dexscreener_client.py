@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 
@@ -37,7 +37,7 @@ class DexScreenerClient:
     async def _request(
         self,
         endpoint: str,
-        params: Optional[dict] = None,
+        params: dict | None = None,
         timeout: int = 15
     ) -> dict[str, Any]:
         """Make API request."""
@@ -70,7 +70,7 @@ class DexScreenerClient:
         Good for finding legitimate new projects.
         """
         self.logger.info(f"[get_token_profiles] Fetching profiles for {chain}")
-        data = await self._request(f"/token-profiles/latest/v1")
+        data = await self._request("/token-profiles/latest/v1")
 
         # Filter to Solana only
         profiles = []
@@ -89,7 +89,7 @@ class DexScreenerClient:
         Can indicate active marketing (bullish) or desperation (bearish).
         """
         self.logger.info(f"[get_boosted_tokens] Fetching boosted for {chain}")
-        data = await self._request(f"/token-boosts/latest/v1")
+        data = await self._request("/token-boosts/latest/v1")
 
         boosted = []
         for item in data if isinstance(data, list) else []:
@@ -102,7 +102,7 @@ class DexScreenerClient:
     async def get_top_boosted(self, chain: str = "solana") -> list[dict]:
         """Get tokens with most active boosts."""
         self.logger.info(f"[get_top_boosted] Fetching top boosted for {chain}")
-        data = await self._request(f"/token-boosts/top/v1")
+        data = await self._request("/token-boosts/top/v1")
 
         top = []
         for item in data if isinstance(data, list) else []:
@@ -123,7 +123,7 @@ class DexScreenerClient:
         - Transaction counts
         """
         self.logger.info(f"[search_pairs] Searching: {query}")
-        data = await self._request(f"/latest/dex/search", {"q": query})
+        data = await self._request("/latest/dex/search", {"q": query})
 
         pairs = data.get("pairs", [])
         # Filter to Solana
@@ -145,7 +145,7 @@ class DexScreenerClient:
         self.logger.info(f"[get_token_pairs] Found {len(pairs)} pairs")
         return pairs
 
-    async def get_pair_by_address(self, pair_address: str) -> Optional[dict]:
+    async def get_pair_by_address(self, pair_address: str) -> dict | None:
         """Get detailed info for a specific pair address."""
         self.logger.info(f"[get_pair_by_address] Fetching {pair_address[:8]}...")
         data = await self._request(f"/pairs/solana/{pair_address}")

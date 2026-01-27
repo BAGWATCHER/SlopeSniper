@@ -7,32 +7,29 @@ Deploy this to your server and call via WebFetch from Cowork.
 from __future__ import annotations
 
 import os
-from typing import Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # Import skill functions
 from slopesniper_skill import (
-    solana_get_price,
-    solana_search_token,
+    get_status,
+    get_strategy,
+    get_watchlist,
+    list_strategies,
+    quick_trade,
+    scan_opportunities,
+    set_strategy,
     solana_check_token,
+    solana_get_price,
     solana_get_wallet,
     solana_quote,
+    solana_search_token,
     solana_swap_confirm,
-    quick_trade,
-    get_status,
-    setup_wallet,
-    set_strategy,
-    get_strategy,
-    list_strategies,
-    scan_opportunities,
     watch_token,
-    get_watchlist,
 )
-
 
 # API Key authentication
 API_KEY = os.environ.get("SLOPESNIPER_API_KEY", "")
@@ -93,11 +90,11 @@ class ConfirmRequest(BaseModel):
 
 
 class StrategyRequest(BaseModel):
-    strategy: Optional[str] = None
-    max_trade_usd: Optional[float] = None
-    auto_execute_under_usd: Optional[float] = None
-    slippage_bps: Optional[int] = None
-    require_rugcheck: Optional[bool] = None
+    strategy: str | None = None
+    max_trade_usd: float | None = None
+    auto_execute_under_usd: float | None = None
+    slippage_bps: int | None = None
+    require_rugcheck: bool | None = None
 
 
 class WatchRequest(BaseModel):
@@ -154,7 +151,7 @@ async def root():
 
 # NOTE: Jupiter API key is now served from GitHub, not this server.
 # This endpoint is kept for backwards compatibility but requires env var.
-# Config URL: https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/jup.json
+# Config URL: https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/jup.json
 
 
 @app.get("/config/jup")
@@ -166,12 +163,12 @@ async def get_jupiter_config(
 
     This endpoint redirects to the GitHub-hosted config.
     Direct your client to fetch from:
-    https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/jup.json
+    https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/jup.json
     """
     return {
         "error": "deprecated",
         "message": "Config moved to GitHub",
-        "config_url": "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/jup.json",
+        "config_url": "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/jup.json",
     }
 
 
@@ -218,7 +215,7 @@ async def api_check_token(mint: str):
 
 
 @app.get("/wallet", dependencies=[Depends(verify_api_key)])
-async def api_get_wallet(address: Optional[str] = None):
+async def api_get_wallet(address: str | None = None):
     """Get wallet balances."""
     return await solana_get_wallet(address)
 

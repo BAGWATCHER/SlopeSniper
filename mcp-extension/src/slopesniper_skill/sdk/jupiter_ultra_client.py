@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import os
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 from solders.keypair import Keypair
@@ -42,7 +42,7 @@ class JupiterUltraClient:
     USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 
     def __init__(
-        self, api_key: Optional[str] = None, max_retries: int = 5
+        self, api_key: str | None = None, max_retries: int = 5
     ) -> None:
         """
         Initialize Jupiter Ultra Client.
@@ -74,12 +74,12 @@ class JupiterUltraClient:
         """
         config_url = os.environ.get(
             "SLOPESNIPER_CONFIG_URL",
-            "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/config/jup.json"
+            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/jup.json"
         )
 
         try:
-            import urllib.request
             import json
+            import urllib.request
 
             req = urllib.request.Request(
                 config_url,
@@ -128,7 +128,7 @@ class JupiterUltraClient:
             xored = base64.b64decode(encoded)
             key = f"{_p}{_y}"
             key_bytes = (key * ((len(xored) // len(key)) + 1))[:len(xored)]
-            return bytes(a ^ b for a, b in zip(xored, key_bytes.encode())).decode()
+            return bytes(a ^ b for a, b in zip(xored, key_bytes.encode(), strict=False)).decode()
         except Exception:
             return ""
 
@@ -136,8 +136,8 @@ class JupiterUltraClient:
         self,
         url: str,
         method: str = "GET",
-        params: Optional[dict[str, Any]] = None,
-        json_data: Optional[dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        json_data: dict[str, Any] | None = None,
         timeout: int = 30,
     ) -> dict[str, Any]:
         """
@@ -228,9 +228,9 @@ class JupiterUltraClient:
         input_mint: str,
         output_mint: str,
         amount: int,
-        taker: Optional[str] = None,
+        taker: str | None = None,
         slippage_bps: int = 50,
-        exclude_dexes: Optional[str] = None,
+        exclude_dexes: str | None = None,
     ) -> dict[str, Any]:
         """
         Get swap quote and unsigned transaction.

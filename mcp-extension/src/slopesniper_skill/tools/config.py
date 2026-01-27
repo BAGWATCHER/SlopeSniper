@@ -12,17 +12,14 @@ import json
 import os
 import platform
 import secrets
-import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 import base58
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from solders.keypair import Keypair
-
 
 # Local storage paths
 SLOPESNIPER_DIR = Path.home() / ".slopesniper"
@@ -195,7 +192,7 @@ def save_wallet(private_key: str, address: str) -> None:
         WALLET_FILE.unlink()
 
 
-def _migrate_plaintext_wallet() -> Optional[dict]:
+def _migrate_plaintext_wallet() -> dict | None:
     """
     Migrate old plaintext wallet to encrypted format.
 
@@ -216,7 +213,7 @@ def _migrate_plaintext_wallet() -> Optional[dict]:
     return None
 
 
-def load_local_wallet() -> Optional[dict]:
+def load_local_wallet() -> dict | None:
     """
     Load wallet from encrypted local storage.
 
@@ -271,7 +268,7 @@ def get_or_create_wallet() -> tuple[str, str, bool]:
     return private_key, address, True
 
 
-def _parse_private_key(private_key: str) -> Optional[Keypair]:
+def _parse_private_key(private_key: str) -> Keypair | None:
     """Parse private key in various formats."""
     try:
         if private_key.startswith("["):
@@ -284,7 +281,7 @@ def _parse_private_key(private_key: str) -> Optional[Keypair]:
         return None
 
 
-def get_secret(name: str) -> Optional[str]:
+def get_secret(name: str) -> str | None:
     """
     Get a secret value with gateway -> env fallback.
 
@@ -316,7 +313,7 @@ def get_secret(name: str) -> Optional[str]:
     return None
 
 
-def get_keypair() -> Optional[Keypair]:
+def get_keypair() -> Keypair | None:
     """
     Load Solana keypair from local storage or environment.
 
@@ -349,7 +346,7 @@ def get_keypair() -> Optional[Keypair]:
     return None
 
 
-def get_wallet_address() -> Optional[str]:
+def get_wallet_address() -> str | None:
     """
     Get the wallet address from the configured keypair.
 
@@ -412,7 +409,7 @@ def save_user_config(config: dict, merge: bool = True) -> None:
     os.chmod(USER_CONFIG_FILE, 0o600)
 
 
-def load_user_config() -> Optional[dict]:
+def load_user_config() -> dict | None:
     """
     Load user configuration (encrypted).
 
@@ -456,7 +453,7 @@ def set_jupiter_api_key(api_key: str) -> dict:
     }
 
 
-def get_jupiter_api_key() -> Optional[str]:
+def get_jupiter_api_key() -> str | None:
     """
     Get Jupiter API key with priority: env var > local config > None.
 
@@ -510,7 +507,7 @@ def _build_rpc_url(provider: str, value: str) -> str:
     return value
 
 
-def _validate_rpc_config(provider: str, value: str) -> tuple[bool, Optional[str]]:
+def _validate_rpc_config(provider: str, value: str) -> tuple[bool, str | None]:
     """
     Validate RPC provider and value.
 

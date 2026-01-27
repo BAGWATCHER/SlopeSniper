@@ -1,12 +1,12 @@
 #!/bin/bash
 # SlopeSniper Clawdbot Skill Installer/Updater
-# Usage: curl -fsSL https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/skills/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash
 
 set -e
 
 SKILL_NAME="slopesniper"
-REPO_URL="https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/skills/slopesniper"
-PACKAGE_URL="slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
+REPO_URL="https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/slopesniper"
+PACKAGE_URL="slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension"
 
 # Detect Clawdbot skills directory
 detect_skills_dir() {

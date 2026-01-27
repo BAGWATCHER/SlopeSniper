@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # SlopeSniper Installer for Claude Desktop
-# Run: curl -fsSL https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/mcp-extension/install.sh | bash
+# Run: curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/mcp-extension/install.sh | bash
 #
 
 set -e
@@ -35,7 +35,7 @@ if [ -d "$INSTALL_DIR" ]; then
     git pull origin main 2>/dev/null || true
 else
     echo "📦 Downloading SlopeSniper..."
-    git clone https://github.com/maddefientist/SlopeSniper.git "$INSTALL_DIR"
+    git clone https://github.com/BAGWATCHER/SlopeSniper.git "$INSTALL_DIR"
 fi
 
 cd "$INSTALL_DIR/mcp-extension"

@@ -2,7 +2,7 @@
 #
 # SlopeSniper Migration Script: Fork → Main Repository
 #
-# This script updates all references from the fork (maddefientist/SlopeSniper)
+# This script updates all references from the fork (BAGWATCHER/SlopeSniper)
 # to the main repository (BAGWATCHER/SlopeSniper) before creating a PR.
 #
 # Usage:
@@ -15,7 +15,7 @@
 set -e
 
 # Configuration
-FROM_REPO="maddefientist/SlopeSniper"
+FROM_REPO="BAGWATCHER/SlopeSniper"
 TO_REPO="BAGWATCHER/SlopeSniper"
 FROM_USER="maddefientist"
 TO_USER="BAGWATCHER"
