@@ -2,6 +2,7 @@
 Onboarding Tools - Easy wallet setup and status checks.
 
 Helps users get started with SlopeSniper quickly.
+Auto-generates wallet on first run.
 """
 
 from __future__ import annotations
@@ -9,7 +10,14 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-from .config import get_keypair, get_wallet_address, get_rpc_url, get_secret
+from .config import (
+    get_keypair,
+    get_wallet_address,
+    get_rpc_url,
+    get_secret,
+    get_or_create_wallet,
+    WALLET_FILE,
+)
 from .strategies import get_active_strategy
 
 
@@ -24,11 +32,16 @@ class Status:
     auto_execute_under_usd: float
     max_trade_usd: float
     ready_to_trade: bool
+    is_new_wallet: bool = False
+    private_key: str | None = None
 
 
 async def get_status() -> dict:
     """
     Check if SlopeSniper is ready to trade.
+
+    On FIRST RUN: Auto-generates a new wallet and displays the private key.
+    IMPORTANT: User must save the private key and fund the wallet with SOL!
 
     Use this tool FIRST when a user wants to trade. It tells you:
     - Whether wallet is configured
@@ -36,34 +49,33 @@ async def get_status() -> dict:
     - Active trading strategy and limits
 
     Returns:
-        dict with wallet_configured, wallet_address, sol_balance,
-        strategy info, and ready_to_trade boolean
+        dict with wallet info, balance, strategy, and setup instructions
     """
-    wallet_address = get_wallet_address()
-    wallet_configured = wallet_address is not None
+    # Get or create wallet (auto-generates on first run)
+    private_key, wallet_address, is_new_wallet = get_or_create_wallet()
+    wallet_configured = True
 
     sol_balance = None
-    if wallet_configured:
-        # Get balance from Solana RPC (no API key needed)
-        try:
-            import aiohttp
-            rpc_url = get_rpc_url()
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    rpc_url,
-                    json={
-                        "jsonrpc": "2.0",
-                        "id": 1,
-                        "method": "getBalance",
-                        "params": [wallet_address],
-                    },
-                ) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        lamports = data.get("result", {}).get("value", 0)
-                        sol_balance = lamports / 1_000_000_000  # Convert lamports to SOL
-        except Exception:
-            sol_balance = None
+    # Get balance from Solana RPC (no API key needed)
+    try:
+        import aiohttp
+        rpc_url = get_rpc_url()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                rpc_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "getBalance",
+                    "params": [wallet_address],
+                },
+            ) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    lamports = data.get("result", {}).get("value", 0)
+                    sol_balance = lamports / 1_000_000_000  # Convert lamports to SOL
+    except Exception:
+        sol_balance = None
 
     strategy = get_active_strategy()
 
@@ -75,6 +87,8 @@ async def get_status() -> dict:
         auto_execute_under_usd=strategy.auto_execute_under_usd,
         max_trade_usd=strategy.max_trade_usd,
         ready_to_trade=wallet_configured and (sol_balance or 0) > 0.01,
+        is_new_wallet=is_new_wallet,
+        private_key=private_key if is_new_wallet else None,
     )
 
     result = {
@@ -89,11 +103,22 @@ async def get_status() -> dict:
         "ready_to_trade": status.ready_to_trade,
     }
 
-    if not status.wallet_configured:
-        result["setup_instructions"] = (
-            "To configure your wallet, set the SOLANA_PRIVATE_KEY environment variable "
-            "in Claude Desktop's extension settings. You can export your private key from "
-            "Phantom (Settings → Security → Export Private Key) or Solflare."
+    # Show private key ONLY on first run (new wallet generation)
+    if is_new_wallet:
+        result["NEW_WALLET_CREATED"] = True
+        result["private_key"] = private_key
+        result["IMPORTANT"] = (
+            "A NEW WALLET HAS BEEN CREATED! You MUST:\n"
+            "1. SAVE THE PRIVATE KEY ABOVE - it will NOT be shown again!\n"
+            "2. Send SOL to your wallet address to start trading\n"
+            "3. Keep your private key secure - anyone with it can access your funds\n\n"
+            f"Wallet stored at: {WALLET_FILE}"
+        )
+    elif (sol_balance or 0) < 0.01:
+        result["needs_funding"] = True
+        result["funding_instructions"] = (
+            f"Send SOL to your wallet address: {wallet_address}\n"
+            "You need at least 0.01 SOL to start trading."
         )
 
     return result
@@ -101,95 +126,59 @@ async def get_status() -> dict:
 
 async def setup_wallet(private_key: str | None = None) -> dict:
     """
-    Guide user through wallet setup.
+    Set up or import a trading wallet.
 
-    If private_key is provided, validates it and shows the address.
-    If not provided, returns instructions for getting and setting up a key.
-
-    IMPORTANT: For security, users should:
-    1. Use a DEDICATED trading wallet, not their main wallet
-    2. Fund it with only what they're willing to risk
-    3. Never share their private key
+    If no private_key provided: Uses existing wallet or creates new one.
+    If private_key provided: Imports that wallet (overrides existing).
 
     Args:
-        private_key: Optional - the wallet's private key (base58 or JSON array)
+        private_key: Optional - import an existing wallet's private key
 
     Returns:
-        dict with configured status, address (if valid), and instructions
+        dict with wallet address, private key (if new), and instructions
     """
+    from .config import save_wallet, _parse_private_key
+
     if private_key:
-        # Validate the provided key
-        try:
-            import base58
-            from solders.keypair import Keypair
-            import json
-
-            if private_key.startswith("["):
-                # JSON array format
-                key_bytes = bytes(json.loads(private_key))
-                keypair = Keypair.from_bytes(key_bytes)
-            else:
-                # Base58 format
-                key_bytes = base58.b58decode(private_key)
-                keypair = Keypair.from_bytes(key_bytes)
-
-            address = str(keypair.pubkey())
-
+        # Import provided key
+        keypair = _parse_private_key(private_key)
+        if not keypair:
             return {
-                "valid": True,
-                "address": address,
-                "instructions": (
-                    f"Your wallet address is: {address}\n\n"
-                    "To complete setup:\n"
-                    "1. In Claude Desktop, go to Extensions → slopesniper → Configure\n"
-                    "2. Add environment variable: SOLANA_PRIVATE_KEY = <your key>\n"
-                    "3. Restart Claude Desktop\n\n"
-                    "SECURITY: Only fund this wallet with amounts you're willing to risk!"
-                ),
-            }
-        except Exception as e:
-            return {
-                "valid": False,
-                "error": f"Invalid private key format: {e}",
-                "instructions": (
-                    "The private key should be either:\n"
-                    "- Base58 encoded string (from Phantom/Solflare export)\n"
-                    "- JSON array of bytes (from CLI wallet)\n\n"
-                    "Make sure you copied the full key without extra spaces."
-                ),
+                "success": False,
+                "error": "Invalid private key format",
+                "hint": "Key should be base58 encoded (from Phantom/Solflare export)",
             }
 
-    # No key provided - return setup guide
-    current_address = get_wallet_address()
-    if current_address:
+        address = str(keypair.pubkey())
+        save_wallet(private_key, address)
+
         return {
-            "configured": True,
-            "address": current_address,
-            "instructions": "Wallet is already configured! Use get_status to check balance.",
+            "success": True,
+            "wallet_address": address,
+            "message": f"Wallet imported! Address: {address}",
+            "next_step": "Send SOL to this address to start trading.",
         }
 
-    return {
-        "configured": False,
-        "instructions": (
-            "## How to Set Up Your Trading Wallet\n\n"
-            "### Step 1: Create or Export a Wallet\n\n"
-            "**From Phantom:**\n"
-            "1. Open Phantom → Settings (gear icon)\n"
-            "2. Security & Privacy → Export Private Key\n"
-            "3. Enter password and copy the key\n\n"
-            "**From Solflare:**\n"
-            "1. Open Solflare → Settings\n"
-            "2. Export Private Key\n"
-            "3. Copy the base58 string\n\n"
-            "### Step 2: Configure in Claude Desktop\n\n"
-            "1. Go to Extensions panel\n"
-            "2. Find 'slopesniper' and click Configure\n"
-            "3. Add: `SOLANA_PRIVATE_KEY = <paste your key>`\n"
-            "4. Restart Claude Desktop\n\n"
-            "### Security Tips\n"
-            "- Use a DEDICATED wallet for trading (not your main holdings!)\n"
-            "- Only fund it with amounts you're willing to lose\n"
-            "- The key is stored locally on your machine\n\n"
-            "Once configured, say 'check my status' to verify setup."
-        ),
+    # Get or create wallet
+    pk, address, is_new = get_or_create_wallet()
+
+    result = {
+        "success": True,
+        "wallet_address": address,
+        "is_new_wallet": is_new,
     }
+
+    if is_new:
+        result["private_key"] = pk
+        result["IMPORTANT"] = (
+            "NEW WALLET CREATED!\n\n"
+            f"Address: {address}\n"
+            f"Private Key: {pk}\n\n"
+            "SAVE THIS PRIVATE KEY NOW - it will NOT be shown again!\n"
+            "Send SOL to your address to start trading."
+        )
+    else:
+        result["message"] = f"Using existing wallet: {address}"
+        result["next_step"] = "Check balance with 'slopesniper status'"
+
+    return result
