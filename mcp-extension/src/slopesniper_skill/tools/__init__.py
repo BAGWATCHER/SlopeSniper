@@ -26,8 +26,10 @@ from .intents import (
     mark_executed,
 )
 from .onboarding import (
+    export_backup,
     export_wallet,
     get_status,
+    list_backup_wallets,
     setup_wallet,
 )
 from .policy import (
@@ -85,6 +87,8 @@ __all__ = [
     "get_status",
     "setup_wallet",
     "export_wallet",
+    "list_backup_wallets",
+    "export_backup",
     # Strategies
     "set_strategy",
     "get_strategy",

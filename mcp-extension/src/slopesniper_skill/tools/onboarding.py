@@ -11,9 +11,11 @@ from dataclasses import dataclass
 
 from .config import (
     SLOPESNIPER_DIR,
+    export_backup_wallet,
     get_jupiter_api_key,
     get_or_create_wallet,
     get_rpc_url,
+    list_wallet_backups,
     load_local_wallet,
 )
 from .strategies import get_active_strategy
@@ -194,7 +196,7 @@ async def setup_wallet(private_key: str | None = None) -> dict:
     return result
 
 
-async def export_wallet() -> dict:
+async def export_wallet(include_backups: bool = False) -> dict:
     """
     Export wallet private key for backup purposes.
 
@@ -203,19 +205,31 @@ async def export_wallet() -> dict:
     - Importing into another wallet (Phantom, Solflare, etc.)
     - Disaster recovery
 
+    Args:
+        include_backups: If True, also list available backup wallets
+
     Returns:
         dict with private_key, address, and security warnings
     """
     wallet = load_local_wallet()
 
     if not wallet:
+        # Check if there are backups even without current wallet
+        backups = list_wallet_backups()
+        if backups:
+            return {
+                "success": False,
+                "error": "No active wallet found, but backups exist",
+                "backups": backups,
+                "hint": "Use 'slopesniper export --backup TIMESTAMP' to recover a backed up wallet.",
+            }
         return {
             "success": False,
             "error": "No wallet found",
             "hint": "Run 'slopesniper status' to create a wallet first.",
         }
 
-    return {
+    result = {
         "success": True,
         "address": wallet["address"],
         "private_key": wallet["private_key"],
@@ -227,5 +241,86 @@ async def export_wallet() -> dict:
             "- Never paste it into websites\n"
             "- Store backups in secure, offline locations\n\n"
             "Compatible with: Phantom, Solflare, Backpack, and other Solana wallets."
+        ),
+    }
+
+    # Include backup info if requested
+    if include_backups:
+        backups = list_wallet_backups()
+        if backups:
+            result["backups"] = backups
+            result["backup_hint"] = "Use 'slopesniper export --backup TIMESTAMP' to export a specific backup."
+
+    return result
+
+
+async def list_backup_wallets() -> dict:
+    """
+    List all backed up wallets.
+
+    Returns:
+        dict with list of backups and their addresses
+    """
+    backups = list_wallet_backups()
+
+    if not backups:
+        return {
+            "success": True,
+            "backups": [],
+            "message": "No wallet backups found.",
+            "hint": "Backups are created automatically when importing/generating a new wallet.",
+        }
+
+    return {
+        "success": True,
+        "backups": backups,
+        "count": len(backups),
+        "hint": "Use 'slopesniper export --backup TIMESTAMP' to export a specific backup.",
+    }
+
+
+async def export_backup(timestamp: str) -> dict:
+    """
+    Export a specific wallet backup by timestamp.
+
+    Args:
+        timestamp: Backup timestamp (YYYYMMDD_HHMMSS format)
+
+    Returns:
+        dict with private_key, address, or error
+    """
+    backup = export_backup_wallet(timestamp)
+
+    if not backup:
+        backups = list_wallet_backups()
+        available = [b["timestamp"] for b in backups]
+        return {
+            "success": False,
+            "error": f"Backup not found: {timestamp}",
+            "available_backups": available,
+            "hint": "Use 'slopesniper export --list-backups' to see all available backups.",
+        }
+
+    if "error" in backup:
+        return {
+            "success": False,
+            "error": backup["error"],
+            "timestamp": timestamp,
+        }
+
+    return {
+        "success": True,
+        "address": backup["address"],
+        "private_key": backup["private_key"],
+        "timestamp": timestamp,
+        "source": backup.get("source"),
+        "WARNING": (
+            "BACKUP WALLET PRIVATE KEY IS SHOWN ABOVE.\n\n"
+            "- Anyone with this key can STEAL ALL YOUR FUNDS\n"
+            "- Never share it with anyone\n"
+            "- Never paste it into websites\n"
+            "- Store backups in secure, offline locations\n\n"
+            "To restore this wallet as your active wallet:\n"
+            "  slopesniper setup --import-key <PRIVATE_KEY>"
         ),
     }

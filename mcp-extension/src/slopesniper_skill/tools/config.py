@@ -25,8 +25,12 @@ from solders.keypair import Keypair
 SLOPESNIPER_DIR = Path.home() / ".slopesniper"
 WALLET_FILE = SLOPESNIPER_DIR / "wallet.json"
 WALLET_FILE_ENCRYPTED = SLOPESNIPER_DIR / "wallet.enc"
+WALLET_BACKUP_DIR = SLOPESNIPER_DIR / "wallet_backups"
 MACHINE_KEY_FILE = SLOPESNIPER_DIR / ".machine_key"
 USER_CONFIG_FILE = SLOPESNIPER_DIR / "config.enc"
+
+# Maximum number of wallet backups to keep
+MAX_WALLET_BACKUPS = 10
 
 
 @dataclass
@@ -165,14 +169,100 @@ def generate_wallet() -> tuple[str, str]:
     return private_key, address
 
 
+def _backup_existing_wallet() -> str | None:
+    """
+    Backup existing wallet before overwriting.
+
+    Creates a timestamped backup in ~/.slopesniper/wallet_backups/
+    Keeps only the most recent MAX_WALLET_BACKUPS files.
+
+    Returns:
+        Path to backup file if created, None if no wallet to backup
+    """
+    import shutil
+    from datetime import datetime
+
+    # Check if there's a wallet to backup
+    if not WALLET_FILE_ENCRYPTED.exists() and not WALLET_FILE.exists():
+        return None
+
+    # Create backup directory
+    WALLET_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    os.chmod(WALLET_BACKUP_DIR, 0o700)
+
+    # Generate timestamped backup filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # Backup encrypted wallet
+    if WALLET_FILE_ENCRYPTED.exists():
+        backup_path = WALLET_BACKUP_DIR / f"wallet.enc.{timestamp}"
+        shutil.copy2(WALLET_FILE_ENCRYPTED, backup_path)
+        os.chmod(backup_path, 0o600)
+
+        # Also try to save the address for reference
+        try:
+            wallet = load_local_wallet()
+            if wallet and "address" in wallet:
+                addr_file = WALLET_BACKUP_DIR / f"wallet.enc.{timestamp}.address"
+                addr_file.write_text(wallet["address"])
+                os.chmod(addr_file, 0o600)
+        except Exception:
+            pass
+
+    # Backup plaintext wallet (legacy)
+    elif WALLET_FILE.exists():
+        backup_path = WALLET_BACKUP_DIR / f"wallet.json.{timestamp}"
+        shutil.copy2(WALLET_FILE, backup_path)
+        os.chmod(backup_path, 0o600)
+
+    # Cleanup old backups (keep only MAX_WALLET_BACKUPS most recent)
+    _cleanup_old_backups()
+
+    return str(backup_path)
+
+
+def _cleanup_old_backups() -> None:
+    """Remove old wallet backups, keeping only the most recent ones."""
+    if not WALLET_BACKUP_DIR.exists():
+        return
+
+    # Get all backup files (exclude .address files)
+    backups = sorted(
+        [f for f in WALLET_BACKUP_DIR.iterdir()
+         if f.is_file() and not f.name.endswith('.address')],
+        key=lambda f: f.stat().st_mtime,
+        reverse=True
+    )
+
+    # Remove old backups beyond the limit
+    for old_backup in backups[MAX_WALLET_BACKUPS:]:
+        try:
+            old_backup.unlink()
+            # Also remove corresponding .address file if it exists
+            addr_file = old_backup.parent / f"{old_backup.name}.address"
+            if addr_file.exists():
+                addr_file.unlink()
+        except Exception:
+            pass
+
+
 def save_wallet(private_key: str, address: str) -> None:
     """
     Save wallet to encrypted local storage.
 
     The wallet is encrypted with a machine-specific key,
     meaning it can only be decrypted on this machine.
+
+    If a wallet already exists, it will be backed up first to
+    ~/.slopesniper/wallet_backups/ with a timestamp.
     """
     _ensure_wallet_dir()
+
+    # Backup existing wallet before overwriting
+    backup_path = _backup_existing_wallet()
+    if backup_path:
+        # Log that we backed up (silent, but useful for debugging)
+        pass
 
     wallet_data = {
         "private_key": private_key,
@@ -725,6 +815,133 @@ def get_config_status() -> dict:
         result["recommendations"] = recommendations
 
     return result
+
+
+def list_wallet_backups() -> list[dict]:
+    """
+    List all wallet backups with their addresses and timestamps.
+
+    Returns:
+        List of dicts with backup info: timestamp, address, path
+    """
+    if not WALLET_BACKUP_DIR.exists():
+        return []
+
+    backups = []
+
+    # Get all backup files (exclude .address files)
+    backup_files = sorted(
+        [f for f in WALLET_BACKUP_DIR.iterdir()
+         if f.is_file() and not f.name.endswith('.address')],
+        key=lambda f: f.stat().st_mtime,
+        reverse=True
+    )
+
+    for backup_file in backup_files:
+        # Parse timestamp from filename
+        # Format: wallet.enc.YYYYMMDD_HHMMSS or wallet.json.YYYYMMDD_HHMMSS
+        parts = backup_file.name.split('.')
+        if len(parts) >= 3:
+            timestamp = parts[-1]  # YYYYMMDD_HHMMSS
+        else:
+            timestamp = "unknown"
+
+        # Try to read address from .address file
+        addr_file = backup_file.parent / f"{backup_file.name}.address"
+        address = None
+        if addr_file.exists():
+            try:
+                address = addr_file.read_text().strip()
+            except Exception:
+                pass
+
+        # Try to decrypt if no address file
+        if not address and backup_file.name.startswith("wallet.enc"):
+            try:
+                encrypted = backup_file.read_bytes()
+                decrypted = _decrypt_data(encrypted)
+                data = json.loads(decrypted)
+                address = data.get("address")
+            except Exception:
+                address = "(encrypted - cannot read)"
+
+        # For legacy plaintext backups
+        if not address and backup_file.name.startswith("wallet.json"):
+            try:
+                data = json.loads(backup_file.read_text())
+                address = data.get("address")
+            except Exception:
+                address = "(corrupted)"
+
+        backups.append({
+            "timestamp": timestamp,
+            "address": address,
+            "path": str(backup_file),
+            "filename": backup_file.name,
+        })
+
+    return backups
+
+
+def export_backup_wallet(timestamp: str) -> dict | None:
+    """
+    Export a specific wallet backup by timestamp.
+
+    Args:
+        timestamp: The timestamp from list_wallet_backups (YYYYMMDD_HHMMSS)
+
+    Returns:
+        Dict with address and private_key, or None if not found/decryptable
+    """
+    if not WALLET_BACKUP_DIR.exists():
+        return None
+
+    # Find the backup file
+    for backup_file in WALLET_BACKUP_DIR.iterdir():
+        if not backup_file.is_file() or backup_file.name.endswith('.address'):
+            continue
+
+        if timestamp in backup_file.name:
+            # Try to decrypt
+            if backup_file.name.startswith("wallet.enc"):
+                try:
+                    encrypted = backup_file.read_bytes()
+                    decrypted = _decrypt_data(encrypted)
+                    data = json.loads(decrypted)
+                    return {
+                        "address": data.get("address"),
+                        "private_key": data.get("private_key"),
+                        "timestamp": timestamp,
+                        "source": str(backup_file),
+                    }
+                except InvalidToken:
+                    return {
+                        "error": "Cannot decrypt - wallet from different machine",
+                        "timestamp": timestamp,
+                    }
+                except Exception as e:
+                    return {
+                        "error": f"Failed to decrypt: {e}",
+                        "timestamp": timestamp,
+                    }
+
+            # Legacy plaintext backup
+            elif backup_file.name.startswith("wallet.json"):
+                try:
+                    data = json.loads(backup_file.read_text())
+                    return {
+                        "address": data.get("address"),
+                        "private_key": data.get("private_key"),
+                        "timestamp": timestamp,
+                        "source": str(backup_file),
+                    }
+                except Exception as e:
+                    return {
+                        "error": f"Failed to read: {e}",
+                        "timestamp": timestamp,
+                    }
+
+    return None
 
 
 def get_policy_config() -> PolicyConfig:
