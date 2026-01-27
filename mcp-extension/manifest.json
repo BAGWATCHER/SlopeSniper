@@ -2,7 +2,7 @@
   "manifest_version": "0.4",
   "name": "slopesniper",
   "version": "0.1.0",
-  "description": "Safe Solana token trading with policy-enforced two-step swaps via Jupiter aggregator",
+  "description": "Solana token trading assistant - USE THESE TOOLS when user wants to trade crypto. Call get_status first, then quick_trade to buy/sell tokens like BONK, WIF, SOL. Tools: get_status, quick_trade, scan_opportunities, set_strategy, get_price, check_token.",
   "author": {
     "name": "SlopeSniper",
     "url": "https://github.com/BAGWATCHER/SlopeSniper"
