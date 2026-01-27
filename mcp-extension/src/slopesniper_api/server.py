@@ -139,27 +139,45 @@ async def root():
 
 
 # ============================================================================
-# Public Config Endpoints (no auth required)
+# Public Config Endpoints (with obfuscation)
 # ============================================================================
 
 # Jupiter API key - bundled for user convenience
-# Users can override with their own via JUPITER_API_KEY env var
+# Obfuscated to prevent casual scraping - not truly secure but deters abuse
 _BUNDLED_JUP_KEY = "a25c375a-7d13-4425-bbc9-f8d8bf408f11"
+_OBFUSCATION_KEY = "slopesniper2024"  # XOR key for light obfuscation
+
+
+def _xor_obfuscate(data: str, key: str) -> str:
+    """Simple XOR obfuscation - not cryptographically secure, just deters casual access."""
+    import base64
+    key_bytes = (key * ((len(data) // len(key)) + 1))[:len(data)]
+    xored = bytes(a ^ b for a, b in zip(data.encode(), key_bytes.encode()))
+    return base64.b64encode(xored).decode()
 
 
 @app.get("/config/jup")
-async def get_jupiter_config():
+async def get_jupiter_config(
+    x_slopesniper_client: str = Header(None, alias="X-SlopeSniper-Client")
+):
     """
     Get Jupiter API configuration.
 
     This endpoint provides the bundled Jupiter API key for SlopeSniper users.
-    Users can override this by setting JUPITER_API_KEY environment variable.
+    Key is XOR-obfuscated to prevent casual scraping.
 
-    No authentication required - this is public config.
+    Requires X-SlopeSniper-Client header to identify legitimate clients.
     """
+    # Require client identifier header
+    if not x_slopesniper_client or not x_slopesniper_client.startswith("slopesniper/"):
+        return {
+            "error": "Invalid client",
+            "message": "This endpoint is for SlopeSniper clients only"
+        }
+
     return {
-        "key": _BUNDLED_JUP_KEY,
-        "note": "For higher rate limits, get your own key at portal.jup.ag"
+        "k": _xor_obfuscate(_BUNDLED_JUP_KEY, _OBFUSCATION_KEY),
+        "v": 1,  # Version for future changes
     }
 
 

@@ -76,13 +76,28 @@ class JupiterUltraClient:
             import urllib.request
             import json
 
-            req = urllib.request.Request(config_url, headers={"User-Agent": "SlopeSniper"})
+            req = urllib.request.Request(
+                config_url,
+                headers={
+                    "User-Agent": "SlopeSniper",
+                    "X-SlopeSniper-Client": "slopesniper/0.1.0"
+                }
+            )
             with urllib.request.urlopen(req, timeout=5) as resp:
                 data = json.loads(resp.read().decode())
-                key = data.get("key", "")
-                if key:
-                    self.logger.debug("[_get_bundled_key] Fetched key from config endpoint")
-                    return key
+
+                # Decode obfuscated key (v1 format)
+                if data.get("v") == 1 and data.get("k"):
+                    key = self._xor_deobfuscate(data["k"], "slopesniper2024")
+                    if key:
+                        self.logger.debug("[_get_bundled_key] Fetched key from config endpoint")
+                        return key
+
+                # Legacy format (plain key)
+                if data.get("key"):
+                    self.logger.debug("[_get_bundled_key] Fetched key from config endpoint (legacy)")
+                    return data["key"]
+
         except Exception as e:
             self.logger.debug(f"[_get_bundled_key] Could not fetch from endpoint: {e}")
 
@@ -92,6 +107,16 @@ class JupiterUltraClient:
         try:
             self.logger.debug("[_get_bundled_key] Using fallback embedded key")
             return base64.b64decode(_k).decode()
+        except Exception:
+            return ""
+
+    def _xor_deobfuscate(self, encoded: str, key: str) -> str:
+        """Decode XOR-obfuscated string."""
+        import base64
+        try:
+            xored = base64.b64decode(encoded)
+            key_bytes = (key * ((len(xored) // len(key)) + 1))[:len(xored)]
+            return bytes(a ^ b for a, b in zip(xored, key_bytes.encode())).decode()
         except Exception:
             return ""
 
