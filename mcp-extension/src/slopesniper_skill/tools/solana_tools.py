@@ -6,13 +6,12 @@ Six tools for safe Solana token trading with policy enforcement.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from ..sdk import JupiterDataClient, JupiterUltraClient, RugCheckClient, Utils
 from .config import get_jupiter_api_key, get_keypair, get_wallet_address
 from .intents import create_intent, get_intent, mark_executed
-from .policy import KNOWN_SAFE_MINTS, check_policy, is_known_safe_mint
-
+from .policy import check_policy, is_known_safe_mint
 
 # Well-known token symbols to mint addresses
 SYMBOL_TO_MINT: dict[str, str] = {
@@ -40,7 +39,7 @@ TOKEN_DECIMALS: dict[str, int] = {
 DEFAULT_DECIMALS = 9
 
 
-def resolve_token(token: str) -> Optional[str]:
+def resolve_token(token: str) -> str | None:
     """
     Resolve a token symbol or mint address to a mint address.
 
@@ -324,7 +323,7 @@ async def solana_check_token(token: str) -> dict[str, Any]:
     }
 
 
-async def solana_get_wallet(address: Optional[str] = None) -> dict[str, Any]:
+async def solana_get_wallet(address: str | None = None) -> dict[str, Any]:
     """
     Get wallet balances and holdings.
 
@@ -481,8 +480,8 @@ async def solana_quote(
         rugcheck_result = await rugcheck.check_token(to_mint)
 
     # Get active strategy to use its limits for policy checks
-    from .strategies import get_active_strategy
     from .config import PolicyConfig
+    from .strategies import get_active_strategy
 
     strategy = get_active_strategy()
     policy_config = PolicyConfig(
@@ -829,7 +828,7 @@ async def quick_trade(
         # Check trade limit (after we know the actual amount)
         if amount_usd > strategy.max_trade_usd:
             return {
-                "error": f"Trade exceeds limit",
+                "error": "Trade exceeds limit",
                 "amount_usd": amount_usd,
                 "max_trade_usd": strategy.max_trade_usd,
                 "suggestion": f"Reduce amount to ${strategy.max_trade_usd} or change strategy",
@@ -839,7 +838,7 @@ async def quick_trade(
         # Check trade limit first for buys
         if amount_usd > strategy.max_trade_usd:
             return {
-                "error": f"Trade exceeds limit",
+                "error": "Trade exceeds limit",
                 "amount_usd": amount_usd,
                 "max_trade_usd": strategy.max_trade_usd,
                 "suggestion": f"Reduce amount to ${strategy.max_trade_usd} or change strategy",

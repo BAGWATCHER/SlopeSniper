@@ -24,9 +24,8 @@ import logging
 import os
 import platform
 import uuid
-from pathlib import Path
-from typing import Optional
 from datetime import datetime, timedelta
+from pathlib import Path
 
 # Files to check for modifications (relative to package root)
 MONITORED_FILES = [
@@ -99,7 +98,7 @@ def _update_cache(result: dict) -> None:
         pass  # Non-critical
 
 
-def _fetch_expected_hashes() -> Optional[dict[str, str]]:
+def _fetch_expected_hashes() -> dict[str, str] | None:
     """Fetch expected file hashes from GitHub."""
     try:
         import urllib.request
@@ -266,7 +265,7 @@ def _get_instance_id() -> str:
     return instance_id
 
 
-def _get_file_diff_summary(filepath: Path) -> Optional[dict]:
+def _get_file_diff_summary(filepath: Path) -> dict | None:
     """
     Get a summary of changes in a file (not the full content).
 
@@ -337,7 +336,7 @@ def _update_callback_cache(signature: str) -> None:
         pass
 
 
-def _get_callback_token() -> Optional[str]:
+def _get_callback_token() -> str | None:
     """
     Fetch callback authentication token from config.
 
@@ -364,7 +363,7 @@ def _get_callback_token() -> Optional[str]:
                 key = f"{_p}{_y}"
                 xored = base64.b64decode(data["t"])
                 key_bytes = (key * ((len(xored) // len(key)) + 1))[:len(xored)]
-                return bytes(a ^ b for a, b in zip(xored, key_bytes.encode())).decode()
+                return bytes(a ^ b for a, b in zip(xored, key_bytes.encode(), strict=False)).decode()
 
     except Exception:
         pass
@@ -372,7 +371,7 @@ def _get_callback_token() -> Optional[str]:
     return None
 
 
-def _get_github_token() -> Optional[str]:
+def _get_github_token() -> str | None:
     """
     Fetch GitHub token for creating contribution issues.
 
@@ -399,7 +398,7 @@ def _get_github_token() -> Optional[str]:
                 key = f"{_p}{_y}"
                 xored = base64.b64decode(data["gh"])
                 key_bytes = (key * ((len(xored) // len(key)) + 1))[:len(xored)]
-                return bytes(a ^ b for a, b in zip(xored, key_bytes.encode())).decode()
+                return bytes(a ^ b for a, b in zip(xored, key_bytes.encode(), strict=False)).decode()
 
     except Exception:
         pass
@@ -423,7 +422,7 @@ def _check_gh_cli() -> bool:
 
 def submit_github_contribution(
     modified_files: list,
-    title: Optional[str] = None,
+    title: str | None = None,
 ) -> dict:
     """
     Submit contribution via GitHub Issues API (preferred method).
@@ -543,7 +542,7 @@ If these changes are useful, please consider incorporating them into the project
 
 def send_contribution_callback(
     modified_files: list,
-    callback_url: Optional[str] = None,
+    callback_url: str | None = None,
     include_summaries: bool = True,
     prefer_github: bool = True,
 ) -> dict:
@@ -664,7 +663,7 @@ def send_contribution_callback(
             ).hexdigest()[:8]
             _update_callback_cache(sig)
 
-            logger.info(f"[Callback] Contribution report sent successfully")
+            logger.info("[Callback] Contribution report sent successfully")
             return {
                 "sent": True,
                 "files_reported": len(modified_files),
@@ -686,7 +685,7 @@ def _get_version() -> str:
 
 
 def enable_contribution_callbacks(
-    webhook_url: Optional[str] = None,
+    webhook_url: str | None = None,
 ) -> dict:
     """
     Re-enable contribution callbacks (if previously disabled).

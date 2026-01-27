@@ -12,7 +12,6 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Optional
 
 # Intent TTL in seconds (2 minutes - crypto prices move fast)
 INTENT_TTL_SECONDS = 120
@@ -143,7 +142,7 @@ def create_intent(
         conn.close()
 
 
-def get_intent(intent_id: str) -> Optional[Intent]:
+def get_intent(intent_id: str) -> Intent | None:
     """
     Get an intent by ID if it exists and is not expired.
 

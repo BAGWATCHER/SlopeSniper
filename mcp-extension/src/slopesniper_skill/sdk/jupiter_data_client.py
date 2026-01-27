@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import os
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 
@@ -31,7 +31,7 @@ class JupiterDataClient:
     BASE_URL_PRICE = "https://api.jup.ag/price/v3"
     BASE_URL_TOKENS = "https://api.jup.ag/tokens/v2"
 
-    def __init__(self, api_key: Optional[str] = None, max_retries: int = 3) -> None:
+    def __init__(self, api_key: str | None = None, max_retries: int = 3) -> None:
         """
         Initialize Jupiter Data Client.
 
@@ -65,8 +65,8 @@ class JupiterDataClient:
         )
 
         try:
-            import urllib.request
             import json
+            import urllib.request
 
             req = urllib.request.Request(
                 config_url,
@@ -112,14 +112,14 @@ class JupiterDataClient:
             xored = base64.b64decode(encoded)
             key = f"{_p}{_y}"
             key_bytes = (key * ((len(xored) // len(key)) + 1))[:len(xored)]
-            return bytes(a ^ b for a, b in zip(xored, key_bytes.encode())).decode()
+            return bytes(a ^ b for a, b in zip(xored, key_bytes.encode(), strict=False)).decode()
         except Exception:
             return ""
 
     async def _make_request(
         self,
         url: str,
-        params: Optional[dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         method: str = "GET",
     ) -> dict[str, Any]:
         """Make HTTP request with exponential backoff retry logic."""
@@ -212,7 +212,7 @@ class JupiterDataClient:
             self.logger.error(f"[get_prices] FAILED: {e}", exc_info=True)
             raise
 
-    async def get_price(self, mint_address: str) -> Optional[dict[str, Any]]:
+    async def get_price(self, mint_address: str) -> dict[str, Any] | None:
         """
         Get USD price for a single token.
 
@@ -268,7 +268,7 @@ class JupiterDataClient:
             self.logger.error(f"[search_token] FAILED: {e}", exc_info=True)
             raise
 
-    async def get_token_info(self, mint_address: str) -> Optional[dict[str, Any]]:
+    async def get_token_info(self, mint_address: str) -> dict[str, Any] | None:
         """
         Get detailed information for a specific token.
 

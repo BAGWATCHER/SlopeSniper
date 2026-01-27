@@ -40,7 +40,7 @@ def print_json(data: dict) -> None:
 
 async def cmd_status() -> None:
     """Full status: wallet, holdings, strategy, and config."""
-    from . import get_status, solana_get_wallet, get_strategy
+    from . import get_status, get_strategy, solana_get_wallet
     from .tools.config import get_config_status
 
     # Get all status info
@@ -168,10 +168,10 @@ def cmd_config(
 ) -> None:
     """View or update configuration."""
     from .tools.config import (
+        clear_rpc_config,
         get_config_status,
         set_jupiter_api_key,
         set_rpc_config,
-        clear_rpc_config,
     )
 
     if set_key and set_value:
@@ -218,8 +218,8 @@ def cmd_version(check_latest: bool = False) -> None:
 
     if check_latest:
         try:
-            import urllib.request
             import re
+            import urllib.request
 
             # Fetch pyproject.toml from GitHub to get latest version
             url = "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/mcp-extension/pyproject.toml"
@@ -241,8 +241,8 @@ def cmd_version(check_latest: bool = False) -> None:
 
 def cmd_update() -> None:
     """Update to latest version from GitHub."""
-    import subprocess
     import re
+    import subprocess
     import urllib.request
 
     from . import __version__
@@ -383,8 +383,8 @@ def cmd_contribute(
     """Manage contribution callbacks and check for improvements."""
     from .integrity import (
         check_and_report,
-        enable_contribution_callbacks,
         disable_contribution_callbacks,
+        enable_contribution_callbacks,
     )
     from .tools.config import load_user_config
 

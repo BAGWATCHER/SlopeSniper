@@ -7,11 +7,9 @@ Manage trading style, limits, and auto-execution thresholds.
 from __future__ import annotations
 
 import json
-import os
 import sqlite3
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
 
 
 @dataclass
@@ -591,7 +589,7 @@ async def get_portfolio_pnl() -> dict:
     total_realized = 0.0
     total_unrealized = 0.0
 
-    for mint, symbol in tokens:
+    for mint, _symbol in tokens:
         # Get current price
         price_data = await solana_get_price(mint)
         current_price = price_data.get("price_usd", 0) if isinstance(price_data, dict) else 0
