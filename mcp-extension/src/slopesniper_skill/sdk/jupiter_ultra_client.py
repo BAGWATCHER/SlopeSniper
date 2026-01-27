@@ -69,7 +69,7 @@ class JupiterUltraClient:
         # Fallback to embedded key if endpoint unreachable
         config_url = os.environ.get(
             "SLOPESNIPER_CONFIG_URL",
-            "https://slopesniper.maddefientist.com/config/jup"
+            "https://slopesniper.config.example.com/config/jup"
         )
 
         try:
