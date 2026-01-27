@@ -8,6 +8,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Version](https://img.shields.io/badge/version-0.2.2-green.svg)](https://github.com/maddefientist/SlopeSniper/releases)
 
 [Quick Start](#-quick-start) · [Features](#-features) · [Documentation](#-documentation) · [Contributing](#-contributing)
 
@@ -90,7 +91,8 @@ No commands to memorize. Just describe what you want:
 |---------|--------------|
 | "Buy $25 of BONK" | Resolves token → safety check → quote → execute |
 | "Sell half my WIF" | Calculates 50% of holdings → executes sell |
-| "What's pumping?" | Scans for trending tokens with volume spikes |
+| "What's pumping?" | Scans DexScreener for trending tokens |
+| "Scan for new tokens" | Finds newly listed pairs |
 | "Is POPCAT safe?" | Runs rugcheck analysis, shows risk factors |
 | "Set aggressive mode" | Increases trade limits and auto-execution threshold |
 
@@ -134,20 +136,39 @@ For trades above your auto-execute threshold, you'll be asked to confirm first.
 ### CLI Reference
 
 ```bash
+# Trading
 slopesniper status              # Check wallet and trading readiness
 slopesniper price SOL           # Get current token price
-slopesniper price BONK          # Get meme coin price
 slopesniper buy BONK 25         # Buy $25 of BONK
 slopesniper sell WIF 50         # Sell $50 worth of WIF
-slopesniper check POPCAT        # Run safety analysis
+
+# Discovery
 slopesniper search "dog"        # Search for tokens
+slopesniper resolve BONK        # Get mint address from symbol
+slopesniper scan                # Scan all opportunities
+slopesniper scan trending       # Scan trending tokens
+slopesniper scan pumping        # Scan tokens with price spikes
+
+# Safety
+slopesniper check POPCAT        # Run safety analysis
+
+# Strategy
 slopesniper strategy            # View current strategy
 slopesniper strategy aggressive # Change to aggressive mode
+
+# Configuration
+slopesniper config              # View current config
+slopesniper config --set-jupiter-key KEY  # Set custom API key (10x faster!)
+
+# Updates
+slopesniper version             # Show current version
+slopesniper version --check     # Check for updates
+slopesniper update              # Update to latest version
 ```
 
 ### Wallet Management
 
-Your wallet is stored locally at `~/.slopesniper/wallet.json`. The private key is shown **only once** at creation—make sure to save it!
+Your wallet is **encrypted** and stored at `~/.slopesniper/wallet.enc`. The private key is shown **only once** at creation—make sure to save it!
 
 **To view your wallet address:**
 ```bash
@@ -157,13 +178,34 @@ slopesniper status
 **To import an existing wallet:**
 Set the `SOLANA_PRIVATE_KEY` environment variable before running any commands.
 
+**Storage locations:**
+```
+~/.slopesniper/
+├── wallet.enc      # Encrypted private key (AES-128)
+├── config.enc      # Encrypted user config (Jupiter API key, etc.)
+└── .machine_key    # Salt for key derivation
+```
+
 ### Configuration
+
+**View current config:**
+```bash
+slopesniper config
+```
+
+**Set your own Jupiter API key (10x better performance):**
+```bash
+slopesniper config --set-jupiter-key YOUR_KEY
+```
+Get a free key at: https://station.jup.ag/docs/apis/ultra-api
+
+**Environment Variables:**
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `SOLANA_PRIVATE_KEY` | No | Override auto-generated wallet |
 | `SOLANA_RPC_URL` | No | Custom RPC endpoint (defaults to public mainnet) |
-| `JUPITER_API_KEY` | No | Your own Jupiter key for higher rate limits |
+| `JUPITER_API_KEY` | No | Your own Jupiter key (or use `slopesniper config`) |
 
 ### Trading Limits
 
@@ -183,11 +225,22 @@ export POLICY_MAX_SLIPPAGE_BPS=50  # 0.5%
 
 ## 🔐 Security
 
+### Encryption & Storage
+
+| Layer | Implementation |
+|-------|----------------|
+| **Wallet Encryption** | Fernet (AES-128-CBC) |
+| **Key Derivation** | PBKDF2 + machine fingerprint + random salt (100k iterations) |
+| **File Permissions** | Directory 700, files 600 |
+| **Machine Binding** | Wallet can only be decrypted on the machine that created it |
+| **API Keys** | User's Jupiter API key stored encrypted |
+
 ### What We Do
 
+- **Encrypted Storage** - Wallet and config encrypted at rest with machine-specific key
+- **Machine-Bound Keys** - Wallet files cannot be decrypted on a different machine
 - **Isolated Wallet** - Auto-generates a dedicated trading wallet separate from your main holdings
-- **Local Storage** - Private keys stored only on your machine (`~/.slopesniper/`)
-- **No Key Exposure** - Private keys never sent to any API or logged
+- **No Secrets in Code** - No API keys or credentials embedded in source
 - **Rugcheck Integration** - Every trade runs safety analysis first
 - **Two-Step Trades** - Large trades require explicit confirmation
 
@@ -197,7 +250,8 @@ export POLICY_MAX_SLIPPAGE_BPS=50  # 0.5%
 2. **Fund conservatively** - Only deposit what you're actively trading
 3. **Start with conservative mode** - Get comfortable before increasing limits
 4. **Save your private key** - It's only shown once at wallet creation
-5. **Monitor your transactions** - Check Solscan for trade history
+5. **Set your own Jupiter API key** - `slopesniper config --set-jupiter-key` for 10x better performance
+6. **Monitor your transactions** - Check Solscan for trade history
 
 ---
 
