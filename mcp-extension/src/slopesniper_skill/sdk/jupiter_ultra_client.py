@@ -41,9 +41,7 @@ class JupiterUltraClient:
     SOL_MINT = "So11111111111111111111111111111111111111112"
     USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 
-    def __init__(
-        self, api_key: str | None = None, max_retries: int = 5
-    ) -> None:
+    def __init__(self, api_key: str | None = None, max_retries: int = 5) -> None:
         """
         Initialize Jupiter Ultra Client.
 
@@ -74,7 +72,7 @@ class JupiterUltraClient:
         """
         config_url = os.environ.get(
             "SLOPESNIPER_CONFIG_URL",
-            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/jup.json"
+            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/jup.json",
         )
 
         try:
@@ -82,8 +80,7 @@ class JupiterUltraClient:
             import urllib.request
 
             req = urllib.request.Request(
-                config_url,
-                headers={"User-Agent": f"SlopeSniper/{self._get_version()}"}
+                config_url, headers={"User-Agent": f"SlopeSniper/{self._get_version()}"}
             )
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode())
@@ -114,6 +111,7 @@ class JupiterUltraClient:
         """Get package version for User-Agent."""
         try:
             from .. import __version__
+
             return __version__
         except Exception:
             return "0.0.0"
@@ -121,13 +119,14 @@ class JupiterUltraClient:
     def _decode_v1(self, encoded: str) -> str:
         """Decode v1 format (XOR obfuscated)."""
         import base64
+
         # Key components derived from package identity
         _p = "slopesniper"
         _y = "2024"
         try:
             xored = base64.b64decode(encoded)
             key = f"{_p}{_y}"
-            key_bytes = (key * ((len(xored) // len(key)) + 1))[:len(xored)]
+            key_bytes = (key * ((len(xored) // len(key)) + 1))[: len(xored)]
             return bytes(a ^ b for a, b in zip(xored, key_bytes.encode(), strict=False)).decode()
         except Exception:
             return ""
@@ -287,9 +286,7 @@ class JupiterUltraClient:
             self.logger.error(f"[get_order] FAILED: {e}", exc_info=True)
             raise
 
-    async def execute_swap(
-        self, signed_transaction: str, request_id: str
-    ) -> dict[str, Any]:
+    async def execute_swap(self, signed_transaction: str, request_id: str) -> dict[str, Any]:
         """
         Execute a signed swap transaction.
 
@@ -309,9 +306,7 @@ class JupiterUltraClient:
 
         try:
             url = f"{self.BASE_URL}/execute"
-            data = await self._make_request(
-                url=url, method="POST", json_data=payload, timeout=60
-            )
+            data = await self._make_request(url=url, method="POST", json_data=payload, timeout=60)
 
             status = data.get("status")
             signature = data.get("signature")
@@ -323,8 +318,7 @@ class JupiterUltraClient:
                 )
             else:
                 self.logger.error(
-                    f"[execute_swap] FAILED: status={status}, "
-                    f"error={data.get('error')}"
+                    f"[execute_swap] FAILED: status={status}, error={data.get('error')}"
                 )
 
             return data

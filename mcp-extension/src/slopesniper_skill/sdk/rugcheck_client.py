@@ -27,9 +27,7 @@ class RugCheckClient:
         self.base_url = "https://api.rugcheck.xyz/v1"
         self.timeout = timeout
 
-    async def get_report_summary(
-        self, contract_address: str
-    ) -> dict[str, Any] | None:
+    async def get_report_summary(self, contract_address: str) -> dict[str, Any] | None:
         """
         Fetch report summary from RugCheck API.
 
@@ -62,9 +60,7 @@ class RugCheckClient:
             self.logger.exception(f"[get_report_summary] Unexpected error: {e}")
             return None
 
-    async def check_token(
-        self, contract_address: str, max_score: int = 2000
-    ) -> dict[str, Any]:
+    async def check_token(self, contract_address: str, max_score: int = 2000) -> dict[str, Any]:
         """
         Check token and return risk assessment.
 

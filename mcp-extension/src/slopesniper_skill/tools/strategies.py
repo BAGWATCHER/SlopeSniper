@@ -367,15 +367,17 @@ async def list_strategies() -> dict:
 
     presets = []
     for name, strategy in STRATEGY_PRESETS.items():
-        presets.append({
-            "name": name,
-            "description": strategy.description,
-            "max_trade_usd": strategy.max_trade_usd,
-            "auto_execute_under_usd": strategy.auto_execute_under_usd,
-            "slippage_bps": strategy.slippage_bps,
-            "require_rugcheck": strategy.require_rugcheck,
-            "is_active": name == active.name,
-        })
+        presets.append(
+            {
+                "name": name,
+                "description": strategy.description,
+                "max_trade_usd": strategy.max_trade_usd,
+                "auto_execute_under_usd": strategy.auto_execute_under_usd,
+                "slippage_bps": strategy.slippage_bps,
+                "require_rugcheck": strategy.require_rugcheck,
+                "is_active": name == active.name,
+            }
+        )
 
     return {
         "active_strategy": active.name,

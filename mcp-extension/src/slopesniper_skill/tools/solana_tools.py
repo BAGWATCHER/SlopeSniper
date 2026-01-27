@@ -174,7 +174,9 @@ async def solana_resolve_token(token: str) -> dict[str, Any]:
             }
             for r in results[1:5]  # Up to 4 alternatives
         ]
-        response["note"] = "Multiple matches found. Using best match. See 'alternatives' for other options."
+        response["note"] = (
+            "Multiple matches found. Using best match. See 'alternatives' for other options."
+        )
 
     return response
 
@@ -240,15 +242,17 @@ async def solana_search_token(query: str) -> list[dict[str, Any]]:
     tokens = []
     for token in results[:10]:  # Limit to top 10
         # Jupiter API uses "id" for mint address
-        tokens.append({
-            "symbol": token.get("symbol", ""),
-            "name": token.get("name", ""),
-            "mint": token.get("id") or token.get("address", ""),
-            "verified": token.get("isVerified", False),
-            "liquidity": token.get("liquidity"),
-            "market_cap": token.get("mcap"),
-            "price_usd": token.get("usdPrice"),
-        })
+        tokens.append(
+            {
+                "symbol": token.get("symbol", ""),
+                "name": token.get("name", ""),
+                "mint": token.get("id") or token.get("address", ""),
+                "verified": token.get("isVerified", False),
+                "liquidity": token.get("liquidity"),
+                "market_cap": token.get("mcap"),
+                "price_usd": token.get("usdPrice"),
+            }
+        )
 
     return tokens
 
@@ -403,12 +407,14 @@ async def solana_get_wallet(address: str | None = None) -> dict[str, Any]:
             price = token_prices.get(mint, 0)
             value_usd = total_amount * price if price > 0 else None
 
-            tokens.append({
-                "mint": mint,
-                "symbol": token_symbols.get(mint, mint[:8]),
-                "amount": total_amount,
-                "value_usd": value_usd,
-            })
+            tokens.append(
+                {
+                    "mint": mint,
+                    "symbol": token_symbols.get(mint, mint[:8]),
+                    "amount": total_amount,
+                    "value_usd": value_usd,
+                }
+            )
 
     return {
         "address": address,
@@ -440,13 +446,9 @@ async def solana_quote(
     """
     # Validate inputs are mint addresses, not symbols
     if not Utils.is_valid_solana_address(from_mint):
-        return {
-            "error": f"from_mint must be a valid mint address, not a symbol. Got: {from_mint}"
-        }
+        return {"error": f"from_mint must be a valid mint address, not a symbol. Got: {from_mint}"}
     if not Utils.is_valid_solana_address(to_mint):
-        return {
-            "error": f"to_mint must be a valid mint address, not a symbol. Got: {to_mint}"
-        }
+        return {"error": f"to_mint must be a valid mint address, not a symbol. Got: {to_mint}"}
 
     # Get user's wallet
     keypair = get_keypair()
@@ -650,7 +652,9 @@ async def solana_swap_confirm(intent_id: str) -> dict[str, Any]:
             symbol = _get_symbol_for_mint(trade_mint)
 
             # Calculate price per token
-            price_per_token = trade_amount_usd / trade_amount_tokens if trade_amount_tokens > 0 else 0
+            price_per_token = (
+                trade_amount_usd / trade_amount_tokens if trade_amount_tokens > 0 else 0
+            )
 
             record_trade(
                 action=action,

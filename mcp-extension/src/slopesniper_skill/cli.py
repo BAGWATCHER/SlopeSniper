@@ -79,6 +79,7 @@ async def cmd_status() -> None:
 async def cmd_wallet() -> None:
     """Show wallet address and holdings."""
     from . import solana_get_wallet
+
     result = await solana_get_wallet()
     print_json(result)
 
@@ -90,14 +91,17 @@ async def cmd_export(
     """Export private key for backup/recovery."""
     if list_backups:
         from .tools.onboarding import list_backup_wallets
+
         result = await list_backup_wallets()
         print_json(result)
     elif backup_timestamp:
         from .tools.onboarding import export_backup
+
         result = await export_backup(backup_timestamp)
         print_json(result)
     else:
         from . import export_wallet
+
         result = await export_wallet(include_backups=True)
         print_json(result)
 
@@ -105,6 +109,7 @@ async def cmd_export(
 async def cmd_pnl() -> None:
     """Show portfolio profit/loss."""
     from . import get_portfolio_pnl
+
     result = await get_portfolio_pnl()
     print_json(result)
 
@@ -112,6 +117,7 @@ async def cmd_pnl() -> None:
 def cmd_history(limit: int = 20) -> None:
     """Show trade history."""
     from . import get_trade_history
+
     result = get_trade_history(limit=limit)
     print_json({"trades": result, "count": len(result)})
 
@@ -119,6 +125,7 @@ def cmd_history(limit: int = 20) -> None:
 async def cmd_price(token: str) -> None:
     """Get token price."""
     from . import solana_get_price
+
     result = await solana_get_price(token)
     print_json(result)
 
@@ -126,6 +133,7 @@ async def cmd_price(token: str) -> None:
 async def cmd_buy(token: str, amount_usd: float) -> None:
     """Buy tokens."""
     from . import quick_trade
+
     result = await quick_trade("buy", token, amount_usd)
     print_json(result)
 
@@ -133,6 +141,7 @@ async def cmd_buy(token: str, amount_usd: float) -> None:
 async def cmd_sell(token: str, amount_usd: float) -> None:
     """Sell tokens."""
     from . import quick_trade
+
     result = await quick_trade("sell", token, amount_usd)
     print_json(result)
 
@@ -140,6 +149,7 @@ async def cmd_sell(token: str, amount_usd: float) -> None:
 async def cmd_check(token: str) -> None:
     """Run safety check on token."""
     from . import solana_check_token
+
     result = await solana_check_token(token)
     print_json(result)
 
@@ -147,6 +157,7 @@ async def cmd_check(token: str) -> None:
 async def cmd_search(query: str) -> None:
     """Search for tokens."""
     from . import solana_search_token
+
     result = await solana_search_token(query)
     print_json(result)
 
@@ -154,6 +165,7 @@ async def cmd_search(query: str) -> None:
 async def cmd_resolve(token: str) -> None:
     """Resolve token symbol to mint address."""
     from . import solana_resolve_token
+
     result = await solana_resolve_token(token)
     print_json(result)
 
@@ -162,9 +174,11 @@ async def cmd_strategy(name: str | None = None) -> None:
     """View or set trading strategy."""
     if name:
         from . import set_strategy
+
         result = await set_strategy(name)
     else:
         from . import get_strategy
+
         result = await get_strategy()
     print_json(result)
 
@@ -172,6 +186,7 @@ async def cmd_strategy(name: str | None = None) -> None:
 async def cmd_scan(filter_type: str = "all") -> None:
     """Scan for trading opportunities."""
     from . import scan_opportunities
+
     result = await scan_opportunities(filter_type)
     print_json(result)
 
@@ -202,9 +217,10 @@ def cmd_config(
         elif key_lower in ("helius", "quicknode", "alchemy"):
             result = set_rpc_config(key_lower, set_value)
         else:
-            result = {"error": f"Unknown config key: {set_key}", "valid_keys": [
-                "jupiter-key", "rpc-url", "helius", "quicknode", "alchemy"
-            ]}
+            result = {
+                "error": f"Unknown config key: {set_key}",
+                "valid_keys": ["jupiter-key", "rpc-url", "helius", "quicknode", "alchemy"],
+            }
         print_json(result)
 
     elif clear_key:
@@ -261,6 +277,7 @@ def cmd_update() -> None:
     import urllib.request
 
     from . import __version__
+
     old_version = __version__
 
     print("Updating SlopeSniper...")
@@ -274,13 +291,15 @@ def cmd_update() -> None:
     try:
         result = subprocess.run(
             [
-                "uv", "tool", "install",
+                "uv",
+                "tool",
+                "install",
                 "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension",
                 "--force",
                 "--refresh",  # Bust git cache
             ],
             capture_output=True,
-            text=True
+            text=True,
         )
         if result.returncode == 0:
             success = True
@@ -293,13 +312,15 @@ def cmd_update() -> None:
         try:
             result = subprocess.run(
                 [
-                    "uv", "pip", "install",
+                    "uv",
+                    "pip",
+                    "install",
                     "--force-reinstall",
                     "--refresh",  # Bust git cache
-                    "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension"
+                    "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension",
                 ],
                 capture_output=True,
-                text=True
+                text=True,
             )
             if result.returncode == 0:
                 success = True
@@ -312,13 +333,14 @@ def cmd_update() -> None:
         try:
             result = subprocess.run(
                 [
-                    "pip", "install",
+                    "pip",
+                    "install",
                     "--force-reinstall",
                     "--no-cache-dir",  # Bust pip cache
-                    "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension"
+                    "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension",
                 ],
                 capture_output=True,
-                text=True
+                text=True,
             )
             if result.returncode == 0:
                 success = True
@@ -327,10 +349,12 @@ def cmd_update() -> None:
             pass
 
     if not success:
-        print_json({
-            "error": "Update failed",
-            "suggestion": "Try manually: uv tool install 'slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension' --force"
-        })
+        print_json(
+            {
+                "error": "Update failed",
+                "suggestion": "Try manually: uv tool install 'slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension' --force",
+            }
+        )
         return
 
     # Fetch new version from GitHub
@@ -352,11 +376,11 @@ def cmd_update() -> None:
         with urllib.request.urlopen(req, timeout=5) as resp:
             changelog = resp.read().decode()
             # Extract first version section (after [Unreleased])
-            lines = changelog.split('\n')
+            lines = changelog.split("\n")
             in_section = False
             section_count = 0
             for line in lines:
-                if line.startswith('## [') and 'Unreleased' not in line:
+                if line.startswith("## [") and "Unreleased" not in line:
                     if section_count == 0:
                         in_section = True
                         changelog_summary.append(line)
@@ -364,7 +388,7 @@ def cmd_update() -> None:
                     else:
                         break
                 elif in_section:
-                    if line.startswith('## ['):
+                    if line.startswith("## ["):
                         break
                     if line.strip():
                         changelog_summary.append(line)
@@ -413,6 +437,7 @@ def cmd_uninstall(keep_data: bool = False, confirm: bool = False) -> None:
         # Try to show the address
         try:
             from .tools.config import load_local_wallet
+
             wallet = load_local_wallet()
             if wallet:
                 print(f"  Wallet address: {wallet['address']}")
@@ -460,8 +485,7 @@ def cmd_uninstall(keep_data: bool = False, confirm: bool = False) -> None:
     # Try uv tool uninstall
     try:
         result = subprocess.run(
-            ["uv", "tool", "uninstall", "slopesniper-mcp"],
-            capture_output=True, text=True
+            ["uv", "tool", "uninstall", "slopesniper-mcp"], capture_output=True, text=True
         )
         if result.returncode == 0:
             success = True
@@ -473,8 +497,7 @@ def cmd_uninstall(keep_data: bool = False, confirm: bool = False) -> None:
     if not success:
         try:
             result = subprocess.run(
-                ["pip", "uninstall", "-y", "slopesniper-mcp"],
-                capture_output=True, text=True
+                ["pip", "uninstall", "-y", "slopesniper-mcp"], capture_output=True, text=True
             )
             if result.returncode == 0:
                 success = True

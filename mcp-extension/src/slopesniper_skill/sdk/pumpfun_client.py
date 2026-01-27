@@ -33,12 +33,7 @@ class PumpFunClient:
     def __init__(self) -> None:
         self.logger = Utils.setup_logger("PumpFunClient")
 
-    async def _request(
-        self,
-        url: str,
-        params: dict | None = None,
-        timeout: int = 15
-    ) -> Any:
+    async def _request(self, url: str, params: dict | None = None, timeout: int = 15) -> Any:
         """Make API request."""
         self.logger.debug(f"[_request] GET {url}")
 
@@ -51,7 +46,7 @@ class PumpFunClient:
                     headers={
                         "User-Agent": "Mozilla/5.0 (compatible; SlopeSniper/0.1.0)",
                         "Accept": "application/json",
-                    }
+                    },
                 ) as resp:
                     if resp.status == 200:
                         return await resp.json()
@@ -73,8 +68,7 @@ class PumpFunClient:
 
         # Try the graduated coins endpoint
         data = await self._request(
-            f"{self.GRADUATED_URL}/coins/graduated",
-            {"limit": limit, "offset": 0}
+            f"{self.GRADUATED_URL}/coins/graduated", {"limit": limit, "offset": 0}
         )
 
         if data and isinstance(data, list):
@@ -83,8 +77,7 @@ class PumpFunClient:
 
         # Fallback: try king of the hill (top tokens)
         data = await self._request(
-            f"{self.BASE_URL}/coins/king-of-the-hill",
-            {"includeNsfw": "false"}
+            f"{self.BASE_URL}/coins/king-of-the-hill", {"includeNsfw": "false"}
         )
 
         if data and isinstance(data, list):
@@ -103,7 +96,7 @@ class PumpFunClient:
 
         data = await self._request(
             f"{self.BASE_URL}/coins",
-            {"offset": 0, "limit": limit, "sort": "created_timestamp", "order": "DESC"}
+            {"offset": 0, "limit": limit, "sort": "created_timestamp", "order": "DESC"},
         )
 
         if data and isinstance(data, list):
@@ -123,10 +116,7 @@ class PumpFunClient:
         """Get recent trades for a token."""
         self.logger.info(f"[get_token_trades] Fetching trades for {mint[:8]}...")
 
-        data = await self._request(
-            f"{self.BASE_URL}/trades/latest/{mint}",
-            {"limit": limit}
-        )
+        data = await self._request(f"{self.BASE_URL}/trades/latest/{mint}", {"limit": limit})
 
         if data and isinstance(data, list):
             return data
@@ -137,8 +127,7 @@ class PumpFunClient:
         self.logger.info(f"[search_tokens] Searching: {query}")
 
         data = await self._request(
-            f"{self.BASE_URL}/coins/search",
-            {"query": query, "limit": limit}
+            f"{self.BASE_URL}/coins/search", {"query": query, "limit": limit}
         )
 
         if data and isinstance(data, list):

@@ -35,10 +35,7 @@ class DexScreenerClient:
         self.logger = Utils.setup_logger("DexScreenerClient")
 
     async def _request(
-        self,
-        endpoint: str,
-        params: dict | None = None,
-        timeout: int = 15
+        self, endpoint: str, params: dict | None = None, timeout: int = 15
     ) -> dict[str, Any]:
         """Make API request."""
         url = f"{self.BASE_URL}{endpoint}"
@@ -50,7 +47,7 @@ class DexScreenerClient:
                     url,
                     params=params,
                     timeout=aiohttp.ClientTimeout(total=timeout),
-                    headers={"User-Agent": "SlopeSniper/0.1.0"}
+                    headers={"User-Agent": "SlopeSniper/0.1.0"},
                 ) as resp:
                     if resp.status == 200:
                         data = await resp.json()
@@ -154,10 +151,7 @@ class DexScreenerClient:
         return pair
 
     async def get_new_pairs(
-        self,
-        min_liquidity_usd: float = 10000,
-        max_age_hours: int = 24,
-        limit: int = 20
+        self, min_liquidity_usd: float = 10000, max_age_hours: int = 24, limit: int = 20
     ) -> list[dict]:
         """
         Get newly created pairs on Solana.
@@ -212,10 +206,7 @@ class DexScreenerClient:
                 continue
 
         # Sort by volume
-        filtered.sort(
-            key=lambda p: float(p.get("volume", {}).get("h24", 0)),
-            reverse=True
-        )
+        filtered.sort(key=lambda p: float(p.get("volume", {}).get("h24", 0)), reverse=True)
 
         self.logger.info(f"[get_new_pairs] Found {len(filtered)} matching pairs")
         return filtered[:limit]
@@ -253,10 +244,7 @@ class DexScreenerClient:
                 continue
 
         # Sort by volume
-        trending.sort(
-            key=lambda p: float(p.get("volume", {}).get("h24", 0)),
-            reverse=True
-        )
+        trending.sort(key=lambda p: float(p.get("volume", {}).get("h24", 0)), reverse=True)
 
         self.logger.info(f"[get_trending] Found {len(trending)} trending")
         return trending[:limit]

@@ -130,10 +130,7 @@ async def scan_opportunities(
                 opportunities.extend(result)
 
         # Filter by volume
-        opportunities = [
-            o for o in opportunities
-            if (o.volume_24h_usd or 0) >= min_volume_usd
-        ]
+        opportunities = [o for o in opportunities if (o.volume_24h_usd or 0) >= min_volume_usd]
 
         # Add safety scores (batch for efficiency)
         await _add_safety_scores(opportunities[:20], rugcheck)
@@ -144,9 +141,7 @@ async def scan_opportunities(
 
         # Sort: buy > watch > avoid, then by volume
         order = {"buy": 0, "watch": 1, "avoid": 2}
-        opportunities.sort(
-            key=lambda o: (order.get(o.recommendation, 3), -(o.volume_24h_usd or 0))
-        )
+        opportunities.sort(key=lambda o: (order.get(o.recommendation, 3), -(o.volume_24h_usd or 0)))
 
     except Exception as e:
         return [{"error": f"Scan failed: {str(e)}"}]
@@ -210,9 +205,7 @@ async def scan_new_pairs(
 
     try:
         pairs = await dex.get_new_pairs(
-            min_liquidity_usd=min_liquidity_usd,
-            max_age_hours=max_age_hours,
-            limit=limit
+            min_liquidity_usd=min_liquidity_usd, max_age_hours=max_age_hours, limit=limit
         )
 
         results = []
@@ -307,9 +300,7 @@ async def get_token_details(mint_or_symbol: str) -> dict:
 
 
 async def _scan_trending(
-    dex: DexScreenerClient,
-    seen: set[str],
-    min_liquidity: float
+    dex: DexScreenerClient, seen: set[str], min_liquidity: float
 ) -> list[TokenOpportunity]:
     """Scan trending tokens from DexScreener."""
     opportunities = []
@@ -329,26 +320,28 @@ async def _scan_trending(
                 continue
 
             seen.add(mint)
-            opportunities.append(TokenOpportunity(
-                mint=mint,
-                symbol=summary.get("symbol", "???"),
-                name=summary.get("name", "Unknown"),
-                source="dexscreener",
-                signal="trending",
-                price_usd=summary.get("price_usd", 0),
-                price_change_5m=summary.get("price_change_5m"),
-                price_change_1h=summary.get("price_change_1h"),
-                price_change_24h=summary.get("price_change_24h"),
-                volume_24h_usd=summary.get("volume_24h"),
-                liquidity_usd=liquidity,
-                age=summary.get("age"),
-                buys_24h=summary.get("buys_24h"),
-                sells_24h=summary.get("sells_24h"),
-                dex=summary.get("dex"),
-                pair_address=summary.get("pair_address"),
-                url=summary.get("url"),
-                boosted=summary.get("boosted", False),
-            ))
+            opportunities.append(
+                TokenOpportunity(
+                    mint=mint,
+                    symbol=summary.get("symbol", "???"),
+                    name=summary.get("name", "Unknown"),
+                    source="dexscreener",
+                    signal="trending",
+                    price_usd=summary.get("price_usd", 0),
+                    price_change_5m=summary.get("price_change_5m"),
+                    price_change_1h=summary.get("price_change_1h"),
+                    price_change_24h=summary.get("price_change_24h"),
+                    volume_24h_usd=summary.get("volume_24h"),
+                    liquidity_usd=liquidity,
+                    age=summary.get("age"),
+                    buys_24h=summary.get("buys_24h"),
+                    sells_24h=summary.get("sells_24h"),
+                    dex=summary.get("dex"),
+                    pair_address=summary.get("pair_address"),
+                    url=summary.get("url"),
+                    boosted=summary.get("boosted", False),
+                )
+            )
 
     except Exception:
         pass
@@ -357,19 +350,13 @@ async def _scan_trending(
 
 
 async def _scan_new_pairs(
-    dex: DexScreenerClient,
-    seen: set[str],
-    min_liquidity: float
+    dex: DexScreenerClient, seen: set[str], min_liquidity: float
 ) -> list[TokenOpportunity]:
     """Scan new pairs from DexScreener."""
     opportunities = []
 
     try:
-        pairs = await dex.get_new_pairs(
-            min_liquidity_usd=min_liquidity,
-            max_age_hours=24,
-            limit=20
-        )
+        pairs = await dex.get_new_pairs(min_liquidity_usd=min_liquidity, max_age_hours=24, limit=20)
 
         for pair in pairs:
             summary = dex.format_pair_summary(pair)
@@ -379,25 +366,27 @@ async def _scan_new_pairs(
                 continue
 
             seen.add(mint)
-            opportunities.append(TokenOpportunity(
-                mint=mint,
-                symbol=summary.get("symbol", "???"),
-                name=summary.get("name", "Unknown"),
-                source="dexscreener",
-                signal="new_pair",
-                price_usd=summary.get("price_usd", 0),
-                price_change_5m=summary.get("price_change_5m"),
-                price_change_1h=summary.get("price_change_1h"),
-                price_change_24h=summary.get("price_change_24h"),
-                volume_24h_usd=summary.get("volume_24h"),
-                liquidity_usd=summary.get("liquidity_usd"),
-                age=summary.get("age"),
-                buys_24h=summary.get("buys_24h"),
-                sells_24h=summary.get("sells_24h"),
-                dex=summary.get("dex"),
-                pair_address=summary.get("pair_address"),
-                url=summary.get("url"),
-            ))
+            opportunities.append(
+                TokenOpportunity(
+                    mint=mint,
+                    symbol=summary.get("symbol", "???"),
+                    name=summary.get("name", "Unknown"),
+                    source="dexscreener",
+                    signal="new_pair",
+                    price_usd=summary.get("price_usd", 0),
+                    price_change_5m=summary.get("price_change_5m"),
+                    price_change_1h=summary.get("price_change_1h"),
+                    price_change_24h=summary.get("price_change_24h"),
+                    volume_24h_usd=summary.get("volume_24h"),
+                    liquidity_usd=summary.get("liquidity_usd"),
+                    age=summary.get("age"),
+                    buys_24h=summary.get("buys_24h"),
+                    sells_24h=summary.get("sells_24h"),
+                    dex=summary.get("dex"),
+                    pair_address=summary.get("pair_address"),
+                    url=summary.get("url"),
+                )
+            )
 
     except Exception:
         pass
@@ -406,10 +395,7 @@ async def _scan_new_pairs(
 
 
 async def _scan_graduated(
-    pump: PumpFunClient,
-    dex: DexScreenerClient,
-    seen: set[str],
-    min_liquidity: float
+    pump: PumpFunClient, dex: DexScreenerClient, seen: set[str], min_liquidity: float
 ) -> list[TokenOpportunity]:
     """Scan graduated tokens from Pump.fun."""
     opportunities = []
@@ -438,24 +424,26 @@ async def _scan_graduated(
                         continue
 
                     seen.add(mint)
-                    opportunities.append(TokenOpportunity(
-                        mint=mint,
-                        symbol=summary.get("symbol", "???"),
-                        name=summary.get("name", "Unknown"),
-                        source="pumpfun",
-                        signal="graduated",
-                        price_usd=pair_summary.get("price_usd", 0),
-                        price_change_5m=pair_summary.get("price_change_5m"),
-                        price_change_1h=pair_summary.get("price_change_1h"),
-                        price_change_24h=pair_summary.get("price_change_24h"),
-                        volume_24h_usd=pair_summary.get("volume_24h"),
-                        liquidity_usd=liquidity,
-                        age=summary.get("age"),
-                        buys_24h=pair_summary.get("buys_24h"),
-                        sells_24h=pair_summary.get("sells_24h"),
-                        dex=pair_summary.get("dex"),
-                        url=pair_summary.get("url"),
-                    ))
+                    opportunities.append(
+                        TokenOpportunity(
+                            mint=mint,
+                            symbol=summary.get("symbol", "???"),
+                            name=summary.get("name", "Unknown"),
+                            source="pumpfun",
+                            signal="graduated",
+                            price_usd=pair_summary.get("price_usd", 0),
+                            price_change_5m=pair_summary.get("price_change_5m"),
+                            price_change_1h=pair_summary.get("price_change_1h"),
+                            price_change_24h=pair_summary.get("price_change_24h"),
+                            volume_24h_usd=pair_summary.get("volume_24h"),
+                            liquidity_usd=liquidity,
+                            age=summary.get("age"),
+                            buys_24h=pair_summary.get("buys_24h"),
+                            sells_24h=pair_summary.get("sells_24h"),
+                            dex=pair_summary.get("dex"),
+                            url=pair_summary.get("url"),
+                        )
+                    )
             except Exception:
                 continue
 
@@ -468,9 +456,7 @@ async def _scan_graduated(
 
 
 async def _scan_pumping(
-    dex: DexScreenerClient,
-    seen: set[str],
-    min_liquidity: float
+    dex: DexScreenerClient, seen: set[str], min_liquidity: float
 ) -> list[TokenOpportunity]:
     """Scan tokens with significant price increases."""
     opportunities = []
@@ -499,24 +485,26 @@ async def _scan_pumping(
                     continue
 
                 seen.add(mint)
-                opportunities.append(TokenOpportunity(
-                    mint=mint,
-                    symbol=summary.get("symbol", "???"),
-                    name=summary.get("name", "Unknown"),
-                    source="dexscreener",
-                    signal="price_pump",
-                    price_usd=summary.get("price_usd", 0),
-                    price_change_5m=summary.get("price_change_5m"),
-                    price_change_1h=change_1h,
-                    price_change_24h=change_24h,
-                    volume_24h_usd=summary.get("volume_24h"),
-                    liquidity_usd=liquidity,
-                    age=summary.get("age"),
-                    buys_24h=summary.get("buys_24h"),
-                    sells_24h=summary.get("sells_24h"),
-                    dex=summary.get("dex"),
-                    url=summary.get("url"),
-                ))
+                opportunities.append(
+                    TokenOpportunity(
+                        mint=mint,
+                        symbol=summary.get("symbol", "???"),
+                        name=summary.get("name", "Unknown"),
+                        source="dexscreener",
+                        signal="price_pump",
+                        price_usd=summary.get("price_usd", 0),
+                        price_change_5m=summary.get("price_change_5m"),
+                        price_change_1h=change_1h,
+                        price_change_24h=change_24h,
+                        volume_24h_usd=summary.get("volume_24h"),
+                        liquidity_usd=liquidity,
+                        age=summary.get("age"),
+                        buys_24h=summary.get("buys_24h"),
+                        sells_24h=summary.get("sells_24h"),
+                        dex=summary.get("dex"),
+                        url=summary.get("url"),
+                    )
+                )
 
             await asyncio.sleep(0.2)
 
@@ -527,8 +515,7 @@ async def _scan_pumping(
 
 
 async def _add_safety_scores(
-    opportunities: list[TokenOpportunity],
-    rugcheck: RugCheckClient
+    opportunities: list[TokenOpportunity], rugcheck: RugCheckClient
 ) -> None:
     """Add safety scores to opportunities."""
     for opp in opportunities[:10]:  # Limit to avoid rate limits
@@ -672,14 +659,16 @@ async def get_watchlist() -> list[dict]:
     watchlist = []
     for mint, symbol, alert_condition, added_at in rows:
         price_info = prices.get(mint, {})
-        watchlist.append({
-            "mint": mint,
-            "symbol": symbol,
-            "alert_condition": alert_condition,
-            "added_at": added_at,
-            "current_price_usd": price_info.get("price"),
-            "change_24h_pct": price_info.get("change_24h"),
-        })
+        watchlist.append(
+            {
+                "mint": mint,
+                "symbol": symbol,
+                "alert_condition": alert_condition,
+                "added_at": added_at,
+                "current_price_usd": price_info.get("price"),
+                "change_24h_pct": price_info.get("change_24h"),
+            }
+        )
 
     return watchlist
 
