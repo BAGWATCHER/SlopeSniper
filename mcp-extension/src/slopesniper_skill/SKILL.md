@@ -14,12 +14,17 @@ Trade Solana meme coins and tokens using natural language. Just tell me what you
 
 | You say | What happens |
 |---------|--------------|
-| "Check my status" | Shows wallet balance and current strategy |
+| "Check my status" | Shows wallet balance, holdings, and strategy |
+| "Show my wallet" | Lists all token holdings with values |
 | "Buy $25 of BONK" | Purchases BONK tokens |
 | "Sell half my WIF" | Sells 50% of WIF position |
+| "Sell all my POPCAT" | Exits entire position |
+| "What's my PnL?" | Shows realized + unrealized profit/loss |
+| "Show trade history" | Lists recent trades |
 | "What's pumping?" | Scans for opportunities |
 | "Is POPCAT safe?" | Runs rugcheck analysis |
 | "Set aggressive mode" | Changes trading strategy |
+| "Export my key" | Shows private key for backup |
 
 ## Getting Started
 
@@ -66,9 +71,16 @@ For trades above your auto-execute threshold, you'll be asked to confirm first.
 - `buy $X of TOKEN` - Purchase tokens
 - `sell $X of TOKEN` - Sell tokens
 - `sell X% of TOKEN` - Sell percentage of holdings
+- `sell all TOKEN` - Exit entire position
+
+### Account & Wallet
+- `check status` / `am I ready?` - Full status with holdings
+- `show wallet` / `my holdings` - View all token balances
+- `export key` / `backup wallet` - Show private key for backup
+- `what's my PnL?` - Profit/loss summary
+- `trade history` - Recent trades
 
 ### Information
-- `check status` / `am I ready?` - Wallet and config status
 - `price of TOKEN` - Current price (symbol or mint)
 - `search TOKEN` - Find token by name (returns mint addresses)
 - `resolve TOKEN` - Get mint address from symbol
@@ -88,24 +100,42 @@ For trades above your auto-execute threshold, you'll be asked to confirm first.
 Use the `slopesniper` CLI for direct execution:
 
 ```bash
-slopesniper status              # Check wallet and trading readiness
-slopesniper price SOL           # Get token price (works with symbols)
+# Account & Wallet
+slopesniper status              # Full status: wallet, holdings, strategy, config
+slopesniper wallet              # Show wallet address and all token holdings
+slopesniper export              # Export private key for backup/recovery
+slopesniper pnl                 # Show portfolio profit/loss
+slopesniper history             # Show recent trade history
+slopesniper history 50          # Show last 50 trades
+
+# Trading
+slopesniper price SOL           # Get token price
 slopesniper price BONK          # Get meme coin price
 slopesniper buy BONK 25         # Buy $25 of BONK
 slopesniper sell WIF 50         # Sell $50 of WIF
-slopesniper check POPCAT        # Safety check (works with symbols!)
-slopesniper search "dog"        # Search for tokens (returns mint addresses)
+slopesniper sell WIF all        # Sell entire WIF position
+
+# Token Discovery
+slopesniper search "dog"        # Search for tokens by name
+slopesniper check POPCAT        # Safety check (rugcheck analysis)
 slopesniper resolve BONK        # Get mint address from symbol
+slopesniper scan                # Scan for all opportunities
+slopesniper scan trending       # Scan trending tokens
+slopesniper scan new            # Scan new pairs
+slopesniper scan graduated      # Scan pump.fun graduates
+slopesniper scan pumping        # Scan tokens with price spikes
+
+# Strategy & Config
 slopesniper strategy            # View current strategy
 slopesniper strategy aggressive # Set aggressive mode
-slopesniper scan                # Scan for all opportunities
-slopesniper scan trending       # Scan trending tokens only
-slopesniper scan new            # Scan new pairs only
-slopesniper scan pumping        # Scan tokens with price increases
 slopesniper config              # View current configuration
 slopesniper config --set-jupiter-key KEY  # Set custom API key (10x faster!)
+slopesniper config --set-rpc mainnet URL  # Set custom RPC endpoint
+
+# Updates
 slopesniper version             # Show current version
-slopesniper update              # Update to latest version
+slopesniper version --check     # Check for updates
+slopesniper update              # Update to latest version (shows changelog)
 ```
 
 All commands output JSON with mint addresses included for easy chaining.
