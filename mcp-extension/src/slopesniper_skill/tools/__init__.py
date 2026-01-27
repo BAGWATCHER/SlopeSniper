@@ -47,6 +47,9 @@ from .config import (
     get_jupiter_api_key,
     get_policy_config,
     PolicyConfig,
+    set_rpc_config,
+    clear_rpc_config,
+    get_rpc_config_status,
 )
 
 from .policy import (
@@ -103,6 +106,9 @@ __all__ = [
     "get_jupiter_api_key",
     "get_policy_config",
     "PolicyConfig",
+    "set_rpc_config",
+    "clear_rpc_config",
+    "get_rpc_config_status",
     # Policy
     "check_policy",
     "is_known_safe_mint",

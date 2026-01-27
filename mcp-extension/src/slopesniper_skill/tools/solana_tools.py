@@ -82,7 +82,7 @@ async def solana_resolve_token(token: str) -> dict[str, Any]:
     """
     # First check if it's already a valid mint address
     if Utils.is_valid_solana_address(token):
-        data_client = JupiterDataClient()
+        data_client = JupiterDataClient(api_key=get_jupiter_api_key())
         info = await data_client.get_token_info(token)
         return {
             "mint": token,
@@ -105,7 +105,7 @@ async def solana_resolve_token(token: str) -> dict[str, Any]:
         }
 
     # Search for the token
-    data_client = JupiterDataClient()
+    data_client = JupiterDataClient(api_key=get_jupiter_api_key())
     results = await data_client.search_token(token)
 
     if not results:
@@ -156,7 +156,7 @@ async def solana_get_price(token: str) -> dict[str, Any]:
 
     if not mint:
         # Try searching for the token
-        data_client = JupiterDataClient()
+        data_client = JupiterDataClient(api_key=get_jupiter_api_key())
         results = await data_client.search_token(token)
         if results:
             # Jupiter API uses "id" for mint address
@@ -165,7 +165,7 @@ async def solana_get_price(token: str) -> dict[str, Any]:
             return {"error": f"Token not found: {token}"}
 
     # Get price
-    data_client = JupiterDataClient()
+    data_client = JupiterDataClient(api_key=get_jupiter_api_key())
     price_data = await data_client.get_price(mint)
 
     if not price_data:
@@ -196,7 +196,7 @@ async def solana_search_token(query: str) -> list[dict[str, Any]]:
     Returns:
         List of matching tokens with symbol, name, mint, verified, liquidity
     """
-    data_client = JupiterDataClient()
+    data_client = JupiterDataClient(api_key=get_jupiter_api_key())
     results = await data_client.search_token(query)
 
     tokens = []
@@ -231,7 +231,7 @@ async def solana_check_token(token: str) -> dict[str, Any]:
 
     if not mint_address:
         # Not a known symbol or valid address - try searching
-        data_client = JupiterDataClient()
+        data_client = JupiterDataClient(api_key=get_jupiter_api_key())
         results = await data_client.search_token(token)
         if results:
             # Jupiter API uses "id" for mint address
@@ -250,7 +250,7 @@ async def solana_check_token(token: str) -> dict[str, Any]:
 
     # Get symbol if we don't have it yet
     if not resolved_symbol:
-        data_client = JupiterDataClient()
+        data_client = JupiterDataClient(api_key=get_jupiter_api_key())
         info = await data_client.get_token_info(mint_address)
         resolved_symbol = info.get("symbol", mint_address[:8]) if info else mint_address[:8]
 
@@ -374,7 +374,7 @@ async def solana_quote(
         return {"error": f"Invalid amount: {amount}"}
 
     # Get price of from_token to calculate USD value
-    data_client = JupiterDataClient()
+    data_client = JupiterDataClient(api_key=get_jupiter_api_key())
     price_data = await data_client.get_price(from_mint)
     if price_data:
         price_usd = float(price_data.get("price", 0))
@@ -590,7 +590,7 @@ async def quick_trade(
     mint = resolve_token(token)
     if not mint:
         # Try searching
-        data_client = JupiterDataClient()
+        data_client = JupiterDataClient(api_key=get_jupiter_api_key())
         results = await data_client.search_token(token)
         if results:
             # Jupiter API uses "id" for mint address
@@ -602,7 +602,7 @@ async def quick_trade(
         # Get symbol for display
         token_symbol = token.upper() if len(token) < 10 else None
         if not token_symbol:
-            data_client = JupiterDataClient()
+            data_client = JupiterDataClient(api_key=get_jupiter_api_key())
             info = await data_client.get_token_info(mint)
             token_symbol = info.get("symbol", mint[:8]) if info else mint[:8]
 
@@ -618,7 +618,7 @@ async def quick_trade(
         to_mint = sol_mint
 
     # Get price to calculate amount
-    data_client = JupiterDataClient()
+    data_client = JupiterDataClient(api_key=get_jupiter_api_key())
     price_data = await data_client.get_price(from_mint)
 
     if not price_data or not price_data.get("price"):

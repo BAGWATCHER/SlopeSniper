@@ -25,19 +25,26 @@ class JupiterDataClient:
     - Detailed token metadata including audit info and stats
     """
 
-    BASE_URL_PRICE = "https://lite-api.jup.ag/price/v3"
-    BASE_URL_TOKENS = "https://lite-api.jup.ag/tokens/v2"
+    # Use main API endpoints (not lite-api) for better rate limits with API key
+    BASE_URL_PRICE = "https://api.jup.ag/price/v3"
+    BASE_URL_TOKENS = "https://api.jup.ag/tokens/v2"
 
-    def __init__(self, max_retries: int = 3) -> None:
+    def __init__(self, api_key: Optional[str] = None, max_retries: int = 3) -> None:
         """
         Initialize Jupiter Data Client.
 
         Args:
+            api_key: Optional Jupiter API key for higher rate limits
             max_retries: Maximum number of retry attempts for failed requests
         """
         self.logger = Utils.setup_logger("JupiterDataClient")
         self.max_retries = max_retries
-        self.logger.info("[__init__] JupiterDataClient initialized")
+        self.api_key = api_key
+
+        if api_key:
+            self.logger.info("[__init__] JupiterDataClient initialized with API key")
+        else:
+            self.logger.info("[__init__] JupiterDataClient initialized (no API key)")
 
     async def _make_request(
         self,
@@ -51,10 +58,15 @@ class JupiterDataClient:
         for attempt in range(self.max_retries):
             try:
                 async with aiohttp.ClientSession() as session:
+                    # Build headers with API key if available
+                    headers = {"Content-Type": "application/json"}
+                    if self.api_key:
+                        headers["x-api-key"] = self.api_key
+
                     if method == "GET":
                         timeout = aiohttp.ClientTimeout(total=10)
                         async with session.get(
-                            url, params=params, timeout=timeout
+                            url, params=params, timeout=timeout, headers=headers
                         ) as response:
                             response_text = await response.text()
 

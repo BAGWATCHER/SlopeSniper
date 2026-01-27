@@ -22,6 +22,7 @@ from ..sdk.jupiter_data_client import JupiterDataClient
 from ..sdk.rugcheck_client import RugCheckClient
 from ..sdk.dexscreener_client import DexScreenerClient
 from ..sdk.pumpfun_client import PumpFunClient
+from .config import get_jupiter_api_key
 from .strategies import _get_config_db_path, _init_db
 
 
@@ -241,7 +242,7 @@ async def get_token_details(mint_or_symbol: str) -> dict:
         Full token details including price, volume, safety
     """
     dex = DexScreenerClient()
-    jupiter = JupiterDataClient()
+    jupiter = JupiterDataClient(api_key=get_jupiter_api_key())
     rugcheck = RugCheckClient()
 
     # Resolve symbol to mint if needed
@@ -619,7 +620,7 @@ async def watch_token(mint: str, alert_on: str = "10% change") -> dict:
     _init_db()
     db_path = _get_config_db_path()
 
-    client = JupiterDataClient()
+    client = JupiterDataClient(api_key=get_jupiter_api_key())
     try:
         info = await client.get_token_info(mint)
         symbol = info.get("symbol", "???")
@@ -663,7 +664,7 @@ async def get_watchlist() -> list[dict]:
     if not rows:
         return []
 
-    client = JupiterDataClient()
+    client = JupiterDataClient(api_key=get_jupiter_api_key())
     mints = [row[0] for row in rows]
 
     try:

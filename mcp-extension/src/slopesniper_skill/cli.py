@@ -14,6 +14,8 @@ Usage:
     slopesniper scan [filter]       Scan for opportunities (trending/new/graduated/pumping)
     slopesniper config              View current configuration
     slopesniper config --set-jupiter-key KEY   Set your Jupiter API key
+    slopesniper config --set-rpc PROVIDER VALUE   Set custom RPC endpoint
+    slopesniper config --clear-rpc             Clear custom RPC (use default)
     slopesniper update              Update to latest version
     slopesniper version [--check]   Show version (--check for update availability)
 """
@@ -97,12 +99,28 @@ async def cmd_scan(filter_type: str = "all") -> None:
     print_json(result)
 
 
-def cmd_config(set_jupiter_key: str | None = None) -> None:
+def cmd_config(
+    set_jupiter_key: str | None = None,
+    set_rpc_provider: str | None = None,
+    set_rpc_value: str | None = None,
+    clear_rpc: bool = False,
+) -> None:
     """View or update configuration."""
-    from .tools.config import get_config_status, set_jupiter_api_key
+    from .tools.config import (
+        get_config_status,
+        set_jupiter_api_key,
+        set_rpc_config,
+        clear_rpc_config,
+    )
 
     if set_jupiter_key:
         result = set_jupiter_api_key(set_jupiter_key)
+        print_json(result)
+    elif set_rpc_provider and set_rpc_value:
+        result = set_rpc_config(set_rpc_provider, set_rpc_value)
+        print_json(result)
+    elif clear_rpc:
+        result = clear_rpc_config()
         print_json(result)
     else:
         result = get_config_status()
@@ -280,13 +298,34 @@ def main() -> None:
             asyncio.run(cmd_scan(filter_type))
 
         elif cmd == "config":
-            # Check for --set-jupiter-key flag
+            # Parse config flags
             jupiter_key = None
-            for i, arg in enumerate(args):
+            rpc_provider = None
+            rpc_value = None
+            clear_rpc = False
+
+            i = 0
+            while i < len(args):
+                arg = args[i]
                 if arg == "--set-jupiter-key" and i + 1 < len(args):
                     jupiter_key = args[i + 1]
-                    break
-            cmd_config(set_jupiter_key=jupiter_key)
+                    i += 2
+                elif arg == "--set-rpc" and i + 2 < len(args):
+                    rpc_provider = args[i + 1]
+                    rpc_value = args[i + 2]
+                    i += 3
+                elif arg == "--clear-rpc":
+                    clear_rpc = True
+                    i += 1
+                else:
+                    i += 1
+
+            cmd_config(
+                set_jupiter_key=jupiter_key,
+                set_rpc_provider=rpc_provider,
+                set_rpc_value=rpc_value,
+                clear_rpc=clear_rpc,
+            )
 
         elif cmd == "version":
             check_latest = "--check" in args or "-c" in args

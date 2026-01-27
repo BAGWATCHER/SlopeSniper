@@ -364,28 +364,50 @@ def get_wallet_address() -> Optional[str]:
 
 def get_rpc_url() -> str:
     """
-    Get Solana RPC URL.
+    Get Solana RPC URL with priority: env > user config > default.
+
+    Priority:
+    1. SOLANA_RPC_URL environment variable
+    2. User's configured RPC provider (~/.slopesniper/config.enc)
+    3. Default mainnet-beta endpoint
 
     Returns:
-        RPC URL (defaults to mainnet-beta)
+        RPC URL
     """
-    return get_secret("SOLANA_RPC_URL") or "https://api.mainnet-beta.solana.com"
+    # Check env var first (highest priority)
+    env_url = get_secret("SOLANA_RPC_URL")
+    if env_url:
+        return env_url
+
+    # Check user config
+    config = load_user_config()
+    if config and config.get("rpc_provider"):
+        provider = config["rpc_provider"]
+        value = config.get("rpc_value")
+        if provider and value:
+            return _build_rpc_url(provider, value)
+
+    # Default
+    return "https://api.mainnet-beta.solana.com"
 
 
-def save_user_config(config: dict) -> None:
+def save_user_config(config: dict, merge: bool = True) -> None:
     """
     Save user configuration (encrypted).
 
     Args:
         config: Dict with user settings (e.g., jupiter_api_key, rpc_url)
+        merge: If True, merge with existing config. If False, replace entirely.
     """
     _ensure_wallet_dir()
 
-    # Merge with existing config
-    existing = load_user_config() or {}
-    existing.update(config)
+    if merge:
+        # Merge with existing config
+        existing = load_user_config() or {}
+        existing.update(config)
+        config = existing
 
-    encrypted = _encrypt_data(json.dumps(existing))
+    encrypted = _encrypt_data(json.dumps(config))
     USER_CONFIG_FILE.write_bytes(encrypted)
     os.chmod(USER_CONFIG_FILE, 0o600)
 
@@ -459,6 +481,195 @@ def get_jupiter_api_key() -> Optional[str]:
     return None
 
 
+# RPC Provider Configuration
+RPC_PROVIDERS = {
+    "helius": "https://mainnet.helius-rpc.com/?api-key={key}",
+    "alchemy": "https://solana-mainnet.g.alchemy.com/v2/{key}",
+    "quicknode": None,  # Full URL provided by user
+    "custom": None,  # Full URL provided by user
+}
+
+
+def _build_rpc_url(provider: str, value: str) -> str:
+    """
+    Build full RPC URL from provider and key/url.
+
+    Args:
+        provider: helius | alchemy | quicknode | custom
+        value: API key (helius/alchemy) or full URL (quicknode/custom)
+
+    Returns:
+        Full RPC URL
+    """
+    if provider == "helius":
+        return f"https://mainnet.helius-rpc.com/?api-key={value}"
+    elif provider == "alchemy":
+        return f"https://solana-mainnet.g.alchemy.com/v2/{value}"
+    elif provider in ("quicknode", "custom"):
+        return value  # Full URL already provided
+    return value
+
+
+def _validate_rpc_config(provider: str, value: str) -> tuple[bool, Optional[str]]:
+    """
+    Validate RPC provider and value.
+
+    Args:
+        provider: Provider name
+        value: API key or URL
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if provider not in RPC_PROVIDERS:
+        return False, f"Invalid provider. Must be one of: {', '.join(RPC_PROVIDERS.keys())}"
+
+    if not value or len(value) < 5:
+        return False, "Value too short"
+
+    # Provider-specific validation
+    if provider == "helius":
+        # Helius keys are alphanumeric
+        if not value.replace("-", "").replace("_", "").isalnum():
+            return False, "Invalid Helius API key format"
+
+    elif provider == "alchemy":
+        # Alchemy keys are alphanumeric with hyphens/underscores
+        if not value.replace("-", "").replace("_", "").isalnum():
+            return False, "Invalid Alchemy API key format"
+
+    elif provider == "quicknode":
+        # Quicknode URLs must match pattern
+        if not value.startswith("https://") or "quiknode.pro" not in value:
+            return False, "Invalid Quicknode URL. Must be https://your-endpoint.solana-*.quiknode.pro/..."
+
+    elif provider == "custom":
+        # Custom must be a valid HTTPS URL
+        if not value.startswith("https://") and not value.startswith("http://"):
+            return False, "Custom RPC URL must start with https:// or http://"
+
+    return True, None
+
+
+def set_rpc_config(provider: str, value: str) -> dict:
+    """
+    Set RPC provider configuration.
+
+    Args:
+        provider: helius | alchemy | quicknode | custom
+        value: API key (helius/alchemy) or full URL (quicknode/custom)
+
+    Returns:
+        Status dict with success/error
+    """
+    # Validate
+    is_valid, error = _validate_rpc_config(provider, value)
+    if not is_valid:
+        return {"success": False, "error": error}
+
+    # Save to encrypted config
+    save_user_config({
+        "rpc_provider": provider,
+        "rpc_value": value,
+    })
+
+    # Build URL for display (masked)
+    url = _build_rpc_url(provider, value)
+    # Mask the key/token in display
+    if provider in ("helius", "alchemy"):
+        display_url = _build_rpc_url(provider, "****")
+    else:
+        # Mask the path for URLs
+        display_url = url.split("//")[0] + "//" + url.split("//")[1].split("/")[0] + "/****"
+
+    return {
+        "success": True,
+        "message": f"RPC endpoint configured: {provider}",
+        "provider": provider,
+        "url_preview": display_url,
+        "benefits": [
+            "Faster transaction processing",
+            "Higher rate limits",
+            "Better reliability",
+            "Priority access to network",
+        ],
+    }
+
+
+def clear_rpc_config() -> dict:
+    """
+    Clear custom RPC configuration (revert to default).
+
+    Returns:
+        Status dict
+    """
+    config = load_user_config() or {}
+    config.pop("rpc_provider", None)
+    config.pop("rpc_value", None)
+    save_user_config(config, merge=False)
+
+    return {
+        "success": True,
+        "message": "RPC configuration cleared. Using default endpoint.",
+        "default_url": "https://api.mainnet-beta.solana.com",
+    }
+
+
+def get_rpc_config_status() -> dict:
+    """
+    Get current RPC configuration status.
+
+    Returns:
+        Dict with RPC config details
+    """
+    config = load_user_config() or {}
+    env_url = os.environ.get("SOLANA_RPC_URL")
+
+    provider = config.get("rpc_provider")
+    value = config.get("rpc_value")
+    has_custom = bool(env_url or (provider and value))
+
+    # Determine source
+    source = "default"
+    url = "https://api.mainnet-beta.solana.com"
+    url_preview = url
+
+    if env_url:
+        source = "environment"
+        url = env_url
+        # Mask env URL for display
+        url_preview = url.split("//")[0] + "//" + url.split("//")[1].split("/")[0] + "/****"
+    elif provider and value:
+        source = "local_config"
+        url = _build_rpc_url(provider, value)
+        # Mask the key/token
+        if provider in ("helius", "alchemy"):
+            url_preview = _build_rpc_url(provider, "****")
+        else:
+            url_preview = url.split("//")[0] + "//" + url.split("//")[1].split("/")[0] + "/****"
+
+    result = {
+        "configured": has_custom,
+        "provider": provider or "default",
+        "source": source,
+        "url": url,
+        "url_preview": url_preview,
+    }
+
+    if not has_custom:
+        result["recommendation"] = {
+            "message": "Using default RPC endpoint. For faster transactions, configure a custom RPC provider.",
+            "providers": {
+                "helius": "Fast, reliable. Get free key at: https://www.helius.dev",
+                "quicknode": "Enterprise-grade. Get started at: https://www.quicknode.com",
+                "alchemy": "High-performance. Sign up at: https://www.alchemy.com",
+            },
+            "how_to": "Run: slopesniper config --set-rpc helius YOUR_KEY",
+        }
+
+    return result
+
+
 def get_config_status() -> dict:
     """
     Get current configuration status.
@@ -476,18 +687,25 @@ def get_config_status() -> dict:
     elif config.get("jupiter_api_key"):
         key_source = "local_config"
 
+    # Get RPC status
+    rpc_status = get_rpc_config_status()
+
     result = {
         "jupiter_api_key": {
             "configured": has_custom_key,
             "source": key_source,
         },
-        "rpc_url": get_rpc_url(),
+        "rpc": rpc_status,
         "wallet_configured": WALLET_FILE_ENCRYPTED.exists(),
         "config_dir": str(SLOPESNIPER_DIR),
     }
 
+    # Add recommendations
+    recommendations = []
+
     if not has_custom_key:
-        result["recommendation"] = {
+        recommendations.append({
+            "category": "Jupiter API",
             "message": "Using shared API key. For better performance, set your own Jupiter API key.",
             "benefits": [
                 "10x higher rate limits",
@@ -496,7 +714,18 @@ def get_config_status() -> dict:
             ],
             "how_to": "Run: slopesniper config --set-jupiter-key YOUR_KEY",
             "get_key": "Get a free key at: https://station.jup.ag/docs/apis/ultra-api",
-        }
+        })
+
+    if not rpc_status["configured"]:
+        recommendations.append({
+            "category": "RPC Endpoint",
+            "message": "Using default RPC endpoint. For faster transactions, configure a custom RPC provider.",
+            "providers": rpc_status["recommendation"]["providers"],
+            "how_to": rpc_status["recommendation"]["how_to"],
+        })
+
+    if recommendations:
+        result["recommendations"] = recommendations
 
     return result
 

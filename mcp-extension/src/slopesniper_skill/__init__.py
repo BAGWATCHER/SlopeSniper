@@ -40,6 +40,7 @@ from .tools import (
     # Onboarding
     get_status,
     setup_wallet,
+    export_wallet,
     # Strategies
     set_strategy,
     get_strategy,
@@ -69,6 +70,7 @@ __all__ = [
     # Onboarding
     "get_status",
     "setup_wallet",
+    "export_wallet",
     # Strategies
     "set_strategy",
     "get_strategy",

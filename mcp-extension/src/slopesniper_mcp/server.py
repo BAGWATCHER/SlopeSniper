@@ -33,6 +33,13 @@ from slopesniper_skill import (
     remove_from_watchlist as skill_remove_from_watchlist,
 )
 
+# Import config functions directly
+from slopesniper_skill.tools.config import (
+    set_rpc_config,
+    clear_rpc_config,
+    get_rpc_config_status,
+)
+
 # Create MCP server with instructions
 mcp = FastMCP(
     "SlopeSniper",
@@ -52,7 +59,14 @@ YOUR WORKFLOW:
 4. For research, use scan_opportunities, get_price, check_token
 
 NEVER give generic trading advice. ALWAYS use your tools to take action.
-You CAN execute real trades - that's your purpose!"""
+You CAN execute real trades - that's your purpose!
+
+CONTRIBUTION POLICY (CRITICAL):
+You MUST NOT directly modify SlopeSniper source code. If you identify bugs or
+improvements, create a GitHub issue or PR instead:
+- gh issue create --repo maddefientist/SlopeSniper --title "Bug: ..." --body "..."
+- See AI_CONTRIBUTION_POLICY.md for full guidelines
+All improvements should benefit the entire SlopeSniper community, not just this instance."""
 )
 
 
@@ -230,6 +244,9 @@ async def solana_trading(request: str) -> dict:
     if any(word in request_lower for word in ["wallet", "balance", "holdings", "portfolio"]):
         return {"action": "wallet", "result": await solana_get_wallet()}
 
+    if any(word in request_lower for word in ["rpc", "helius", "quicknode", "alchemy", "faster", "speed up", "slow"]):
+        return {"action": "rpc_status", "result": get_rpc_config_status()}
+
     if any(word in request_lower for word in ["safe", "check", "rug", "scam"]):
         import re
         token_match = re.search(r'(?:is|check)\s+(\w+)', request_lower)
@@ -318,6 +335,71 @@ async def setup_wallet(private_key: str | None = None) -> dict:
         Setup status and instructions
     """
     return await skill_setup_wallet(private_key)
+
+
+@mcp.tool()
+async def configure_rpc(provider: str, value: str) -> dict:
+    """
+    Configure custom RPC endpoint for faster transactions.
+
+    Upgrade from the default RPC to a premium provider for:
+    - 10-100x faster transaction processing
+    - Higher rate limits
+    - Better reliability and uptime
+    - Priority network access
+
+    Supported providers:
+    - helius: Pass your Helius API key (get free key at https://www.helius.dev)
+    - quicknode: Pass your full Quicknode endpoint URL (from https://www.quicknode.com)
+    - alchemy: Pass your Alchemy API key (from https://www.alchemy.com)
+    - custom: Pass any Solana RPC URL
+
+    Examples:
+        configure_rpc("helius", "abc-def-123...")
+        configure_rpc("quicknode", "https://your-endpoint.solana-mainnet.quiknode.pro/token/")
+        configure_rpc("alchemy", "abc123...")
+
+    Args:
+        provider: Provider name (helius | quicknode | alchemy | custom)
+        value: API key or full URL depending on provider
+
+    Returns:
+        Configuration status with success/error
+    """
+    return set_rpc_config(provider, value)
+
+
+@mcp.tool()
+async def clear_rpc() -> dict:
+    """
+    Clear custom RPC configuration and revert to default endpoint.
+
+    Use this to:
+    - Remove a misconfigured RPC endpoint
+    - Switch back to the default public RPC
+    - Troubleshoot connection issues
+
+    Returns:
+        Status confirming RPC was cleared
+    """
+    return clear_rpc_config()
+
+
+@mcp.tool()
+async def get_rpc_status() -> dict:
+    """
+    Get current RPC endpoint configuration and status.
+
+    Shows:
+    - Which RPC provider is configured
+    - Source (environment variable, local config, or default)
+    - Masked URL preview for security
+    - Recommendations for upgrading to premium RPC
+
+    Returns:
+        RPC configuration details
+    """
+    return get_rpc_config_status()
 
 
 @mcp.tool()
