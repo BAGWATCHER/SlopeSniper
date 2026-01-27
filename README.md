@@ -170,12 +170,18 @@ slopesniper update              # Update to latest version
 
 Your wallet is **encrypted** and stored at `~/.slopesniper/wallet.enc`. The private key is shown **only once** at creation—make sure to save it!
 
-**To view your wallet address:**
+**View wallet and holdings:**
 ```bash
-slopesniper status
+slopesniper wallet              # Quick view
+slopesniper status              # Full status
 ```
 
-**To import an existing wallet:**
+**Export private key for backup:**
+```bash
+slopesniper export              # Displays your private key
+```
+
+**Import an existing wallet:**
 Set the `SOLANA_PRIVATE_KEY` environment variable before running any commands.
 
 **Storage locations:**
@@ -185,6 +191,21 @@ Set the `SOLANA_PRIVATE_KEY` environment variable before running any commands.
 ├── config.enc      # Encrypted user config (Jupiter API key, etc.)
 └── .machine_key    # Salt for key derivation
 ```
+
+### ⚠️ CRITICAL: Backup Your Private Key
+
+**Your private key is only shown once at wallet creation.** Use `slopesniper export` to retrieve it.
+
+**Back it up OUTSIDE this system immediately:**
+- Password manager (1Password, Bitwarden, LastPass)
+- Encrypted USB drive stored securely
+- Paper backup in a safe or lockbox
+- Import into a hardware wallet (Ledger, Trezor)
+
+**Why external backup is essential:**
+- The wallet file is **machine-bound** and won't work on other computers
+- If your computer dies, the encrypted file is useless
+- **No private key = No recovery = Funds lost forever**
 
 ### Configuration
 

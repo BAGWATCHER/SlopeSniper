@@ -79,7 +79,7 @@ Bot: Hot tokens right now:
 - **Export/backup** - `slopesniper export` reveals key for backup
 - **Self-update** - `slopesniper update` keeps you current
 
-## Commands
+## Natural Language Commands
 
 | Command | Action |
 |---------|--------|
@@ -94,6 +94,60 @@ Bot: Hot tokens right now:
 | `set aggressive mode` | Change strategy |
 | `what's trending` | Scan for opportunities |
 | `is TOKEN safe` | Run safety check |
+
+## CLI Commands
+
+```bash
+# Account & Wallet
+slopesniper status              # Full status: wallet, holdings, strategy
+slopesniper wallet              # Show wallet and all token balances
+slopesniper export              # Export private key for backup
+slopesniper pnl                 # Show portfolio profit/loss
+slopesniper history             # Show recent trade history
+
+# Trading
+slopesniper price SOL           # Get token price
+slopesniper buy BONK 25         # Buy $25 of BONK
+slopesniper sell WIF 50         # Sell $50 of WIF
+slopesniper sell WIF all        # Sell entire position
+
+# Token Discovery
+slopesniper search "dog"        # Search tokens by name
+slopesniper check POPCAT        # Run safety analysis
+slopesniper resolve BONK        # Get mint address from symbol
+slopesniper scan                # Scan for opportunities
+slopesniper scan trending       # Scan trending tokens
+slopesniper scan pumping        # Scan price movers
+
+# Strategy & Config
+slopesniper strategy            # View current strategy
+slopesniper strategy aggressive # Change strategy
+slopesniper config              # View configuration
+slopesniper config --set-jupiter-key KEY  # Set custom API key
+
+# Updates
+slopesniper version             # Show current version
+slopesniper update              # Update to latest version
+```
+
+## ⚠️ IMPORTANT: Backup Your Private Key
+
+Your wallet's private key is **only shown once** when first created.
+
+**You MUST back it up immediately:**
+```bash
+slopesniper export              # Display your private key
+```
+
+**Store your backup safely OUTSIDE this system:**
+- Password manager (1Password, Bitwarden, etc.)
+- Encrypted USB drive
+- Paper backup in secure location
+- Hardware wallet import
+
+**If you lose your private key, your funds are GONE FOREVER.**
+
+The wallet file (`~/.slopesniper/wallet.enc`) is encrypted and machine-bound—it cannot be transferred to another computer.
 
 ## Requirements
 
