@@ -16,8 +16,9 @@ from pathlib import Path
 
 
 def encode_token(token: str) -> str:
-    """Encode token using XOR obfuscation (same as integrity.py)."""
-    key = "slopesniper2024"
+    """Encode token using XOR obfuscation (same as integrity.py _get_github_token)."""
+    # MUST match the key in integrity.py: _p + _y = "slopesniper" + "github"
+    key = "slopesnipergithub"
     key_bytes = (key * ((len(token) // len(key)) + 1))[:len(token)]
     xored = bytes(a ^ b for a, b in zip(token.encode(), key_bytes.encode()))
     return base64.b64encode(xored).decode()
@@ -25,7 +26,8 @@ def encode_token(token: str) -> str:
 
 def decode_token(encoded: str) -> str:
     """Decode token (for verification)."""
-    key = "slopesniper2024"
+    # MUST match the key in integrity.py
+    key = "slopesnipergithub"
     try:
         xored = base64.b64decode(encoded)
         key_bytes = (key * ((len(xored) // len(key)) + 1))[:len(xored)]
