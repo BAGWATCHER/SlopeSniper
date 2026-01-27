@@ -242,9 +242,18 @@ def cmd_version(check_latest: bool = False) -> None:
 def cmd_update() -> None:
     """Update to latest version from GitHub."""
     import subprocess
+    import re
+    import urllib.request
+
+    from . import __version__
+    old_version = __version__
 
     print("Updating SlopeSniper...")
+    print(f"Current version: {old_version}")
     print("")
+
+    success = False
+    method = ""
 
     # Try uv tool first (preferred for CLI tools)
     try:
@@ -259,57 +268,112 @@ def cmd_update() -> None:
             text=True
         )
         if result.returncode == 0:
-            print("Updated successfully via uv tool!")
-            print("")
-            print("Run 'slopesniper version' to verify.")
-            return
+            success = True
+            method = "uv tool"
     except FileNotFoundError:
         pass
 
     # Fallback to uv pip
-    try:
-        result = subprocess.run(
-            [
-                "uv", "pip", "install",
-                "--force-reinstall",
-                "--refresh",  # Bust git cache
-                "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
-            ],
-            capture_output=True,
-            text=True
-        )
-        if result.returncode == 0:
-            print("Updated successfully via uv pip!")
-            print("")
-            print("Run 'slopesniper version' to verify.")
-            return
-    except FileNotFoundError:
-        pass
+    if not success:
+        try:
+            result = subprocess.run(
+                [
+                    "uv", "pip", "install",
+                    "--force-reinstall",
+                    "--refresh",  # Bust git cache
+                    "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
+                ],
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                success = True
+                method = "uv pip"
+        except FileNotFoundError:
+            pass
 
     # Final fallback to pip
+    if not success:
+        try:
+            result = subprocess.run(
+                [
+                    "pip", "install",
+                    "--force-reinstall",
+                    "--no-cache-dir",  # Bust pip cache
+                    "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
+                ],
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                success = True
+                method = "pip"
+        except FileNotFoundError:
+            pass
+
+    if not success:
+        print_json({
+            "error": "Update failed",
+            "suggestion": "Try manually: uv tool install 'slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension' --force"
+        })
+        return
+
+    # Fetch new version from GitHub
+    new_version = "unknown"
+    changelog_summary = []
     try:
-        result = subprocess.run(
-            [
-                "pip", "install",
-                "--force-reinstall",
-                "--no-cache-dir",  # Bust pip cache
-                "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
-            ],
-            capture_output=True,
-            text=True
-        )
-        if result.returncode == 0:
-            print("Updated successfully via pip!")
-            print("")
-            print("Run 'slopesniper version' to verify.")
-            return
-    except FileNotFoundError:
+        # Get version
+        version_url = "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/mcp-extension/pyproject.toml"
+        req = urllib.request.Request(version_url, headers={"User-Agent": "SlopeSniper"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            content = resp.read().decode()
+            match = re.search(r'version\s*=\s*"([^"]+)"', content)
+            if match:
+                new_version = match.group(1)
+
+        # Get recent changelog
+        changelog_url = "https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/CHANGELOG.md"
+        req = urllib.request.Request(changelog_url, headers={"User-Agent": "SlopeSniper"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            changelog = resp.read().decode()
+            # Extract first version section (after [Unreleased])
+            lines = changelog.split('\n')
+            in_section = False
+            section_count = 0
+            for line in lines:
+                if line.startswith('## [') and 'Unreleased' not in line:
+                    if section_count == 0:
+                        in_section = True
+                        changelog_summary.append(line)
+                        section_count += 1
+                    else:
+                        break
+                elif in_section:
+                    if line.startswith('## ['):
+                        break
+                    if line.strip():
+                        changelog_summary.append(line)
+    except Exception:
         pass
 
-    print_json({
-        "error": "Update failed",
-        "suggestion": "Try manually: uv tool install 'slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension' --force"
-    })
+    # Print success message
+    print("=" * 50)
+    print(f"  Updated successfully via {method}!")
+    print("=" * 50)
+    print("")
+    print(f"  {old_version} → {new_version}")
+    print("")
+
+    if changelog_summary:
+        print("What's new:")
+        print("-" * 50)
+        for line in changelog_summary[:15]:  # Limit to 15 lines
+            print(line)
+        print("-" * 50)
+        print("")
+
+    print("Full changelog: https://github.com/maddefientist/SlopeSniper/blob/main/CHANGELOG.md")
+    print("")
 
 
 def cmd_contribute(
