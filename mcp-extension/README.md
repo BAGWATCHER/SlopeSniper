@@ -90,8 +90,11 @@ No commands to memorize. Just describe what you want:
 |---------|--------------|
 | "Buy $25 of BONK" | Resolves token → safety check → quote → execute |
 | "Sell half my WIF" | Calculates 50% of holdings → executes sell |
+| "Sell all my POPCAT" | Exits entire position |
 | "What's pumping?" | Scans for trending tokens with volume spikes |
 | "Is POPCAT safe?" | Runs rugcheck analysis, shows risk factors |
+| "What's my PnL?" | Shows realized + unrealized profit/loss |
+| "Show my trade history" | Lists recent trades with prices |
 | "Set aggressive mode" | Increases trade limits and auto-execution threshold |
 
 ### Safety First
@@ -133,29 +136,70 @@ For trades above your auto-execute threshold, you'll be asked to confirm first.
 
 ### CLI Reference
 
+#### Account & Wallet
 ```bash
-slopesniper status              # Check wallet and trading readiness
+slopesniper status              # Full status: wallet, holdings, strategy, config
+slopesniper wallet              # Show wallet address and all token holdings
+slopesniper export              # Export private key for backup/recovery
+slopesniper pnl                 # Show portfolio profit/loss (realized + unrealized)
+slopesniper history             # Show recent trade history
+slopesniper history 50          # Show last 50 trades
+```
+
+#### Trading
+```bash
 slopesniper price SOL           # Get current token price
 slopesniper price BONK          # Get meme coin price
 slopesniper buy BONK 25         # Buy $25 of BONK
 slopesniper sell WIF 50         # Sell $50 worth of WIF
-slopesniper check POPCAT        # Run safety analysis
-slopesniper search "dog"        # Search for tokens
+slopesniper sell WIF all        # Sell entire WIF position
+```
+
+#### Token Discovery
+```bash
+slopesniper search "dog"        # Search for tokens by name
+slopesniper check POPCAT        # Run rugcheck safety analysis
+slopesniper resolve BONK        # Get mint address from symbol
+slopesniper scan                # Scan for trading opportunities
+slopesniper scan trending       # Filter: trending tokens
+slopesniper scan new            # Filter: newly listed
+slopesniper scan graduated      # Filter: graduated from pump.fun
+slopesniper scan pumping        # Filter: high volume movers
+```
+
+#### Strategy & Config
+```bash
 slopesniper strategy            # View current strategy
 slopesniper strategy aggressive # Change to aggressive mode
+slopesniper config              # View current configuration
+slopesniper config --set-jupiter-key YOUR_KEY  # Set custom Jupiter API key
+slopesniper config --set-rpc mainnet URL       # Set custom RPC endpoint
+```
+
+#### Updates & Info
+```bash
+slopesniper version             # Show current version
+slopesniper version --check     # Check for updates
+slopesniper update              # Update to latest version
 ```
 
 ### Wallet Management
 
-Your wallet is stored locally at `~/.slopesniper/wallet.json`. The private key is shown **only once** at creation—make sure to save it!
+Your wallet is **encrypted** and stored locally at `~/.slopesniper/wallet.enc`. The encryption is machine-specific—wallet files won't work on other computers.
 
-**To view your wallet address:**
+**View wallet and holdings:**
 ```bash
-slopesniper status
+slopesniper wallet              # Quick view: address + all token balances
+slopesniper status              # Full view: wallet + strategy + config
 ```
 
-**To import an existing wallet:**
-Set the `SOLANA_PRIVATE_KEY` environment variable before running any commands.
+**Export private key:**
+```bash
+slopesniper export              # Decrypt and display private key for backup
+```
+
+**Import an existing wallet:**
+Set the `SOLANA_PRIVATE_KEY` environment variable before running any commands. The wallet will be encrypted on first use.
 
 ### Configuration
 
@@ -185,8 +229,10 @@ export POLICY_MAX_SLIPPAGE_BPS=50  # 0.5%
 
 ### What We Do
 
+- **Encrypted Storage** - Private keys encrypted at rest with Fernet (AES-128-CBC)
+- **Machine-Bound** - Encryption key derived from machine fingerprint (wallets won't decrypt elsewhere)
 - **Isolated Wallet** - Auto-generates a dedicated trading wallet separate from your main holdings
-- **Local Storage** - Private keys stored only on your machine (`~/.slopesniper/`)
+- **Local Only** - Private keys stored only on your machine (`~/.slopesniper/wallet.enc`)
 - **No Key Exposure** - Private keys never sent to any API or logged
 - **Rugcheck Integration** - Every trade runs safety analysis first
 - **Two-Step Trades** - Large trades require explicit confirmation
@@ -234,11 +280,18 @@ export POLICY_MAX_SLIPPAGE_BPS=50  # 0.5%
 
 ## 🔜 Roadmap
 
+### Recently Shipped (v0.2.x)
+
+- ✅ **Portfolio Tracking** - P&L tracking with `slopesniper pnl`
+- ✅ **Trade History** - View past trades with `slopesniper history`
+- ✅ **Encrypted Wallets** - Machine-specific encryption at rest
+- ✅ **Multi-Source Scanning** - DexScreener + Pump.fun integration
+- ✅ **Self-Update** - `slopesniper update` with changelog display
+
 ### Coming Soon
 
 - **Claude Desktop Integration** - MCP extension for native Claude Desktop support
 - **Web API** - REST endpoints for custom integrations
-- **Portfolio Tracking** - P&L tracking and trade history
 - **Price Alerts** - Notifications for price movements
 - **DCA Automation** - Scheduled recurring buys
 
