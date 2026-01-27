@@ -146,6 +146,21 @@ All commands output JSON with mint addresses included for easy chaining.
 - **Start with conservative mode** - Get comfortable before increasing limits
 - **Rugcheck integration** - Automatic scam token detection
 - **Two-step confirmation** - Large trades require explicit approval
+- **Encrypted storage** - Private keys encrypted at rest, machine-bound
+
+### ⚠️ BACKUP YOUR PRIVATE KEY
+
+Your private key is shown **once** at wallet creation. Retrieve it anytime with:
+```bash
+slopesniper export
+```
+
+**Back it up OUTSIDE this system:**
+- Password manager (1Password, Bitwarden)
+- Encrypted USB drive
+- Paper backup in secure location
+
+**The wallet file is machine-bound. If your computer dies without a backup, your funds are lost forever.**
 
 ## Environment Variables
 

@@ -245,6 +245,26 @@ export POLICY_MAX_SLIPPAGE_BPS=50  # 0.5%
 4. **Save your private key** - It's only shown once at wallet creation
 5. **Monitor your transactions** - Check Solscan for trade history
 
+### ⚠️ CRITICAL: Backup Your Private Key
+
+Your wallet's private key is **only shown once** when first created. You can retrieve it later with:
+
+```bash
+slopesniper export
+```
+
+**You MUST back it up OUTSIDE this system:**
+- Password manager (1Password, Bitwarden, etc.)
+- Encrypted USB drive
+- Paper backup in a secure location
+- Import into hardware wallet
+
+**Why?** The wallet file (`~/.slopesniper/wallet.enc`) is:
+- **Machine-bound** - Won't decrypt on another computer
+- **Non-transferable** - If your machine dies, the file is useless
+
+**If you lose your private key and your machine, your funds are GONE FOREVER.**
+
 ---
 
 ## 🛠️ Architecture
