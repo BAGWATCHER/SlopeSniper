@@ -156,7 +156,8 @@ def cmd_update() -> None:
             [
                 "uv", "tool", "install",
                 "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension",
-                "--force"
+                "--force",
+                "--refresh",  # Bust git cache
             ],
             capture_output=True,
             text=True
@@ -173,7 +174,9 @@ def cmd_update() -> None:
     try:
         result = subprocess.run(
             [
-                "uv", "pip", "install", "--force-reinstall",
+                "uv", "pip", "install",
+                "--force-reinstall",
+                "--refresh",  # Bust git cache
                 "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
             ],
             capture_output=True,
@@ -191,7 +194,9 @@ def cmd_update() -> None:
     try:
         result = subprocess.run(
             [
-                "pip", "install", "--force-reinstall",
+                "pip", "install",
+                "--force-reinstall",
+                "--no-cache-dir",  # Bust pip cache
                 "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
             ],
             capture_output=True,
