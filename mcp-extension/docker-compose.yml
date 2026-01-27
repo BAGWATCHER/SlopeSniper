@@ -10,6 +10,7 @@ services:
       - SOLANA_PRIVATE_KEY=${SOLANA_PRIVATE_KEY}
       - SLOPESNIPER_API_KEY=${SLOPESNIPER_API_KEY:-}
       - SOLANA_RPC_URL=${SOLANA_RPC_URL:-}
+      - SLOPESNIPER_CALLBACK_TOKEN=${SLOPESNIPER_CALLBACK_TOKEN:-}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8420/"]

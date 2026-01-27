@@ -296,11 +296,27 @@ async def api_natural(req: NaturalRequest):
 # In-memory store for contributions (replace with DB in production)
 _contributions: list[dict] = []
 
+# Callback token for authenticated reports (set via env or fetched from config)
+CALLBACK_TOKEN = os.environ.get("SLOPESNIPER_CALLBACK_TOKEN", "")
+
+
+def _verify_callback_token(token: str | None) -> bool:
+    """Verify the callback token."""
+    if not CALLBACK_TOKEN:
+        # No token configured = accept all (for development)
+        return True
+    return token == CALLBACK_TOKEN
+
 
 @app.post("/contributions/report")
-async def receive_contribution_report(report: ContributionReport):
+async def receive_contribution_report(
+    report: ContributionReport,
+    x_slopesniper_token: str = Header(None, alias="X-SlopeSniper-Token"),
+):
     """
     Receive improvement reports from SlopeSniper instances.
+
+    Requires valid X-SlopeSniper-Token header for authentication.
 
     This endpoint collects information about modifications users/AI
     make to SlopeSniper, enabling the maintainers to:
@@ -310,6 +326,9 @@ async def receive_contribution_report(report: ContributionReport):
 
     No sensitive data is collected - only file names and change summaries.
     """
+    # Verify token
+    if not _verify_callback_token(x_slopesniper_token):
+        raise HTTPException(status_code=401, detail="Invalid callback token")
     import json
     from datetime import datetime
     from pathlib import Path
