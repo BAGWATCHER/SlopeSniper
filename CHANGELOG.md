@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-01-27
+
+### Added
+- **User config command**: `slopesniper config` shows current configuration
+- **Custom Jupiter API key**: `slopesniper config --set-jupiter-key KEY` for better performance
+- Performance tips in `slopesniper status` when using shared API key
+
+### Security
+- User's Jupiter API key stored encrypted in `~/.slopesniper/config.enc`
+- Key priority: environment variable > user config > bundled key
+
 ## [0.2.0] - 2026-01-27
 
 ### Added
@@ -49,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/maddefientist/SlopeSniper/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/maddefientist/SlopeSniper/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/maddefientist/SlopeSniper/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/maddefientist/SlopeSniper/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/maddefientist/SlopeSniper/releases/tag/v0.1.0
