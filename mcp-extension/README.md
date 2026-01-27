@@ -8,7 +8,7 @@ Trade Solana tokens directly through Claude Desktop. Just talk naturally:
 ## Quick Install (One Command)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/mcpext/mcp-extension/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/maddefientist/SlopeSniper/mcpext/mcp-extension/install.sh | bash
 ```
 
 Then:
@@ -75,7 +75,7 @@ Change with: "Set me to balanced" or "Make it aggressive"
 - Add `SOLANA_PRIVATE_KEY` in Settings → Developer → MCP Servers
 
 **Need help?**
-Open an issue at [github.com/BAGWATCHER/SlopeSniper](https://github.com/BAGWATCHER/SlopeSniper)
+Open an issue at [github.com/maddefientist/SlopeSniper](https://github.com/maddefientist/SlopeSniper)
 
 ---
 

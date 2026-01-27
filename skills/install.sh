@@ -1,12 +1,12 @@
 #!/bin/bash
 # SlopeSniper Clawdbot Skill Installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/skills/install.sh | bash
 
 set -e
 
 SKILL_NAME="slopesniper"
 SKILLS_DIR="${HOME}/.clawdbot/skills"
-REPO_URL="https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/slopesniper"
+REPO_URL="https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/skills/slopesniper"
 
 echo "🎯 Installing SlopeSniper skill for Clawdbot..."
 
@@ -26,8 +26,8 @@ fi
 
 # Install Python package
 echo "📦 Installing SlopeSniper package..."
-uv pip install --system "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension" 2>/dev/null || \
-uv pip install "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension"
+uv pip install --system "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension" 2>/dev/null || \
+uv pip install "slopesniper-mcp @ git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension"
 
 echo ""
 echo "✅ SlopeSniper installed!"

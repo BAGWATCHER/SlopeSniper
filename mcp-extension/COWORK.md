@@ -6,7 +6,7 @@ Claude Cowork runs in a sandboxed VM and can't access local MCP servers. Instead
 
 ```bash
 # Clone the repo
-git clone https://github.com/BAGWATCHER/SlopeSniper.git
+git clone https://github.com/maddefientist/SlopeSniper.git
 cd SlopeSniper/mcp-extension
 
 # Set your private key

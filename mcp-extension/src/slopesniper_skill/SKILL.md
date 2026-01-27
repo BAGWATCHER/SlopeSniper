@@ -1,9 +1,9 @@
 ---
 name: slopesniper
 description: Trade Solana tokens via Jupiter DEX with policy-enforced safety limits
-metadata: {"clawdbot":{"requires":{"bins":["uv"],"env":["SOLANA_PRIVATE_KEY"]},"emoji":"🎯","primaryEnv":"SOLANA_PRIVATE_KEY","install":[{"id":"uv","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper-mcp"],"label":"Install SlopeSniper (uv)"}]}}
+metadata: {"clawdbot":{"requires":{"bins":["uv"],"env":["SOLANA_PRIVATE_KEY"]},"emoji":"🎯","primaryEnv":"SOLANA_PRIVATE_KEY","install":[{"id":"uv","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/maddefientist/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper-mcp"],"label":"Install SlopeSniper (uv)"}]}}
 user-invocable: true
-homepage: https://github.com/BAGWATCHER/SlopeSniper
+homepage: https://github.com/maddefientist/SlopeSniper
 ---
 
 # SlopeSniper - Solana Trading Assistant
