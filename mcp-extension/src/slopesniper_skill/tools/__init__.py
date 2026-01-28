@@ -6,6 +6,7 @@ Safe two-step token swaps with policy enforcement.
 
 from .config import (
     PolicyConfig,
+    clear_jupiter_api_key,
     clear_rpc_config,
     get_jupiter_api_key,
     get_keypair,
@@ -116,6 +117,7 @@ __all__ = [
     "PolicyConfig",
     "set_rpc_config",
     "clear_rpc_config",
+    "clear_jupiter_api_key",
     "get_rpc_config_status",
     # Policy
     "check_policy",

@@ -64,6 +64,7 @@ from slopesniper_skill import (
 
 # Import config functions directly
 from slopesniper_skill.tools.config import (
+    clear_jupiter_api_key,
     clear_rpc_config,
     get_rpc_config_status,
     set_rpc_config,
@@ -445,6 +446,22 @@ async def clear_rpc() -> dict:
         Status confirming RPC was cleared
     """
     return clear_rpc_config()
+
+
+@mcp.tool()
+async def clear_jupiter_key() -> dict:
+    """
+    Clear saved Jupiter API key and revert to bundled key.
+
+    Use this when:
+    - Getting 401 Unauthorized errors
+    - Jupiter API key is invalid or expired
+    - Want to reset to default configuration
+
+    Returns:
+        Status confirming key was cleared
+    """
+    return clear_jupiter_api_key()
 
 
 @mcp.tool()

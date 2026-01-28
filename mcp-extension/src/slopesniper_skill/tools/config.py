@@ -631,6 +631,26 @@ def get_jupiter_api_key() -> str | None:
     return None
 
 
+def clear_jupiter_api_key() -> dict:
+    """
+    Clear saved Jupiter API key (revert to bundled key).
+
+    Returns:
+        Status dict
+    """
+    config = load_user_config() or {}
+    had_key = "jupiter_api_key" in config
+    config.pop("jupiter_api_key", None)
+    save_user_config(config, merge=False)
+
+    return {
+        "success": True,
+        "cleared": had_key,
+        "message": "Jupiter API key cleared. Now using bundled key.",
+        "tip": "Get your own free key at: https://station.jup.ag/docs/apis/ultra-api",
+    }
+
+
 # RPC Provider Configuration
 RPC_PROVIDERS = {
     "helius": "https://mainnet.helius-rpc.com/?api-key={key}",

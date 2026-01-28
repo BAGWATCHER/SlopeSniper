@@ -22,7 +22,7 @@ Usage:
     slopesniper scan [filter]       Scan for opportunities (trending/new/graduated/pumping)
     slopesniper config              View current configuration
     slopesniper config --set KEY VALUE   Set config (jupiter-key, rpc-provider, rpc-url)
-    slopesniper config --clear KEY       Clear config (rpc)
+    slopesniper config --clear KEY       Clear config (rpc, jupiter-key)
     slopesniper contribute          Check for improvements and report to GitHub
     slopesniper contribute --enable       Enable contribution callbacks
     slopesniper contribute --disable      Disable contribution callbacks
@@ -306,6 +306,7 @@ def cmd_config(
 ) -> None:
     """View or update configuration."""
     from .tools.config import (
+        clear_jupiter_api_key,
         clear_rpc_config,
         get_config_status,
         set_jupiter_api_key,
@@ -332,12 +333,15 @@ def cmd_config(
         print_json(result)
 
     elif clear_key:
-        key_lower = clear_key.lower()
+        key_lower = clear_key.lower().replace("-", "_").replace(" ", "_")
         if key_lower in ("rpc", "rpc_url", "rpc_provider"):
             result = clear_rpc_config()
             print_json(result)
+        elif key_lower in ("jupiter", "jupiter_key", "jupiter_api_key", "jup", "jup_key"):
+            result = clear_jupiter_api_key()
+            print_json(result)
         else:
-            print_json({"error": f"Cannot clear: {clear_key}", "clearable": ["rpc"]})
+            print_json({"error": f"Cannot clear: {clear_key}", "clearable": ["rpc", "jupiter-key"]})
 
     else:
         result = get_config_status()
