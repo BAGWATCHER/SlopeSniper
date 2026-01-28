@@ -12,11 +12,15 @@ from dataclasses import dataclass
 from .config import (
     SLOPESNIPER_DIR,
     export_backup_wallet,
+    generate_wallet,
+    get_backup_status,
     get_jupiter_api_key,
     get_or_create_wallet,
     get_rpc_url,
     list_wallet_backups,
     load_local_wallet,
+    record_wallet_created,
+    save_wallet,
 )
 from .strategies import get_active_strategy
 
@@ -34,6 +38,29 @@ class Status:
     ready_to_trade: bool
     is_new_wallet: bool = False
     private_key: str | None = None
+
+
+async def create_wallet_explicit() -> dict:
+    """
+    Create wallet explicitly (called after user confirmation in CLI).
+
+    This is used by the interactive `slopesniper setup` command.
+    Unlike get_status(), this doesn't auto-create - it's called only
+    after the user has confirmed they want a new wallet.
+
+    Returns:
+        dict with address, private_key, and instructions
+    """
+    private_key, address = generate_wallet()
+    save_wallet(private_key, address)
+    record_wallet_created()
+
+    return {
+        "success": True,
+        "address": address,
+        "private_key": private_key,
+        "IMPORTANT": "SAVE THIS PRIVATE KEY NOW - it will NOT be shown again!",
+    }
 
 
 async def get_status() -> dict:
@@ -116,12 +143,24 @@ async def get_status() -> dict:
             f"Wallet stored (encrypted) at: {SLOPESNIPER_DIR}\n"
             "The wallet is encrypted with a machine-specific key for security."
         )
+        result["tip"] = "For a guided setup experience, use 'slopesniper setup' next time."
+        # Record wallet creation for backup tracking
+        record_wallet_created()
     elif (sol_balance or 0) < 0.01:
         result["needs_funding"] = True
         result["funding_instructions"] = (
             f"Send SOL to your wallet address: {wallet_address}\n"
             "You need at least 0.01 SOL to start trading."
         )
+    else:
+        # Existing wallet with balance - check if backup reminder needed
+        backup_status = get_backup_status()
+        if backup_status.get("needs_reminder"):
+            result["backup_reminder"] = {
+                "message": f"Wallet has {sol_balance:.4f} SOL. Consider backing up your private key.",
+                "last_export": backup_status.get("last_backup_export"),
+                "action": "Run 'slopesniper export' to backup your private key",
+            }
 
     # Check if user has their own Jupiter API key
     has_custom_key = get_jupiter_api_key() is not None
