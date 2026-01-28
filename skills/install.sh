@@ -1,5 +1,5 @@
 #!/bin/bash
-# SlopeSniper Clawdbot Skill Installer/Updater
+# SlopeSniper Moltbot Skill Installer/Updater
 # Usage: curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash
 
 set -e
@@ -8,10 +8,15 @@ SKILL_NAME="slopesniper"
 REPO_URL="https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/slopesniper"
 PACKAGE_URL="slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension"
 
-# Detect Clawdbot skills directory
+# Detect Moltbot/Clawdbot skills directory (supports both for backward compatibility)
 detect_skills_dir() {
-    # Check common locations
+    # Check common locations - moltbot first, then clawdbot fallback
     local possible_dirs=(
+        "$(npm root -g 2>/dev/null)/moltbot/skills"
+        "$(dirname $(which moltbot 2>/dev/null) 2>/dev/null)/../lib/node_modules/moltbot/skills"
+        "${HOME}/.moltbot/skills"
+        "/usr/local/lib/node_modules/moltbot/skills"
+        "/usr/lib/node_modules/moltbot/skills"
         "$(npm root -g 2>/dev/null)/clawdbot/skills"
         "$(dirname $(which clawdbot 2>/dev/null) 2>/dev/null)/../lib/node_modules/clawdbot/skills"
         "${HOME}/.clawdbot/skills"
@@ -26,8 +31,8 @@ detect_skills_dir() {
         fi
     done
 
-    # Fallback to ~/.clawdbot/skills
-    echo "${HOME}/.clawdbot/skills"
+    # Fallback to ~/.moltbot/skills (new default)
+    echo "${HOME}/.moltbot/skills"
 }
 
 SKILLS_DIR=$(detect_skills_dir)
@@ -43,7 +48,7 @@ echo "==============================================================="
 if [ "$IS_UPDATE" = true ]; then
     echo "   SlopeSniper - Updating..."
 else
-    echo "   SlopeSniper - Solana Trading for Clawdbot"
+    echo "   SlopeSniper - Solana Trading for Moltbot"
 fi
 echo "==============================================================="
 echo ""

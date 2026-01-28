@@ -49,7 +49,7 @@ gh issue create \
 
 ## Context
 - Discovered by: AI assistant
-- Environment: [Clawdbot/Claude Code/etc.]
+- Environment: [Moltbot/Claude Code/etc.]
 - Date: $(date -I)
 
 ---

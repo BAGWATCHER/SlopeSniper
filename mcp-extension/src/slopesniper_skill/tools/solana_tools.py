@@ -39,6 +39,20 @@ TOKEN_DECIMALS: dict[str, int] = {
 DEFAULT_DECIMALS = 9
 
 
+def _safe_float(value: Any, default: float = 0.0) -> float:
+    """
+    Safely convert a value to float, returning default on failure.
+
+    Handles None, empty strings, and invalid types gracefully.
+    """
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default
+
+
 def resolve_token(token: str) -> str | None:
     """
     Resolve a token symbol or mint address to a mint address.
@@ -81,8 +95,10 @@ async def get_token_decimals_async(mint: str) -> int:
             # Cache for future use
             TOKEN_DECIMALS[mint] = decimals
             return decimals
+    except (ValueError, TypeError, KeyError):
+        pass  # Invalid decimals format
     except Exception:
-        pass
+        pass  # Network errors, API errors
 
     return DEFAULT_DECIMALS
 
@@ -100,9 +116,12 @@ async def _get_sol_price_async() -> float:
     try:
         data_client = JupiterDataClient(api_key=get_jupiter_api_key())
         price_data = await data_client.get_price(SYMBOL_TO_MINT["SOL"])
-        return float(price_data.get("usdPrice", 0)) if price_data else 0
+        return _safe_float(price_data.get("usdPrice")) if price_data else 0.0
+    except (ValueError, TypeError, KeyError):
+        return 0.0
     except Exception:
-        return 0
+        # Network errors, timeouts, etc.
+        return 0.0
 
 
 async def solana_resolve_token(token: str) -> dict[str, Any]:
@@ -217,7 +236,7 @@ async def solana_get_price(token: str) -> dict[str, Any]:
     result: dict[str, Any] = {
         "mint": mint,
         "symbol": token_info.get("symbol") if token_info else None,
-        "price_usd": float(price_data.get("usdPrice", 0)),
+        "price_usd": _safe_float(price_data.get("usdPrice")),
     }
 
     if token_info and "mcap" in token_info:
@@ -371,9 +390,11 @@ async def solana_get_wallet(address: str | None = None) -> dict[str, Any]:
             # Get prices for all tokens
             prices = await data_client.get_prices(mints)
             for mint, price_data in prices.items():
-                token_prices[mint] = float(price_data.get("usdPrice", 0))
+                token_prices[mint] = _safe_float(price_data.get("usdPrice"))
+        except (ValueError, TypeError, KeyError):
+            pass  # Invalid data format, continue without prices
         except Exception:
-            pass  # Continue without prices
+            pass  # Network errors, continue without prices
 
         # Get symbols from known list or search
         for mint in mints:
@@ -387,8 +408,12 @@ async def solana_get_wallet(address: str | None = None) -> dict[str, Any]:
                 try:
                     info = await data_client.get_token_info(mint)
                     symbol = info.get("symbol", mint[:8]) if info else mint[:8]
+                    # Truncate long symbols for safety
+                    symbol = symbol[:20] if symbol else mint[:8]
+                except (ValueError, TypeError, KeyError):
+                    symbol = mint[:8]  # Invalid data format
                 except Exception:
-                    symbol = mint[:8]
+                    symbol = mint[:8]  # Network errors, API errors
             token_symbols[mint] = symbol
 
     # Build tokens list
@@ -398,10 +423,10 @@ async def solana_get_wallet(address: str | None = None) -> dict[str, Any]:
         total_amount = 0.0
         if isinstance(token_accounts, list):
             for account in token_accounts:
-                total_amount += float(account.get("uiAmount", 0))
+                total_amount += _safe_float(account.get("uiAmount"))
         elif isinstance(token_accounts, dict):
             # Fallback if response format is different
-            total_amount = float(token_accounts.get("uiAmount", 0))
+            total_amount = _safe_float(token_accounts.get("uiAmount"))
 
         if total_amount > 0:
             price = token_prices.get(mint, 0)
@@ -469,11 +494,11 @@ async def solana_quote(
     data_client = JupiterDataClient(api_key=get_jupiter_api_key())
     price_data = await data_client.get_price(from_mint)
     if price_data:
-        price_usd = float(price_data.get("usdPrice", 0))
+        price_usd = _safe_float(price_data.get("usdPrice"))
         amount_usd = amount_float * price_usd
     else:
         # If we can't get price, assume $0 (will pass USD check)
-        amount_usd = 0
+        amount_usd = 0.0
 
     # Run rugcheck on destination token (if not known safe)
     rugcheck_result = None
@@ -638,12 +663,12 @@ async def solana_swap_confirm(intent_id: str) -> dict[str, Any]:
                 trade_amount_tokens = out_amount_ui
                 # Estimate USD value: input SOL * SOL price
                 sol_price = await _get_sol_price_async()
-                trade_amount_usd = float(intent.amount) * sol_price
+                trade_amount_usd = _safe_float(intent.amount) * sol_price
             else:
                 # Selling token for SOL
                 action = "sell"
                 trade_mint = intent.from_mint
-                trade_amount_tokens = float(intent.amount)
+                trade_amount_tokens = _safe_float(intent.amount)
                 # Estimate USD value: output SOL * SOL price
                 sol_price = await _get_sol_price_async()
                 trade_amount_usd = out_amount_ui * sol_price
@@ -665,6 +690,8 @@ async def solana_swap_confirm(intent_id: str) -> dict[str, Any]:
                 price_per_token=price_per_token,
                 signature=signature,
             )
+        except (ValueError, TypeError, KeyError):
+            pass  # Invalid data, skip recording
         except Exception:
             pass  # Don't fail the trade if recording fails
 
@@ -730,7 +757,10 @@ async def quick_trade(
         sell_all = True
         amount_usd = 0.0  # Will be calculated from holdings
     else:
-        amount_usd = float(amount_usd)
+        try:
+            amount_usd = float(amount_usd)
+        except (ValueError, TypeError):
+            return {"error": f"Invalid amount: {amount_usd}"}
 
     # Get current strategy for limits
     strategy = get_active_strategy()
@@ -783,10 +813,10 @@ async def quick_trade(
             token_accounts = tokens_data[mint]
             if isinstance(token_accounts, list) and token_accounts:
                 # Sum all token accounts
-                total_amount = sum(float(acc.get("uiAmount", 0)) for acc in token_accounts)
+                total_amount = sum(_safe_float(acc.get("uiAmount")) for acc in token_accounts)
                 token_holding = {"amount": total_amount}
             elif isinstance(token_accounts, dict):
-                token_holding = {"amount": float(token_accounts.get("uiAmount", 0))}
+                token_holding = {"amount": _safe_float(token_accounts.get("uiAmount"))}
 
         if not token_holding or token_holding["amount"] <= 0:
             return {
@@ -803,7 +833,7 @@ async def quick_trade(
         if not price_data or not price_data.get("usdPrice"):
             return {"error": f"Could not get price for {token_symbol}"}
 
-        price_usd = float(price_data.get("usdPrice", 0))
+        price_usd = _safe_float(price_data.get("usdPrice"))
         if price_usd <= 0:
             return {"error": "Invalid price data"}
 
@@ -855,7 +885,7 @@ async def quick_trade(
         if not price_data or not price_data.get("usdPrice"):
             return {"error": "Could not get SOL price"}
 
-        price_usd = float(price_data.get("usdPrice", 0))
+        price_usd = _safe_float(price_data.get("usdPrice"))
         if price_usd <= 0:
             return {"error": "Invalid price data"}
 

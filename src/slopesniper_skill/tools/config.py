@@ -39,12 +39,12 @@ def get_secret(name: str) -> Optional[str]:
         Secret value or None if not found
 
     Priority:
-    1. Clawdbot gateway secret API (if available)
+    1. Moltbot gateway secret API (if available)
     2. Environment variable
     3. None
     """
-    # Try clawdbot gateway first (future integration point)
-    gateway_url = os.environ.get("CLAWDBOT_GATEWAY_URL")
+    # Try moltbot gateway first (future integration point)
+    gateway_url = os.environ.get("MOLTBOT_GATEWAY_URL")
     if gateway_url:
         try:
             # Future: implement gateway secret fetch

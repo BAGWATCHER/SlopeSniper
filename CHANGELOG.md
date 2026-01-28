@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.9] - 2026-01-27
+
+### Added
+- **Backward compatibility** - Supports both Moltbot and Clawdbot installations
+  - Skill metadata includes both `"moltbot"` and `"clawdbot"` keys
+  - Installer checks both `.moltbot` and `.clawdbot` directories
+  - Config checks both `MOLTBOT_GATEWAY_URL` and `CLAWDBOT_GATEWAY_URL`
+
+### Changed
+- **Rebranded** from Clawdbot to Moltbot (with backward compatibility)
+
+### Security
+- Added `_safe_float()` helper for safer API response parsing
+- SQLite database now gets `0o600` permissions on creation
+- Replaced generic exception handlers with specific types
+- Added input validation on user amount parsing
+- Truncate long token symbols to prevent overflow
+
 ## [0.2.8] - 2026-01-27
 
 ### Added
@@ -26,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Issue #14**: Users couldn't clear invalid Jupiter API keys
   - Added `slopesniper config --clear jupiter-key`
   - Added `clear_jupiter_key()` MCP tool
-- **Issue #15**: Wallet desync between Clawdbot/MCP and CLI
+- **Issue #15**: Wallet desync between Moltbot/MCP and CLI
   - Added `get_wallet_sync_status()` for mismatch detection
   - Added `wallet_source` field to status output
   - Added `WALLET_MISMATCH_WARNING` when configs differ
@@ -167,7 +185,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-execution for trades under threshold
 - Two-step confirmation for larger trades
 - Auto-generated trading wallet on first run
-- Clawdbot skill integration
+- Moltbot skill integration
 
 ---
 

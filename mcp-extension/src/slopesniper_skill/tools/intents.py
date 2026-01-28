@@ -7,6 +7,7 @@ Intents store the quote details and unsigned transaction for later execution.
 
 from __future__ import annotations
 
+import os
 import sqlite3
 import uuid
 from dataclasses import dataclass
@@ -42,8 +43,15 @@ def get_db_connection() -> sqlite3.Connection:
     # Ensure parent directory exists
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
+    # Check if this is a new database
+    db_exists = DB_PATH.exists()
+
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
+
+    # Set restrictive permissions on new database file
+    if not db_exists:
+        os.chmod(str(DB_PATH), 0o600)
 
     # Create table if not exists
     conn.execute("""

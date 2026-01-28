@@ -34,7 +34,7 @@ SlopeSniper handles token resolution, safety checks, quotes, and execution—all
 
 | Platform | Status | Description |
 |----------|--------|-------------|
-| **Clawdbot** | ✅ Beta | Natural language trading via Claude Code |
+| **Moltbot** | ✅ Beta | Natural language trading via Claude Code |
 | Claude Desktop (MCP) | 🔜 Coming Soon | Direct integration with Claude Desktop |
 | Web API | 🔜 Coming Soon | REST API for custom integrations |
 
@@ -70,7 +70,7 @@ Send SOL to the displayed wallet address. This is your dedicated trading wallet�
 
 ### 4. Start Trading
 
-Talk to Clawdbot:
+Talk to Moltbot:
 
 ```
 You: "Check my trading status"
@@ -271,7 +271,7 @@ slopesniper export
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                      Clawdbot                           │
+│                      Moltbot                           │
 │                    (Claude Code)                        │
 └─────────────────────┬───────────────────────────────────┘
                       │ Natural Language
@@ -354,7 +354,7 @@ ruff check src/
 ```
 SlopeSniper/
 ├── config/                 # Public configuration files
-├── skills/                 # Clawdbot skill definition
+├── skills/                 # Moltbot skill definition
 │   ├── install.sh         # One-line installer
 │   └── slopesniper/
 │       └── SKILL.md       # Skill metadata and docs
