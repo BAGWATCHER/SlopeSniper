@@ -129,6 +129,18 @@ def _init_db():
         )
     """)
 
+    # PnL snapshots for baseline tracking
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS pnl_snapshots (
+            id INTEGER PRIMARY KEY,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            sol_balance REAL,
+            sol_value_usd REAL,
+            total_value_usd REAL,
+            trigger TEXT DEFAULT 'manual'
+        )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -613,4 +625,414 @@ async def get_portfolio_pnl() -> dict:
         "total_pnl_pct": (total_pnl / total_invested * 100) if total_invested > 0 else 0,
         "tokens_traded": len(token_pnls),
         "token_breakdown": token_pnls,
+    }
+
+
+# ============================================================================
+# PnL Enhancement Functions (Issue #25)
+# ============================================================================
+
+
+async def pnl_init(starting_value: float | None = None) -> dict:
+    """
+    Initialize PnL tracking with current portfolio value as baseline.
+
+    Args:
+        starting_value: Optional manual starting value in USD.
+                       If not provided, uses current wallet balance.
+
+    Returns:
+        Snapshot record with baseline set
+    """
+    _init_db()
+
+    if starting_value is None:
+        # Get current wallet value
+        from .solana_tools import solana_get_wallet
+
+        wallet = await solana_get_wallet()
+        if "error" in wallet:
+            return {"error": "Could not fetch wallet balance", "details": wallet}
+
+        sol_balance = wallet.get("sol_balance", 0)
+        sol_value = wallet.get("sol_value_usd", 0)
+        token_value = sum(t.get("value_usd", 0) for t in wallet.get("tokens", []))
+        total_value = sol_value + token_value
+    else:
+        sol_balance = 0
+        sol_value = 0
+        total_value = starting_value
+
+    db_path = _get_config_db_path()
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO pnl_snapshots (sol_balance, sol_value_usd, total_value_usd, trigger)
+        VALUES (?, ?, ?, 'init')
+        """,
+        (sol_balance, sol_value, total_value),
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True,
+        "message": f"Baseline set: ${total_value:.2f}",
+        "snapshot": {
+            "sol_balance": sol_balance,
+            "sol_value_usd": sol_value,
+            "total_value_usd": total_value,
+            "trigger": "init",
+        },
+    }
+
+
+def get_pnl_baseline() -> dict | None:
+    """Get the earliest (init) snapshot as baseline."""
+    _init_db()
+    db_path = _get_config_db_path()
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT timestamp, sol_balance, sol_value_usd, total_value_usd, trigger
+        FROM pnl_snapshots
+        WHERE trigger = 'init'
+        ORDER BY timestamp ASC
+        LIMIT 1
+        """
+    )
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return None
+
+    return {
+        "timestamp": row[0],
+        "sol_balance": row[1],
+        "sol_value_usd": row[2],
+        "total_value_usd": row[3],
+        "trigger": row[4],
+    }
+
+
+async def pnl_with_baseline() -> dict:
+    """
+    Get PnL compared to baseline snapshot.
+
+    Returns:
+        Portfolio PnL with baseline comparison
+    """
+    baseline = get_pnl_baseline()
+    current_pnl = await get_portfolio_pnl()
+
+    if "error" in current_pnl:
+        return current_pnl
+
+    # Get current wallet value
+    from .solana_tools import solana_get_wallet
+
+    wallet = await solana_get_wallet()
+    sol_value = wallet.get("sol_value_usd", 0) if "error" not in wallet else 0
+    token_value = sum(t.get("value_usd", 0) for t in wallet.get("tokens", []))
+    current_total = sol_value + token_value
+
+    result = {
+        "current_value_usd": current_total,
+        **current_pnl,
+    }
+
+    if baseline:
+        baseline_value = baseline["total_value_usd"]
+        pnl_vs_baseline = current_total - baseline_value
+        pnl_vs_baseline_pct = (pnl_vs_baseline / baseline_value * 100) if baseline_value > 0 else 0
+
+        result["baseline"] = {
+            "value_usd": baseline_value,
+            "timestamp": baseline["timestamp"],
+        }
+        result["pnl_vs_baseline"] = pnl_vs_baseline
+        result["pnl_vs_baseline_pct"] = pnl_vs_baseline_pct
+
+    return result
+
+
+def pnl_stats() -> dict:
+    """
+    Calculate trading statistics: win rate, avg gain/loss, etc.
+
+    Returns:
+        Trading statistics summary
+    """
+    trades = get_trade_history(limit=1000)  # Get all trades
+
+    if not trades:
+        return {"error": "No trade history", "message": "Complete some trades to see stats"}
+
+    # Group trades by token to calculate per-position results
+    token_trades: dict = {}
+    for trade in trades:
+        mint = trade["mint"]
+        if mint not in token_trades:
+            token_trades[mint] = {"buys": [], "sells": [], "symbol": trade.get("symbol")}
+        if trade["action"] == "buy":
+            token_trades[mint]["buys"].append(trade)
+        else:
+            token_trades[mint]["sells"].append(trade)
+
+    # Calculate closed position results
+    closed_positions = []
+    for mint, data in token_trades.items():
+        if data["sells"]:  # Only count if there are sells
+            total_bought = sum(t["amount_usd"] for t in data["buys"])
+            total_sold = sum(t["amount_usd"] for t in data["sells"])
+            if total_bought > 0:
+                pnl = total_sold - total_bought
+                pnl_pct = (pnl / total_bought) * 100
+                closed_positions.append({
+                    "symbol": data["symbol"],
+                    "mint": mint,
+                    "invested": total_bought,
+                    "returned": total_sold,
+                    "pnl": pnl,
+                    "pnl_pct": pnl_pct,
+                    "is_win": pnl > 0,
+                })
+
+    if not closed_positions:
+        return {
+            "message": "No closed positions yet",
+            "total_trades": len(trades),
+            "buys": sum(1 for t in trades if t["action"] == "buy"),
+            "sells": sum(1 for t in trades if t["action"] == "sell"),
+        }
+
+    wins = [p for p in closed_positions if p["is_win"]]
+    losses = [p for p in closed_positions if not p["is_win"]]
+
+    win_rate = (len(wins) / len(closed_positions)) * 100 if closed_positions else 0
+    avg_gain = sum(p["pnl_pct"] for p in wins) / len(wins) if wins else 0
+    avg_loss = sum(p["pnl_pct"] for p in losses) / len(losses) if losses else 0
+
+    largest_win = max(wins, key=lambda x: x["pnl"]) if wins else None
+    largest_loss = min(losses, key=lambda x: x["pnl"]) if losses else None
+
+    return {
+        "total_trades": len(trades),
+        "closed_positions": len(closed_positions),
+        "wins": len(wins),
+        "losses": len(losses),
+        "win_rate_pct": round(win_rate, 2),
+        "avg_gain_pct": round(avg_gain, 2),
+        "avg_loss_pct": round(avg_loss, 2),
+        "largest_win": {
+            "symbol": largest_win["symbol"],
+            "pnl": round(largest_win["pnl"], 2),
+            "pnl_pct": round(largest_win["pnl_pct"], 2),
+        } if largest_win else None,
+        "largest_loss": {
+            "symbol": largest_loss["symbol"],
+            "pnl": round(largest_loss["pnl"], 2),
+            "pnl_pct": round(largest_loss["pnl_pct"], 2),
+        } if largest_loss else None,
+        "total_realized_pnl": round(sum(p["pnl"] for p in closed_positions), 2),
+    }
+
+
+async def pnl_positions() -> dict:
+    """
+    Get detailed view of all positions (open and closed).
+
+    Returns:
+        Position-level breakdown with PnL
+    """
+    trades = get_trade_history(limit=1000)
+
+    if not trades:
+        return {"error": "No trade history", "positions": []}
+
+    # Group by token
+    token_data: dict = {}
+    for trade in trades:
+        mint = trade["mint"]
+        if mint not in token_data:
+            token_data[mint] = {
+                "symbol": trade.get("symbol"),
+                "buys": [],
+                "sells": [],
+                "first_trade": trade["timestamp"],
+            }
+        if trade["action"] == "buy":
+            token_data[mint]["buys"].append(trade)
+        else:
+            token_data[mint]["sells"].append(trade)
+
+    from .solana_tools import solana_get_price
+
+    positions = []
+    for mint, data in token_data.items():
+        total_bought_tokens = sum(t["amount_tokens"] for t in data["buys"])
+        total_bought_usd = sum(t["amount_usd"] for t in data["buys"])
+        total_sold_tokens = sum(t["amount_tokens"] for t in data["sells"])
+        total_sold_usd = sum(t["amount_usd"] for t in data["sells"])
+
+        holdings = total_bought_tokens - total_sold_tokens
+        avg_buy_price = total_bought_usd / total_bought_tokens if total_bought_tokens > 0 else 0
+
+        # Get current price
+        price_data = await solana_get_price(mint)
+        current_price = price_data.get("price_usd", 0) if isinstance(price_data, dict) else 0
+
+        holdings_value = holdings * current_price
+        cost_basis = holdings * avg_buy_price
+
+        # Calculate PnL
+        realized_pnl = total_sold_usd - (total_sold_tokens * avg_buy_price) if total_sold_tokens > 0 else 0
+        unrealized_pnl = holdings_value - cost_basis
+        total_pnl = realized_pnl + unrealized_pnl
+
+        status = "closed" if holdings <= 0 else "open"
+
+        positions.append({
+            "symbol": data["symbol"],
+            "mint": mint,
+            "status": status,
+            "current_holdings": holdings,
+            "current_price": current_price,
+            "holdings_value_usd": round(holdings_value, 2),
+            "total_invested": round(total_bought_usd, 2),
+            "avg_buy_price": avg_buy_price,
+            "realized_pnl": round(realized_pnl, 2),
+            "unrealized_pnl": round(unrealized_pnl, 2),
+            "total_pnl": round(total_pnl, 2),
+            "total_pnl_pct": round((total_pnl / total_bought_usd) * 100, 2) if total_bought_usd > 0 else 0,
+            "first_trade": data["first_trade"],
+            "trade_count": len(data["buys"]) + len(data["sells"]),
+        })
+
+    # Sort by status (open first) then by PnL
+    positions.sort(key=lambda x: (x["status"] == "closed", -x["total_pnl"]))
+
+    open_positions = [p for p in positions if p["status"] == "open"]
+    closed_positions = [p for p in positions if p["status"] == "closed"]
+
+    return {
+        "open_count": len(open_positions),
+        "closed_count": len(closed_positions),
+        "positions": positions,
+    }
+
+
+def pnl_export(format_type: str = "json") -> dict:
+    """
+    Export trade history and PnL data.
+
+    Args:
+        format_type: "json" or "csv"
+
+    Returns:
+        Export data or file path
+    """
+    trades = get_trade_history(limit=10000)
+
+    if not trades:
+        return {"error": "No trade history to export"}
+
+    if format_type == "csv":
+        import csv
+        import io
+        from datetime import datetime
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # Header
+        writer.writerow([
+            "timestamp", "action", "symbol", "mint", "amount_tokens",
+            "amount_usd", "price_per_token", "signature", "notes"
+        ])
+
+        for trade in trades:
+            writer.writerow([
+                trade["timestamp"],
+                trade["action"],
+                trade["symbol"],
+                trade["mint"],
+                trade["amount_tokens"],
+                trade["amount_usd"],
+                trade["price_per_token"],
+                trade["signature"] or "",
+                trade["notes"] or "",
+            ])
+
+        csv_content = output.getvalue()
+
+        # Save to file
+        export_dir = Path.home() / ".slopesniper" / "exports"
+        export_dir.mkdir(parents=True, exist_ok=True)
+        filename = f"trades_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        filepath = export_dir / filename
+
+        with open(filepath, "w") as f:
+            f.write(csv_content)
+
+        return {
+            "success": True,
+            "format": "csv",
+            "file": str(filepath),
+            "trade_count": len(trades),
+        }
+
+    else:  # JSON format
+        from datetime import datetime
+
+        export_dir = Path.home() / ".slopesniper" / "exports"
+        export_dir.mkdir(parents=True, exist_ok=True)
+        filename = f"trades_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        filepath = export_dir / filename
+
+        export_data = {
+            "exported_at": datetime.now().isoformat(),
+            "trade_count": len(trades),
+            "trades": trades,
+        }
+
+        with open(filepath, "w") as f:
+            json.dump(export_data, f, indent=2, default=str)
+
+        return {
+            "success": True,
+            "format": "json",
+            "file": str(filepath),
+            "trade_count": len(trades),
+        }
+
+
+def pnl_reset() -> dict:
+    """
+    Reset PnL baseline by clearing init snapshots.
+
+    Returns:
+        Confirmation of reset
+    """
+    _init_db()
+    db_path = _get_config_db_path()
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM pnl_snapshots WHERE trigger = 'init'")
+    deleted = cursor.rowcount
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True,
+        "message": "PnL baseline reset",
+        "snapshots_deleted": deleted,
     }

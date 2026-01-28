@@ -72,6 +72,12 @@ from .strategies import (
     get_trade_history,
     list_strategies,
     # PnL tracking
+    pnl_export,
+    pnl_init,
+    pnl_positions,
+    pnl_reset,
+    pnl_stats,
+    pnl_with_baseline,
     record_trade,
     set_strategy,
 )
@@ -122,6 +128,12 @@ __all__ = [
     "get_trade_history",
     "calculate_pnl_for_token",
     "get_portfolio_pnl",
+    "pnl_init",
+    "pnl_stats",
+    "pnl_positions",
+    "pnl_export",
+    "pnl_reset",
+    "pnl_with_baseline",
     # Scanner
     "scan_opportunities",
     "watch_token",

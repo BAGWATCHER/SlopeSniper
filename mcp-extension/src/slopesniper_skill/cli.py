@@ -11,6 +11,13 @@ Usage:
     slopesniper export --list-backups    List all backed up wallets
     slopesniper export --backup TIMESTAMP    Export a specific backup
     slopesniper pnl                 Show profit/loss for your portfolio
+    slopesniper pnl init            Set baseline snapshot (current wallet value)
+    slopesniper pnl init --starting-value 100   Set manual baseline
+    slopesniper pnl stats           Show trading statistics (win rate, avg gain/loss)
+    slopesniper pnl positions       Show detailed position breakdown
+    slopesniper pnl export          Export trade history as JSON
+    slopesniper pnl export --format csv   Export as CSV
+    slopesniper pnl reset           Reset PnL baseline
     slopesniper history [limit]     Show trade history (default: 20 trades)
     slopesniper price <token>       Get token price (symbol or mint)
     slopesniper buy <token> <usd>   Buy tokens
@@ -234,11 +241,50 @@ async def cmd_export(
         print_json(result)
 
 
-async def cmd_pnl() -> None:
-    """Show portfolio profit/loss."""
-    from . import get_portfolio_pnl
+async def cmd_pnl(
+    subcommand: str | None = None,
+    starting_value: float | None = None,
+    format_type: str = "json",
+) -> None:
+    """
+    Show portfolio profit/loss with optional subcommands.
 
-    result = await get_portfolio_pnl()
+    Subcommands:
+        (none)      Show current PnL summary
+        init        Set baseline snapshot for tracking
+        stats       Show trading statistics (win rate, etc.)
+        positions   Show detailed position breakdown
+        export      Export trade history (--format json|csv)
+        reset       Reset PnL baseline
+    """
+    from .tools.strategies import (
+        pnl_export,
+        pnl_init,
+        pnl_positions,
+        pnl_reset,
+        pnl_stats,
+        pnl_with_baseline,
+    )
+
+    if subcommand is None:
+        # Default: show PnL with baseline if available
+        result = await pnl_with_baseline()
+    elif subcommand == "init":
+        result = await pnl_init(starting_value=starting_value)
+    elif subcommand == "stats":
+        result = pnl_stats()
+    elif subcommand == "positions":
+        result = await pnl_positions()
+    elif subcommand == "export":
+        result = pnl_export(format_type=format_type)
+    elif subcommand == "reset":
+        result = pnl_reset()
+    else:
+        result = {
+            "error": f"Unknown pnl subcommand: {subcommand}",
+            "available": ["init", "stats", "positions", "export", "reset"],
+        }
+
     print_json(result)
 
 
@@ -1099,7 +1145,22 @@ def main() -> None:
             asyncio.run(cmd_export(list_backups=list_backups, backup_timestamp=backup_timestamp))
 
         elif cmd == "pnl":
-            asyncio.run(cmd_pnl())
+            # Parse pnl subcommands: pnl [init|stats|positions|export|reset]
+            subcommand = args[1] if len(args) > 1 and not args[1].startswith("-") else None
+            starting_value = None
+            format_type = "json"
+
+            # Parse flags
+            for i, arg in enumerate(args):
+                if arg == "--starting-value" and i + 1 < len(args):
+                    try:
+                        starting_value = float(args[i + 1])
+                    except ValueError:
+                        pass
+                elif arg == "--format" and i + 1 < len(args):
+                    format_type = args[i + 1]
+
+            asyncio.run(cmd_pnl(subcommand, starting_value, format_type))
 
         elif cmd == "history":
             limit = int(args[1]) if len(args) > 1 else 20

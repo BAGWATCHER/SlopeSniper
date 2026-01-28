@@ -25,7 +25,7 @@ Example:
 # Version is the single source of truth - update here for releases
 # Follow semantic versioning: MAJOR.MINOR.PATCH
 # Beta versions use 0.x.x (0.MINOR.PATCH)
-__version__ = "0.3.02"
+__version__ = "0.3.03"
 
 from .tools import (
     export_wallet,
@@ -36,8 +36,14 @@ from .tools import (
     get_trade_history,
     get_watchlist,
     list_strategies,
-    quick_trade,
     # PnL tracking
+    pnl_export,
+    pnl_init,
+    pnl_positions,
+    pnl_reset,
+    pnl_stats,
+    pnl_with_baseline,
+    quick_trade,
     record_trade,
     remove_from_watchlist,
     # Scanner
@@ -82,6 +88,12 @@ __all__ = [
     "record_trade",
     "get_trade_history",
     "get_portfolio_pnl",
+    "pnl_init",
+    "pnl_stats",
+    "pnl_positions",
+    "pnl_export",
+    "pnl_reset",
+    "pnl_with_baseline",
     # Scanner
     "scan_opportunities",
     "watch_token",

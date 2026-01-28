@@ -152,6 +152,12 @@ slopesniper status              # Full status: wallet, holdings, strategy, confi
 slopesniper wallet              # Show wallet address and all token holdings
 slopesniper export              # Export private key for backup/recovery
 slopesniper pnl                 # Show portfolio profit/loss
+slopesniper pnl init            # Set baseline snapshot for tracking
+slopesniper pnl stats           # Trading statistics (win rate, avg gain/loss)
+slopesniper pnl positions       # Detailed position breakdown
+slopesniper pnl export          # Export trade history as JSON
+slopesniper pnl export --format csv   # Export as CSV
+slopesniper pnl reset           # Reset PnL baseline
 slopesniper history             # Show recent trade history
 slopesniper history 50          # Show last 50 trades
 
