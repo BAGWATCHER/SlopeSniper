@@ -3,6 +3,8 @@
 SlopeSniper CLI - Simple command interface for Clawdbot agents.
 
 Usage:
+    slopesniper setup               Create new wallet (interactive, recommended)
+    slopesniper setup --import-key KEY   Import existing private key
     slopesniper status              Full status: wallet, holdings, strategy, config
     slopesniper wallet              Show wallet address and all token holdings
     slopesniper export              Export private key for backup/recovery
@@ -76,6 +78,108 @@ async def cmd_status() -> None:
     print_json(result)
 
 
+def cmd_setup(import_key: str | None = None) -> None:
+    """Interactive wallet setup with confirmation."""
+    from .tools.config import load_local_wallet
+    from .tools.onboarding import create_wallet_explicit, setup_wallet
+
+    # Check if wallet already exists
+    existing = load_local_wallet()
+    if existing and not import_key:
+        print("")
+        print("Wallet already configured!")
+        print(f"  Address: {existing['address']}")
+        print("")
+        print("To import a different wallet (current will be backed up):")
+        print("  slopesniper setup --import-key YOUR_PRIVATE_KEY")
+        print("")
+        print("To view/export your current key:")
+        print("  slopesniper export")
+        print("")
+        return
+
+    print("")
+    print("=" * 60)
+    print("  SlopeSniper Wallet Setup")
+    print("=" * 60)
+    print("")
+
+    if import_key:
+        # Import existing private key
+        result = asyncio.run(setup_wallet(private_key=import_key))
+        if result.get("success"):
+            print("Wallet imported successfully!")
+            print(f"  Address: {result['wallet_address']}")
+            print("")
+            print("Send SOL to this address to start trading.")
+        else:
+            print(f"Error: {result.get('error')}")
+            if result.get("hint"):
+                print(f"Hint: {result['hint']}")
+        print("")
+        return
+
+    # New wallet creation - get user confirmation
+    print("This will create a new Solana trading wallet.")
+    print("")
+    print("IMPORTANT:")
+    print("  - You will receive a PRIVATE KEY")
+    print("  - Anyone with this key can access your funds")
+    print("  - You MUST save it securely - it cannot be recovered")
+    print("")
+
+    try:
+        confirm = input("Create new wallet? (yes/no): ").strip().lower()
+        if confirm != "yes":
+            print("")
+            print("Setup cancelled.")
+            return
+    except (EOFError, KeyboardInterrupt):
+        print("\nSetup cancelled.")
+        return
+
+    # Generate wallet
+    result = asyncio.run(create_wallet_explicit())
+
+    # Display with emphasis
+    print("")
+    print("=" * 60)
+    print("  WALLET CREATED - SAVE YOUR PRIVATE KEY NOW!")
+    print("=" * 60)
+    print("")
+    print(f"  Address: {result['address']}")
+    print("")
+    print("  Private Key:")
+    print(f"  {result['private_key']}")
+    print("")
+    print("=" * 60)
+    print("")
+
+    # Require confirmation they saved it
+    try:
+        print("To confirm you saved your key, type your wallet address:")
+        user_addr = input("> ").strip()
+        if user_addr != result["address"]:
+            print("")
+            print("WARNING: Address doesn't match!")
+            print(f"Your address is: {result['address']}")
+            print("Make sure you saved your private key correctly.")
+            print("")
+            return
+    except (EOFError, KeyboardInterrupt):
+        print("\nPlease make sure you saved your private key!")
+        print("")
+        return
+
+    print("")
+    print("Setup complete! Send SOL to your address to start trading.")
+    print("")
+    print("Next steps:")
+    print("  slopesniper status   - Check balance")
+    print("  slopesniper export   - Backup key anytime")
+    print("")
+
+
 async def cmd_wallet() -> None:
     """Show wallet address and holdings."""
     from . import solana_get_wallet
@@ -101,8 +205,12 @@ async def cmd_export(
         print_json(result)
     else:
         from . import export_wallet
+        from .tools.config import record_backup_export
 
         result = await export_wallet(include_backups=True)
+        # Record that user exported their wallet (for backup reminder tracking)
+        if result.get("success"):
+            record_backup_export()
         print_json(result)
 
 
@@ -579,7 +687,15 @@ def main() -> None:
     cmd = args[0].lower()
 
     try:
-        if cmd == "status":
+        if cmd == "setup":
+            import_key = None
+            if "--import-key" in args:
+                idx = args.index("--import-key")
+                if idx + 1 < len(args):
+                    import_key = args[idx + 1]
+            cmd_setup(import_key=import_key)
+
+        elif cmd == "status":
             asyncio.run(cmd_status())
 
         elif cmd == "wallet":

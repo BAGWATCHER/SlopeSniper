@@ -28,12 +28,25 @@ Trade Solana meme coins and tokens using natural language. Just tell me what you
 
 ## Getting Started
 
+### New Users (Recommended)
+```bash
+slopesniper setup
+```
+Interactive setup with confirmation - guides you through wallet creation and ensures you save your private key.
+
+### Quick Start
 1. **Say "check my status"** - A wallet will be auto-generated on first run
 2. **Save your private key** - It's shown once, save it securely!
 3. **Fund your wallet** - Send SOL to the displayed address
 4. **Start trading!** Just describe what you want in plain English
 
-Optional: Set your own Jupiter API key for 10x better performance:
+### Import Existing Wallet
+```bash
+slopesniper setup --import-key YOUR_PRIVATE_KEY
+```
+
+### Optional: Faster API
+Set your own Jupiter API key for 10x better performance:
 ```bash
 slopesniper config --set-jupiter-key YOUR_KEY
 ```
@@ -100,6 +113,10 @@ For trades above your auto-execute threshold, you'll be asked to confirm first.
 Use the `slopesniper` CLI for direct execution:
 
 ```bash
+# Wallet Setup (recommended for new users)
+slopesniper setup               # Interactive wallet creation with confirmation
+slopesniper setup --import-key KEY  # Import existing private key
+
 # Account & Wallet
 slopesniper status              # Full status: wallet, holdings, strategy, config
 slopesniper wallet              # Show wallet address and all token holdings
