@@ -25,6 +25,9 @@ Trade Solana meme coins and tokens using natural language. Just tell me what you
 | "Is POPCAT safe?" | Runs rugcheck analysis |
 | "Set aggressive mode" | Changes trading strategy |
 | "Export my key" | Shows private key for backup |
+| "Set a target to sell BONK at $1B mcap" | Creates auto-sell target |
+| "List my targets" | Shows active sell targets |
+| "Start the daemon" | Begins background monitoring |
 
 ## Important: Always Fetch Fresh Data
 
@@ -153,7 +156,16 @@ For trades above your auto-execute threshold, you'll be asked to confirm first.
 ### Scanning
 - `what's trending?` - Find hot tokens
 - `scan for opportunities` - Look for trades
-- `watch TOKEN` - Add to watchlist
+
+### Auto-Sell Targets (v0.3.0+)
+- `set target for TOKEN at $X mcap` - Auto-sell when market cap reached
+- `set target for TOKEN at $X price` - Auto-sell at price target
+- `set 100% gain target for TOKEN` - Auto-sell on percentage gain
+- `set 20% trailing stop for TOKEN` - Trailing stop loss
+- `list my targets` - View active targets
+- `cancel target ID` - Remove a target
+- `start the daemon` - Background monitoring
+- `stop the daemon` - Stop background monitoring
 
 ## CLI Commands
 
@@ -201,6 +213,24 @@ slopesniper strategy aggressive # Set aggressive mode
 slopesniper config              # View current configuration
 slopesniper config --set-jupiter-key KEY  # Set custom API key (10x faster!)
 slopesniper config --set-rpc mainnet URL  # Set custom RPC endpoint
+
+# Auto-Sell Targets
+slopesniper target add BONK --mcap 1000000000 --sell all   # Sell all at $1B mcap
+slopesniper target add WIF --price 5.00 --sell 50%         # Sell half at $5
+slopesniper target add POPCAT --pct-gain 100 --sell all    # Sell on 2x
+slopesniper target add TOKEN --trailing 20 --sell all      # 20% trailing stop
+slopesniper target list         # List active targets
+slopesniper target list --all   # List all targets (including triggered)
+slopesniper target remove ID    # Cancel a target
+
+# Watch Mode (foreground)
+slopesniper watch BONK --mcap 1000000000 --sell all        # Watch until target hit
+
+# Daemon (background monitoring)
+slopesniper daemon start        # Start background target monitoring
+slopesniper daemon start --interval 15  # Custom poll interval (seconds)
+slopesniper daemon stop         # Stop daemon
+slopesniper daemon status       # Check if daemon is running
 
 # Updates
 slopesniper version             # Show current version

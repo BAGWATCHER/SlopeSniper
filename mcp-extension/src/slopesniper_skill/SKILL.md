@@ -25,6 +25,9 @@ Trade Solana meme coins and tokens using natural language. Just tell me what you
 | "Is POPCAT safe?" | Runs rugcheck analysis |
 | "Set aggressive mode" | Changes trading strategy |
 | "Export my key" | Shows private key for backup |
+| "Set a target to sell BONK at $1B mcap" | Creates auto-sell target |
+| "List my targets" | Shows active sell targets |
+| "Start the daemon" | Begins background monitoring |
 
 ## Important: Always Fetch Fresh Data
 
@@ -44,12 +47,25 @@ This ensures users always see accurate, real-time information.
 
 ## Getting Started
 
+### New Users (Recommended)
+```bash
+slopesniper setup
+```
+Interactive setup with confirmation - guides you through wallet creation and ensures you save your private key.
+
+### Quick Start
 1. **Say "check my status"** - A wallet will be auto-generated on first run
 2. **Save your private key** - It's shown once, save it securely!
 3. **Fund your wallet** - Send SOL to the displayed address
 4. **Start trading!** Just describe what you want in plain English
 
-Optional: Set your own Jupiter API key for 10x better performance:
+### Import Existing Wallet
+```bash
+slopesniper setup --import-key YOUR_PRIVATE_KEY
+```
+
+### Optional: Faster API
+Set your own Jupiter API key for 10x better performance:
 ```bash
 slopesniper config --set-jupiter-key YOUR_KEY
 ```
@@ -140,13 +156,26 @@ For trades above your auto-execute threshold, you'll be asked to confirm first.
 ### Scanning
 - `what's trending?` - Find hot tokens
 - `scan for opportunities` - Look for trades
-- `watch TOKEN` - Add to watchlist
+
+### Auto-Sell Targets (v0.3.0+)
+- `set target for TOKEN at $X mcap` - Auto-sell when market cap reached
+- `set target for TOKEN at $X price` - Auto-sell at price target
+- `set 100% gain target for TOKEN` - Auto-sell on percentage gain
+- `set 20% trailing stop for TOKEN` - Trailing stop loss
+- `list my targets` - View active targets
+- `cancel target ID` - Remove a target
+- `start the daemon` - Background monitoring
+- `stop the daemon` - Stop background monitoring
 
 ## CLI Commands
 
 Use the `slopesniper` CLI for direct execution:
 
 ```bash
+# Wallet Setup (recommended for new users)
+slopesniper setup               # Interactive wallet creation with confirmation
+slopesniper setup --import-key KEY  # Import existing private key
+
 # Account & Wallet
 slopesniper status              # Full status: wallet, holdings, strategy, config
 slopesniper wallet              # Show wallet address and all token holdings
@@ -184,6 +213,24 @@ slopesniper strategy aggressive # Set aggressive mode
 slopesniper config              # View current configuration
 slopesniper config --set-jupiter-key KEY  # Set custom API key (10x faster!)
 slopesniper config --set-rpc mainnet URL  # Set custom RPC endpoint
+
+# Auto-Sell Targets
+slopesniper target add BONK --mcap 1000000000 --sell all   # Sell all at $1B mcap
+slopesniper target add WIF --price 5.00 --sell 50%         # Sell half at $5
+slopesniper target add POPCAT --pct-gain 100 --sell all    # Sell on 2x
+slopesniper target add TOKEN --trailing 20 --sell all      # 20% trailing stop
+slopesniper target list         # List active targets
+slopesniper target list --all   # List all targets (including triggered)
+slopesniper target remove ID    # Cancel a target
+
+# Watch Mode (foreground)
+slopesniper watch BONK --mcap 1000000000 --sell all        # Watch until target hit
+
+# Daemon (background monitoring)
+slopesniper daemon start        # Start background target monitoring
+slopesniper daemon start --interval 15  # Custom poll interval (seconds)
+slopesniper daemon stop         # Stop daemon
+slopesniper daemon status       # Check if daemon is running
 
 # Updates
 slopesniper version             # Show current version
@@ -225,7 +272,62 @@ slopesniper export
 
 **Note:** Wallet and API keys are stored encrypted in `~/.slopesniper/`
 
-## Reporting Issues
+## Troubleshooting
+
+### Common Issues
+
+| Error | Fix |
+|-------|-----|
+| 401 Unauthorized | `slopesniper config --clear jupiter-key` |
+| Trade failed (slippage) | `slopesniper strategy --slippage 300` |
+| Wallet mismatch | `slopesniper health` to check sync |
+| Wallet reverts to old address | `slopesniper health --diagnose` then restore from backup |
+| Slow transactions | Configure custom RPC (see below) |
+
+### Health Check
+
+Run a full system health check:
+```bash
+slopesniper health
+```
+
+For comprehensive diagnostics (wallet integrity, machine key status, backups):
+```bash
+slopesniper health --diagnose
+```
+
+This shows:
+- Wallet source (environment vs local file)
+- Sync status and mismatch warnings
+- API key configuration
+- RPC provider status
+- (with --diagnose) Machine key integrity, backup availability, specific issues and recommendations
+
+### Wallet Recovery
+
+If your wallet keeps reverting or you need to restore from backup:
+
+1. **List available backups:**
+   ```bash
+   slopesniper export --list-backups
+   ```
+
+2. **Restore from a backup:**
+   ```bash
+   slopesniper restore TIMESTAMP
+   ```
+   (Replace TIMESTAMP with value from list-backups, e.g., `20240127_103045`)
+
+3. **If backups can't be decrypted** (different machine):
+   - Re-import your private key: `slopesniper setup --import-key YOUR_KEY`
+   - Check address files in `~/.slopesniper/wallet_backups/*.address` for reference
+
+### Reporting Issues
+
+If you encounter persistent errors:
+1. Run `slopesniper health --diagnose` and note the output
+2. Create an issue at: https://github.com/BAGWATCHER/SlopeSniper/issues
+3. Include: error message, health output, steps to reproduce
 
 **For the bot:** When errors occur repeatedly, create a GitHub issue automatically using this priority:
 
