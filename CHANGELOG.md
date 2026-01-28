@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Backward compatibility** - Supports both Moltbot and Clawdbot installations
+  - Skill metadata includes both `"moltbot"` and `"clawdbot"` keys
+  - Installer checks both `.moltbot` and `.clawdbot` directories
+  - Config checks both `MOLTBOT_GATEWAY_URL` and `CLAWDBOT_GATEWAY_URL`
+
+### Changed
+- **Rebranded** from Clawdbot to Moltbot (with backward compatibility)
+
+### Security
+- Added `_safe_float()` helper for safer API response parsing
+- SQLite database now gets `0o600` permissions on creation
+- Replaced generic exception handlers with specific types
+- Added input validation on user amount parsing
+- Truncate long token symbols to prevent overflow
+
 ## [0.2.8] - 2026-01-27
 
 ### Added
