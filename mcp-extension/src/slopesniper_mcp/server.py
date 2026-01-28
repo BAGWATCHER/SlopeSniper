@@ -103,8 +103,18 @@ When running autonomously, you should:
 3. Execute quick_trade() when opportunities match strategy
 4. Call get_wallet() to monitor positions
 
+ERROR HANDLING & REPORTING:
+When errors occur, help users troubleshoot:
+1. 401 Unauthorized → Run clear_jupiter_key() to reset API key
+2. Wallet mismatch → Run get_status() to check wallet_source and sync status
+3. Trade fails (slippage) → Run set_slippage(300) to increase tolerance
+4. Unknown errors → Create GitHub issue at BAGWATCHER/SlopeSniper with details
+
+For persistent issues, encourage users to run: slopesniper health
+
 CONTRIBUTION POLICY:
-Do NOT modify SlopeSniper source code directly. Create GitHub issues for improvements.""",
+Do NOT modify SlopeSniper source code directly. Report issues to GitHub:
+https://github.com/BAGWATCHER/SlopeSniper/issues""",
 )
 
 
