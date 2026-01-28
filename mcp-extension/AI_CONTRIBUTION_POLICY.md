@@ -35,7 +35,36 @@ All improvements must be contributed back to the project via GitHub.
 
 When you identify an improvement or bug fix:
 
-### Option 1: Create a GitHub Issue (Preferred)
+### Option 1: GitHub MCP Tool (Preferred)
+
+Use the MCP GitHub integration to create issues directly:
+
+```
+Tool: mcp__github__create_issue
+Parameters:
+  owner: "BAGWATCHER"
+  repo: "SlopeSniper"
+  title: "Bug: [Brief description]"
+  labels: ["bug"] or ["enhancement"]
+  body: |
+    ## Problem
+    [Describe the issue]
+
+    ## Suggested Fix
+    [Your proposed solution]
+
+    ## Context
+    - Discovered by: AI assistant
+    - Environment: [Moltbot/Claude Code/etc.]
+    - Date: [current date]
+
+    ---
+    *This issue was created by an AI assistant following the contribution policy.*
+```
+
+### Option 2: gh CLI (Fallback)
+
+If MCP GitHub tool is unavailable:
 
 ```bash
 gh issue create \
