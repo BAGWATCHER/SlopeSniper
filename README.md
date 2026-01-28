@@ -8,7 +8,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/version-0.3.0-green.svg)](https://github.com/BAGWATCHER/SlopeSniper/releases)
+[![Version](https://img.shields.io/badge/version-0.3.03-green.svg)](https://github.com/BAGWATCHER/SlopeSniper/releases)
 
 [Quick Start](#-quick-start) · [Features](#-features) · [Documentation](#-documentation) · [Contributing](#-contributing)
 
@@ -148,6 +148,10 @@ slopesniper status              # Full status: wallet, holdings, strategy
 slopesniper wallet              # Show wallet address and token balances
 slopesniper export              # Export private key for backup
 slopesniper pnl                 # Show portfolio profit/loss
+slopesniper pnl init            # Set baseline for tracking
+slopesniper pnl stats           # Win rate, avg gain/loss
+slopesniper pnl positions       # Detailed position breakdown
+slopesniper pnl export          # Export trade history (JSON/CSV)
 slopesniper history             # Show recent trade history
 
 # Trading
@@ -335,7 +339,6 @@ export POLICY_MAX_SLIPPAGE_BPS=50  # 0.5%
 
 - **Claude Desktop Integration** - MCP extension for native Claude Desktop support
 - **Web API** - REST endpoints for custom integrations
-- **Portfolio Tracking** - P&L tracking and trade history
 - **Price Alerts** - Notifications for price movements
 - **DCA Automation** - Scheduled recurring buys
 
@@ -370,7 +373,7 @@ uv pip install -e .
 pytest
 
 # Run linter
-ruff check src/
+ruff check mcp-extension/src/
 ```
 
 ### Project Structure

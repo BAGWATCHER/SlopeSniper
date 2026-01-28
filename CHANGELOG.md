@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.03] - 2026-01-28
+
+### Added
+- **Issue #25**: Enhanced PnL tracking with new commands
+  - `slopesniper pnl init` - Set baseline snapshot for tracking
+  - `slopesniper pnl init --starting-value 100` - Manual baseline
+  - `slopesniper pnl stats` - Trading statistics (win rate, avg gain/loss)
+  - `slopesniper pnl positions` - Detailed position breakdown
+  - `slopesniper pnl export` - Export trades as JSON
+  - `slopesniper pnl export --format csv` - Export as CSV
+  - `slopesniper pnl reset` - Reset PnL baseline
+  - New `pnl_snapshots` table for baseline tracking
+  - Win rate, average gain/loss calculations
+  - Export to `~/.slopesniper/exports/`
+
+## [0.3.02] - 2026-01-28
+
+### Added
+- **Issue #27**: SKILL.md now emphasizes always fetching fresh data
+  - LLMs should run commands instead of using cached conversation data
+  - Crypto data older than 30 seconds is stale
+- **Issue #29**: Performance tips for users with 10+ token positions
+  - Rate limit documentation in SKILL.md
+  - Recommends custom Jupiter API key for large portfolios
+- **CONTRIBUTING.md**: Version control methodology documented
+  - Issue-based patch versioning (0.3.01, 0.3.02, etc.)
+  - Fork workflow documentation
+
 ## [0.3.0] - 2026-01-27
 
 ### Added
@@ -225,7 +253,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.03...HEAD
+[0.3.03]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.02...v0.3.03
+[0.3.02]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.0...v0.3.02
 [0.3.0]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.92...v0.3.0
 [0.2.92]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.91...v0.2.92
 [0.2.91]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.9...v0.2.91
