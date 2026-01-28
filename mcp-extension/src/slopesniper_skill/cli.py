@@ -34,6 +34,9 @@ Usage:
     slopesniper update              Update to latest version
     slopesniper version [--check]   Show version (--check for update availability)
     slopesniper uninstall           Clean uninstall (removes CLI and optionally data)
+
+Global flags:
+    --quiet, -q                     Suppress logging output (only JSON to stdout)
 """
 
 from __future__ import annotations
@@ -794,6 +797,18 @@ def print_help() -> None:
 def main() -> None:
     """CLI entry point."""
     args = sys.argv[1:]
+
+    # Check for --quiet flag (suppresses logging for clean JSON output)
+    quiet = "--quiet" in args or "-q" in args
+    if quiet:
+        args = [a for a in args if a not in ("--quiet", "-q")]
+        import logging
+
+        logging.disable(logging.CRITICAL)
+        # Also suppress warnings from libraries
+        import warnings
+
+        warnings.filterwarnings("ignore")
 
     if not args or args[0] in ("-h", "--help", "help"):
         print_help()
