@@ -8,7 +8,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/version-0.2.6-green.svg)](https://github.com/maddefientist/SlopeSniper/releases)
+[![Version](https://img.shields.io/badge/version-0.2.7-green.svg)](https://github.com/maddefientist/SlopeSniper/releases)
 
 [Quick Start](#-quick-start) · [Features](#-features) · [Documentation](#-documentation) · [Contributing](#-contributing)
 
@@ -49,25 +49,28 @@ SlopeSniper handles token resolution, safety checks, quotes, and execution—all
 curl -fsSL https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/skills/install.sh | bash
 ```
 
-### 2. Initialize Your Wallet
+### 2. Set Up Your Wallet
 
+**Recommended: Interactive Setup**
+```bash
+slopesniper setup
+```
+This guides you through wallet creation with confirmation and ensures you save your private key.
+
+**Alternative: Quick Start**
 ```bash
 slopesniper status
 ```
+Auto-generates a wallet on first run (for advanced users/automation).
 
-On first run, SlopeSniper automatically generates a dedicated trading wallet:
-
-```
-{
-  "wallet_address": "7xK9mN2...",
-  "private_key": "4ZBCvJL...",    <-- SAVE THIS! Only shown once!
-  "IMPORTANT": "Send SOL to your wallet address to start trading"
-}
+**Import Existing Wallet**
+```bash
+slopesniper setup --import-key YOUR_PRIVATE_KEY
 ```
 
 ### 3. Fund Your Wallet
 
-Send SOL to the displayed wallet address. This is your dedicated trading wallet—only deposit what you're willing to trade.
+Send SOL to your wallet address. This is your dedicated trading wallet—only deposit what you're willing to trade.
 
 ### 4. Start Trading
 
@@ -136,6 +139,10 @@ For trades above your auto-execute threshold, you'll be asked to confirm first.
 ### CLI Reference
 
 ```bash
+# Wallet Setup (recommended for new users)
+slopesniper setup               # Interactive wallet creation with confirmation
+slopesniper setup --import-key KEY  # Import existing private key
+
 # Account & Wallet
 slopesniper status              # Full status: wallet, holdings, strategy
 slopesniper wallet              # Show wallet address and token balances
@@ -177,6 +184,11 @@ slopesniper update              # Update to latest version
 
 Your wallet is **encrypted** and stored at `~/.slopesniper/wallet.enc`. The private key is shown **only once** at creation—make sure to save it!
 
+**Create a new wallet (recommended):**
+```bash
+slopesniper setup               # Interactive setup with confirmation
+```
+
 **View wallet and holdings:**
 ```bash
 slopesniper wallet              # Quick view
@@ -189,7 +201,10 @@ slopesniper export              # Displays your private key
 ```
 
 **Import an existing wallet:**
-Set the `SOLANA_PRIVATE_KEY` environment variable before running any commands.
+```bash
+slopesniper setup --import-key YOUR_PRIVATE_KEY
+```
+Or set the `SOLANA_PRIVATE_KEY` environment variable.
 
 **Storage locations:**
 ```

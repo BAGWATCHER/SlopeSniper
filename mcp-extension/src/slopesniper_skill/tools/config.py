@@ -13,6 +13,7 @@ import os
 import platform
 import secrets
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 import base58
@@ -518,6 +519,65 @@ def load_user_config() -> dict | None:
         return json.loads(decrypted)
     except Exception:
         return None
+
+
+def record_wallet_created() -> None:
+    """Record when wallet was created (for backup reminder tracking)."""
+    save_user_config({"wallet_created_at": datetime.now().isoformat()})
+
+
+def record_backup_export() -> None:
+    """Record that user exported their wallet (for reminder tracking)."""
+    save_user_config({"last_backup_export": datetime.now().isoformat()})
+
+
+def get_backup_status() -> dict:
+    """
+    Check if wallet needs backup reminder.
+
+    Returns dict with:
+    - wallet_created_at: str | None
+    - last_backup_export: str | None
+    - days_since_creation: int | None
+    - days_since_export: int | None
+    - needs_reminder: bool
+    """
+    config = load_user_config() or {}
+
+    wallet_created_at = config.get("wallet_created_at")
+    last_backup_export = config.get("last_backup_export")
+
+    days_since_creation = None
+    days_since_export = None
+
+    if wallet_created_at:
+        try:
+            created = datetime.fromisoformat(wallet_created_at)
+            days_since_creation = (datetime.now() - created).days
+        except Exception:
+            pass
+
+    if last_backup_export:
+        try:
+            exported = datetime.fromisoformat(last_backup_export)
+            days_since_export = (datetime.now() - exported).days
+        except Exception:
+            pass
+
+    # Show reminder if:
+    # - Never exported, OR
+    # - Last export was more than 7 days ago
+    needs_reminder = last_backup_export is None or (
+        days_since_export is not None and days_since_export > 7
+    )
+
+    return {
+        "wallet_created_at": wallet_created_at,
+        "last_backup_export": last_backup_export,
+        "days_since_creation": days_since_creation,
+        "days_since_export": days_since_export,
+        "needs_reminder": needs_reminder,
+    }
 
 
 def set_jupiter_api_key(api_key: str) -> dict:
