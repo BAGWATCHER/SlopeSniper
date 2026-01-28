@@ -1,6 +1,6 @@
-# SlopeSniper for Clawdbot
+# SlopeSniper for Moltbot
 
-Trade Solana tokens using natural language through Clawdbot.
+Trade Solana tokens using natural language through Moltbot.
 
 ## One-Line Install
 
@@ -15,7 +15,7 @@ curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/
 ```bash
 # Clone and copy
 git clone https://github.com/BAGWATCHER/SlopeSniper.git
-cp -r SlopeSniper/skills/slopesniper ~/.clawdbot/skills/
+cp -r SlopeSniper/skills/slopesniper ~/.moltbot/skills/
 
 # Install the Python package
 uv pip install "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension"
@@ -29,7 +29,7 @@ clawdhub install slopesniper
 
 ## Configuration
 
-Add your Solana wallet key to `~/.clawdbot/clawdbot.json`:
+Add your Solana wallet key to `~/.moltbot/moltbot.json`:
 
 ```json
 {
@@ -151,7 +151,7 @@ The wallet file (`~/.slopesniper/wallet.enc`) is encrypted and machine-bound—i
 
 ## Requirements
 
-- [Clawdbot](https://clawd.bot) installed and running
+- [Moltbot](https://molt.bot) installed and running
 - [uv](https://github.com/astral-sh/uv) package manager
 - Solana wallet with SOL for trading
 

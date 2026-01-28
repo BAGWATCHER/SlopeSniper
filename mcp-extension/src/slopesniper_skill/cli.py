@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SlopeSniper CLI - Simple command interface for Clawdbot agents.
+SlopeSniper CLI - Simple command interface for Moltbot agents.
 
 Usage:
     slopesniper setup               Create new wallet (interactive, recommended)

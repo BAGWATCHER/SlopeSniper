@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Issue #14**: Users couldn't clear invalid Jupiter API keys
   - Added `slopesniper config --clear jupiter-key`
   - Added `clear_jupiter_key()` MCP tool
-- **Issue #15**: Wallet desync between Clawdbot/MCP and CLI
+- **Issue #15**: Wallet desync between Moltbot/MCP and CLI
   - Added `get_wallet_sync_status()` for mismatch detection
   - Added `wallet_source` field to status output
   - Added `WALLET_MISMATCH_WARNING` when configs differ
@@ -167,7 +167,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-execution for trades under threshold
 - Two-step confirmation for larger trades
 - Auto-generated trading wallet on first run
-- Clawdbot skill integration
+- Moltbot skill integration
 
 ---
 

@@ -18,7 +18,7 @@
 
 ### Documentation
 - [x] README updated with all install methods
-- [x] SKILL.md follows Clawdbot spec
+- [x] SKILL.md follows Moltbot spec
 - [x] COWORK.md for Cowork users
 - [x] GETTING_STARTED.md for Claude Desktop
 
@@ -51,7 +51,7 @@ clawdhub info slopesniper
 
 ## Installation URLs (Production)
 
-### Clawdbot (after ClawdHub publish)
+### Moltbot (after ClawdHub publish)
 ```bash
 clawdhub install slopesniper
 ```
@@ -64,7 +64,7 @@ curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/
 ### Manual Install
 ```bash
 git clone https://github.com/BAGWATCHER/SlopeSniper.git
-cp -r SlopeSniper/skills/slopesniper ~/.clawdbot/skills/
+cp -r SlopeSniper/skills/slopesniper ~/.moltbot/skills/
 ```
 
 ---

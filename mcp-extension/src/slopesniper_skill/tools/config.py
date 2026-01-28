@@ -398,12 +398,12 @@ def get_secret(name: str) -> str | None:
         Secret value or None if not found
 
     Priority:
-    1. Clawdbot gateway secret API (if available)
+    1. Moltbot gateway secret API (if available)
     2. Environment variable
     3. None
     """
-    # Try clawdbot gateway first (future integration point)
-    gateway_url = os.environ.get("CLAWDBOT_GATEWAY_URL")
+    # Try moltbot gateway first (future integration point)
+    gateway_url = os.environ.get("MOLTBOT_GATEWAY_URL")
     if gateway_url:
         try:
             # Future: implement gateway secret fetch
@@ -470,7 +470,7 @@ def get_wallet_sync_status() -> dict:
     Check wallet configuration sync status.
 
     Detects mismatches between environment variable and local wallet file.
-    This helps identify desynchronization issues between wrapper (Clawdbot/MCP)
+    This helps identify desynchronization issues between wrapper (Moltbot/MCP)
     and CLI configurations.
 
     Returns:
