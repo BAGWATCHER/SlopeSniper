@@ -19,10 +19,13 @@ Usage:
     slopesniper search <query>      Search for tokens (returns mint addresses)
     slopesniper resolve <token>     Get mint address from symbol
     slopesniper strategy [name]     View or set strategy
+    slopesniper strategy --slippage BPS   Set slippage (e.g., 300 for 3%)
+    slopesniper strategy --max-trade USD  Set max trade size
     slopesniper scan [filter]       Scan for opportunities (trending/new/graduated/pumping)
     slopesniper config              View current configuration
     slopesniper config --set KEY VALUE   Set config (jupiter-key, rpc-provider, rpc-url)
-    slopesniper config --clear KEY       Clear config (rpc)
+    slopesniper config --clear KEY       Clear config (rpc, jupiter-key)
+    slopesniper health              Check system health and wallet sync status
     slopesniper contribute          Check for improvements and report to GitHub
     slopesniper contribute --enable       Enable contribution callbacks
     slopesniper contribute --disable      Disable contribution callbacks
@@ -278,15 +281,29 @@ async def cmd_resolve(token: str) -> None:
     print_json(result)
 
 
-async def cmd_strategy(name: str | None = None) -> None:
-    """View or set trading strategy."""
-    if name:
-        from . import set_strategy
+async def cmd_strategy(
+    name: str | None = None,
+    slippage_bps: int | None = None,
+    max_trade_usd: float | None = None,
+) -> None:
+    """
+    View or set trading strategy.
 
-        result = await set_strategy(name)
+    Args:
+        name: Strategy preset name (conservative/balanced/aggressive/degen)
+        slippage_bps: Override slippage tolerance in basis points (100 = 1%)
+        max_trade_usd: Override max trade size in USD
+    """
+    from . import get_strategy, set_strategy
+
+    # If any parameter is set, update strategy
+    if name or slippage_bps is not None or max_trade_usd is not None:
+        result = await set_strategy(
+            strategy=name,
+            slippage_bps=slippage_bps,
+            max_trade_usd=max_trade_usd,
+        )
     else:
-        from . import get_strategy
-
         result = await get_strategy()
     print_json(result)
 
@@ -306,6 +323,7 @@ def cmd_config(
 ) -> None:
     """View or update configuration."""
     from .tools.config import (
+        clear_jupiter_api_key,
         clear_rpc_config,
         get_config_status,
         set_jupiter_api_key,
@@ -332,16 +350,78 @@ def cmd_config(
         print_json(result)
 
     elif clear_key:
-        key_lower = clear_key.lower()
+        key_lower = clear_key.lower().replace("-", "_").replace(" ", "_")
         if key_lower in ("rpc", "rpc_url", "rpc_provider"):
             result = clear_rpc_config()
             print_json(result)
+        elif key_lower in ("jupiter", "jupiter_key", "jupiter_api_key", "jup", "jup_key"):
+            result = clear_jupiter_api_key()
+            print_json(result)
         else:
-            print_json({"error": f"Cannot clear: {clear_key}", "clearable": ["rpc"]})
+            print_json({"error": f"Cannot clear: {clear_key}", "clearable": ["rpc", "jupiter-key"]})
 
     else:
         result = get_config_status()
         print_json(result)
+
+
+def cmd_health() -> None:
+    """
+    Check system health and wallet sync status.
+
+    Shows:
+    - Wallet configuration sources (env vs local)
+    - Mismatch warnings if env and local wallets differ
+    - Jupiter API key status
+    - RPC configuration status
+    - Overall system health
+    """
+    from . import __version__
+
+    from .tools.config import (
+        get_config_status,
+        get_wallet_sync_status,
+        load_user_config,
+    )
+
+    # Get wallet sync status
+    sync_status = get_wallet_sync_status()
+
+    # Get config status
+    config = load_user_config() or {}
+
+    result = {
+        "version": __version__,
+        "health": "ok" if sync_status["is_synced"] else "warning",
+        "wallet": {
+            "active_source": sync_status["active_source"],
+            "active_address": sync_status["active_address"],
+            "env_configured": sync_status["env_configured"],
+            "env_address": sync_status["env_address"],
+            "local_configured": sync_status["local_configured"],
+            "local_address": sync_status["local_address"],
+            "is_synced": sync_status["is_synced"],
+        },
+        "jupiter_api_key": {
+            "configured": bool(config.get("jupiter_api_key")),
+            "source": "local_config" if config.get("jupiter_api_key") else "bundled",
+        },
+        "rpc": {
+            "configured": bool(config.get("rpc_provider")),
+            "provider": config.get("rpc_provider", "default"),
+        },
+    }
+
+    # Add warning if wallet mismatch detected
+    if not sync_status["is_synced"]:
+        result["WARNING"] = sync_status["warning"]
+        result["fix_options"] = [
+            "1. To use the LOCAL wallet: unset SOLANA_PRIVATE_KEY environment variable",
+            "2. To sync ENV to LOCAL: slopesniper setup --import-key $SOLANA_PRIVATE_KEY",
+            "3. To see which wallet is active: check 'active_source' above",
+        ]
+
+    print_json(result)
 
 
 def cmd_version(check_latest: bool = False) -> None:
@@ -754,8 +834,35 @@ def main() -> None:
             asyncio.run(cmd_resolve(args[1]))
 
         elif cmd == "strategy":
-            name = args[1] if len(args) > 1 else None
-            asyncio.run(cmd_strategy(name))
+            # Parse strategy flags: [name] [--slippage BPS] [--max-trade USD]
+            name = None
+            slippage_bps = None
+            max_trade_usd = None
+
+            i = 1
+            while i < len(args):
+                arg = args[i]
+                if arg in ("--slippage", "-s") and i + 1 < len(args):
+                    try:
+                        slippage_bps = int(args[i + 1])
+                    except ValueError:
+                        print(f"Error: slippage must be an integer (basis points)")
+                        sys.exit(1)
+                    i += 2
+                elif arg in ("--max-trade", "-m") and i + 1 < len(args):
+                    try:
+                        max_trade_usd = float(args[i + 1])
+                    except ValueError:
+                        print(f"Error: max-trade must be a number (USD)")
+                        sys.exit(1)
+                    i += 2
+                elif not arg.startswith("-"):
+                    name = arg
+                    i += 1
+                else:
+                    i += 1
+
+            asyncio.run(cmd_strategy(name, slippage_bps, max_trade_usd))
 
         elif cmd == "scan":
             filter_type = args[1] if len(args) > 1 else "all"
@@ -793,6 +900,9 @@ def main() -> None:
                     i += 1
 
             cmd_config(set_key=set_key, set_value=set_value, clear_key=clear_key)
+
+        elif cmd == "health":
+            cmd_health()
 
         elif cmd == "version":
             check_latest = "--check" in args or "-c" in args

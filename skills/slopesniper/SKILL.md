@@ -189,6 +189,39 @@ slopesniper export
 
 **Note:** Wallet and API keys are stored encrypted in `~/.slopesniper/`
 
+## Troubleshooting
+
+### Common Issues
+
+| Error | Fix |
+|-------|-----|
+| 401 Unauthorized | `slopesniper config --clear jupiter-key` |
+| Trade failed (slippage) | `slopesniper strategy --slippage 300` |
+| Wallet mismatch | `slopesniper health` to check sync |
+| Slow transactions | Configure custom RPC (see below) |
+
+### Health Check
+
+Run a full system health check:
+```bash
+slopesniper health
+```
+
+This shows:
+- Wallet source (environment vs local file)
+- Sync status and mismatch warnings
+- API key configuration
+- RPC provider status
+
+### Reporting Issues
+
+If you encounter persistent errors:
+1. Run `slopesniper health` and note the output
+2. Create an issue at: https://github.com/BAGWATCHER/SlopeSniper/issues
+3. Include: error message, health output, steps to reproduce
+
+**For the bot:** When errors occur repeatedly, create a GitHub issue with details to help improve SlopeSniper.
+
 ## Support
 
 - GitHub: https://github.com/BAGWATCHER/SlopeSniper

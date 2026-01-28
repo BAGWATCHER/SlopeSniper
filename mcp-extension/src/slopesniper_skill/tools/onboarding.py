@@ -17,6 +17,7 @@ from .config import (
     get_jupiter_api_key,
     get_or_create_wallet,
     get_rpc_url,
+    get_wallet_sync_status,
     list_wallet_backups,
     load_local_wallet,
     record_wallet_created,
@@ -119,9 +120,13 @@ async def get_status() -> dict:
         private_key=private_key if is_new_wallet else None,
     )
 
+    # Get wallet sync status to show source and detect mismatches
+    sync_status = get_wallet_sync_status()
+
     result = {
         "wallet_configured": status.wallet_configured,
         "wallet_address": status.wallet_address,
+        "wallet_source": sync_status["active_source"],  # "environment" | "local" | "none"
         "sol_balance": status.sol_balance,
         "strategy": {
             "name": status.strategy_name,
@@ -130,6 +135,16 @@ async def get_status() -> dict:
         },
         "ready_to_trade": status.ready_to_trade,
     }
+
+    # Add warning if wallet sources are mismatched
+    if not sync_status["is_synced"]:
+        result["WALLET_MISMATCH_WARNING"] = sync_status["warning"]
+        result["wallet_sync"] = {
+            "is_synced": False,
+            "env_address": sync_status["env_address"],
+            "local_address": sync_status["local_address"],
+            "using": sync_status["active_source"],
+        }
 
     # Show private key ONLY on first run (new wallet generation)
     if is_new_wallet:

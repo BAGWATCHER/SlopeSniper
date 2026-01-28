@@ -64,6 +64,7 @@ from slopesniper_skill import (
 
 # Import config functions directly
 from slopesniper_skill.tools.config import (
+    clear_jupiter_api_key,
     clear_rpc_config,
     get_rpc_config_status,
     set_rpc_config,
@@ -102,8 +103,18 @@ When running autonomously, you should:
 3. Execute quick_trade() when opportunities match strategy
 4. Call get_wallet() to monitor positions
 
+ERROR HANDLING & REPORTING:
+When errors occur, help users troubleshoot:
+1. 401 Unauthorized → Run clear_jupiter_key() to reset API key
+2. Wallet mismatch → Run get_status() to check wallet_source and sync status
+3. Trade fails (slippage) → Run set_slippage(300) to increase tolerance
+4. Unknown errors → Create GitHub issue at BAGWATCHER/SlopeSniper with details
+
+For persistent issues, encourage users to run: slopesniper health
+
 CONTRIBUTION POLICY:
-Do NOT modify SlopeSniper source code directly. Create GitHub issues for improvements.""",
+Do NOT modify SlopeSniper source code directly. Report issues to GitHub:
+https://github.com/BAGWATCHER/SlopeSniper/issues""",
 )
 
 
@@ -448,6 +459,22 @@ async def clear_rpc() -> dict:
 
 
 @mcp.tool()
+async def clear_jupiter_key() -> dict:
+    """
+    Clear saved Jupiter API key and revert to bundled key.
+
+    Use this when:
+    - Getting 401 Unauthorized errors
+    - Jupiter API key is invalid or expired
+    - Want to reset to default configuration
+
+    Returns:
+        Status confirming key was cleared
+    """
+    return clear_jupiter_api_key()
+
+
+@mcp.tool()
 async def get_rpc_status() -> dict:
     """
     Get current RPC endpoint configuration and status.
@@ -539,6 +566,32 @@ async def get_strategy() -> dict:
     Shows active strategy, thresholds, and available presets.
     """
     return await skill_get_strategy()
+
+
+@mcp.tool()
+async def set_slippage(slippage_bps: int) -> dict:
+    """
+    Quick-set slippage tolerance without changing other strategy settings.
+
+    USE THIS when trades fail due to slippage in volatile markets.
+    Common values:
+    - 50 = 0.5% (tight, may fail on volatile tokens)
+    - 100 = 1% (default for balanced strategy)
+    - 200 = 2% (aggressive)
+    - 300 = 3% (for volatile meme coins)
+    - 500 = 5% (degen mode)
+
+    Args:
+        slippage_bps: Slippage in basis points (100 = 1%)
+
+    Returns:
+        Updated strategy with new slippage
+
+    Example:
+        # Trade failing? Increase slippage:
+        set_slippage(300)  # Set to 3%
+    """
+    return await skill_set_strategy(slippage_bps=slippage_bps)
 
 
 @mcp.tool()

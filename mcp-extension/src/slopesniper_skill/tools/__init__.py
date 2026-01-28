@@ -6,6 +6,7 @@ Safe two-step token swaps with policy enforcement.
 
 from .config import (
     PolicyConfig,
+    clear_jupiter_api_key,
     clear_rpc_config,
     get_jupiter_api_key,
     get_keypair,
@@ -14,6 +15,7 @@ from .config import (
     get_rpc_url,
     get_secret,
     get_wallet_address,
+    get_wallet_sync_status,
     set_rpc_config,
 )
 from .intents import (
@@ -110,12 +112,14 @@ __all__ = [
     "get_secret",
     "get_keypair",
     "get_wallet_address",
+    "get_wallet_sync_status",
     "get_rpc_url",
     "get_jupiter_api_key",
     "get_policy_config",
     "PolicyConfig",
     "set_rpc_config",
     "clear_rpc_config",
+    "clear_jupiter_api_key",
     "get_rpc_config_status",
     # Policy
     "check_policy",
