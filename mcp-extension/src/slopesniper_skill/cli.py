@@ -35,6 +35,18 @@ Usage:
     slopesniper version [--check]   Show version (--check for update availability)
     slopesniper uninstall           Clean uninstall (removes CLI and optionally data)
 
+Auto-sell targets:
+    slopesniper target add <token> --mcap <value> [--sell all|50%|USD:100]
+    slopesniper target add <token> --price <value> [--sell ...]
+    slopesniper target add <token> --pct-gain <pct> [--sell ...]
+    slopesniper target add <token> --trailing <pct> [--sell ...]
+    slopesniper target list [--all]     List active (or all) targets
+    slopesniper target remove <id>      Cancel a target
+    slopesniper watch <token> --mcap <value> [--sell all] [--interval 5]
+    slopesniper daemon start [--interval 15]
+    slopesniper daemon stop
+    slopesniper daemon status
+
 Global flags:
     --quiet, -q                     Suppress logging output (only JSON to stdout)
 """
@@ -789,6 +801,252 @@ def cmd_contribute(
         print_json(result)
 
 
+# ============================================================================
+# Auto-sell Target Commands
+# ============================================================================
+
+
+async def cmd_target_add(
+    token: str,
+    mcap: float | None = None,
+    price: float | None = None,
+    pct_gain: float | None = None,
+    trailing: float | None = None,
+    sell: str = "all",
+) -> None:
+    """Add a new sell target."""
+    from .tools import add_target, resolve_token
+
+    # Determine target type and value
+    if mcap is not None:
+        target_type = "mcap"
+        target_value = mcap
+    elif price is not None:
+        target_type = "price"
+        target_value = price
+    elif pct_gain is not None:
+        target_type = "pct_gain"
+        target_value = pct_gain
+    elif trailing is not None:
+        target_type = "trailing_stop"
+        target_value = trailing
+    else:
+        print_json(
+            {
+                "error": "Must specify one of: --mcap, --price, --pct-gain, --trailing",
+                "examples": [
+                    "slopesniper target add BONK --mcap 500000000 --sell all",
+                    "slopesniper target add SOL --price 200 --sell 50%",
+                    "slopesniper target add WIF --pct-gain 100 --sell USD:50",
+                    "slopesniper target add POPCAT --trailing 20 --sell all",
+                ],
+            }
+        )
+        return
+
+    # Resolve token to mint address
+    resolved = await resolve_token(token)
+    if not resolved.get("mint"):
+        print_json({"error": f"Could not resolve token: {token}"})
+        return
+
+    mint = resolved["mint"]
+    symbol = resolved.get("symbol", token)
+
+    # Get current price/mcap for entry tracking
+    entry_price = resolved.get("price_usd")
+    entry_mcap = resolved.get("mcap")
+
+    result = await add_target(
+        mint=mint,
+        target_type=target_type,
+        target_value=target_value,
+        sell_amount=sell,
+        symbol=symbol,
+        entry_price=entry_price,
+        entry_mcap=entry_mcap,
+    )
+
+    print_json(result)
+
+
+async def cmd_target_list(show_all: bool = False) -> None:
+    """List sell targets."""
+    from .tools import format_target_for_display, get_active_targets, get_all_targets
+
+    if show_all:
+        targets = get_all_targets(include_executed=True)
+    else:
+        targets = get_active_targets()
+
+    if not targets:
+        print_json({"targets": [], "message": "No active targets"})
+        return
+
+    formatted = [format_target_for_display(t) for t in targets]
+    print_json({"targets": formatted, "count": len(formatted)})
+
+
+async def cmd_target_remove(target_id: int) -> None:
+    """Remove/cancel a target."""
+    from .tools import remove_target
+
+    result = remove_target(target_id)
+    print_json(result)
+
+
+async def cmd_watch_foreground(
+    token: str,
+    mcap: float | None = None,
+    price: float | None = None,
+    pct_gain: float | None = None,
+    trailing: float | None = None,
+    sell: str = "all",
+    interval: int = 5,
+) -> None:
+    """
+    Foreground watch mode - monitors token until target hit.
+
+    Blocks until target is reached or Ctrl+C is pressed.
+    """
+    import time
+
+    from .tools import resolve_token
+    from .tools.config import get_jupiter_api_key
+
+    # Determine target type and value
+    if mcap is not None:
+        target_type = "mcap"
+        target_value = mcap
+        condition = f"mcap >= ${mcap:,.0f}"
+    elif price is not None:
+        target_type = "price"
+        target_value = price
+        condition = f"price >= ${price:.8g}"
+    elif pct_gain is not None:
+        target_type = "pct_gain"
+        target_value = pct_gain
+        condition = f"+{pct_gain:.1f}% gain"
+    elif trailing is not None:
+        target_type = "trailing_stop"
+        target_value = trailing
+        condition = f"-{trailing:.1f}% from peak"
+    else:
+        print("Error: Must specify one of: --mcap, --price, --pct-gain, --trailing")
+        return
+
+    # Resolve token
+    resolved = await resolve_token(token)
+    if not resolved.get("mint"):
+        print(f"Error: Could not resolve token: {token}")
+        return
+
+    mint = resolved["mint"]
+    symbol = resolved.get("symbol", token)
+    entry_price = resolved.get("price_usd", 0)
+    entry_mcap = resolved.get("mcap")
+    peak_price = entry_price
+
+    print("")
+    print("=" * 60)
+    print(f"  Watching {symbol} ({mint[:8]}...)")
+    print(f"  Target: {condition}")
+    print(f"  Sell: {sell}")
+    print(f"  Interval: {interval}s")
+    print("=" * 60)
+    print("")
+    print("Press Ctrl+C to cancel")
+    print("")
+
+    from ..sdk import JupiterDataClient
+
+    client = JupiterDataClient(api_key=get_jupiter_api_key())
+
+    try:
+        while True:
+            try:
+                # Fetch current price
+                prices = await client.get_prices([mint])
+                price_data = prices.get(mint, {})
+                current_price = price_data.get("usdPrice", 0)
+
+                # Get mcap if needed
+                current_mcap = None
+                if target_type == "mcap":
+                    info = await client.get_token_info(mint)
+                    current_mcap = info.get("mcap") if info else None
+
+                # Update peak for trailing stop
+                if target_type == "trailing_stop" and current_price > peak_price:
+                    peak_price = current_price
+
+                # Check condition
+                triggered = False
+                if target_type == "mcap" and current_mcap:
+                    triggered = current_mcap >= target_value
+                    status = f"mcap: ${current_mcap:,.0f} / ${target_value:,.0f}"
+                elif target_type == "price":
+                    triggered = current_price >= target_value
+                    status = f"price: ${current_price:.8g} / ${target_value:.8g}"
+                elif target_type == "pct_gain" and entry_price > 0:
+                    pct = ((current_price - entry_price) / entry_price) * 100
+                    triggered = pct >= target_value
+                    status = f"gain: {pct:+.1f}% / {target_value:+.1f}%"
+                elif target_type == "trailing_stop" and peak_price > 0:
+                    drop = ((peak_price - current_price) / peak_price) * 100
+                    triggered = drop >= target_value
+                    status = f"drop: {drop:.1f}% / {target_value:.1f}% (peak: ${peak_price:.8g})"
+                else:
+                    status = f"price: ${current_price:.8g}"
+
+                timestamp = time.strftime("%H:%M:%S")
+                print(f"[{timestamp}] {status}")
+
+                if triggered:
+                    print("")
+                    print("=" * 60)
+                    print(f"  TARGET HIT!")
+                    print("=" * 60)
+                    print("")
+                    print(f"Executing sell ({sell})...")
+
+                    from .tools import quick_trade
+
+                    if sell.lower() == "all":
+                        result = await quick_trade("sell", mint, "all")
+                    else:
+                        # Calculate sell amount
+                        from .tools import parse_sell_amount, solana_get_wallet
+
+                        wallet = await solana_get_wallet()
+                        tokens = wallet.get("tokens", [])
+                        holdings = next(
+                            (t for t in tokens if t.get("mint") == mint), None
+                        )
+                        if holdings:
+                            token_amt = holdings.get("amount", 0)
+                            value_usd = holdings.get("value_usd", 0)
+                            sell_tokens = parse_sell_amount(sell, value_usd, token_amt)
+                            sell_usd = sell_tokens * current_price
+                            result = await quick_trade("sell", mint, sell_usd)
+                        else:
+                            result = {"error": "Token not found in wallet"}
+
+                    print_json(result)
+                    return
+
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                print(f"[{time.strftime('%H:%M:%S')}] Error: {e}")
+
+            time.sleep(interval)
+
+    except KeyboardInterrupt:
+        print("")
+        print("Watch cancelled.")
+
+
 def print_help() -> None:
     """Print usage help."""
     print(__doc__)
@@ -977,6 +1235,154 @@ def main() -> None:
             confirm = "--confirm" in args or "-y" in args
             keep_data = "--keep-data" in args
             cmd_uninstall(keep_data=keep_data, confirm=confirm)
+
+        # ================================================================
+        # Auto-sell Target Commands
+        # ================================================================
+        elif cmd == "target":
+            if len(args) < 2:
+                print_json({
+                    "error": "Missing subcommand",
+                    "usage": [
+                        "slopesniper target add TOKEN --mcap VALUE --sell all",
+                        "slopesniper target list [--all]",
+                        "slopesniper target remove ID",
+                    ],
+                })
+                sys.exit(1)
+
+            subcmd = args[1].lower()
+
+            if subcmd == "add":
+                if len(args) < 3:
+                    print_json({"error": "Missing token", "usage": "slopesniper target add TOKEN --mcap VALUE"})
+                    sys.exit(1)
+
+                token = args[2]
+                mcap = price = pct_gain = trailing = None
+                sell = "all"
+
+                i = 3
+                while i < len(args):
+                    arg = args[i]
+                    if arg == "--mcap" and i + 1 < len(args):
+                        mcap = float(args[i + 1])
+                        i += 2
+                    elif arg == "--price" and i + 1 < len(args):
+                        price = float(args[i + 1])
+                        i += 2
+                    elif arg in ("--pct-gain", "--pct", "--gain") and i + 1 < len(args):
+                        pct_gain = float(args[i + 1])
+                        i += 2
+                    elif arg in ("--trailing", "--trail") and i + 1 < len(args):
+                        trailing = float(args[i + 1])
+                        i += 2
+                    elif arg == "--sell" and i + 1 < len(args):
+                        sell = args[i + 1]
+                        i += 2
+                    else:
+                        i += 1
+
+                asyncio.run(cmd_target_add(token, mcap, price, pct_gain, trailing, sell))
+
+            elif subcmd == "list":
+                show_all = "--all" in args or "-a" in args
+                asyncio.run(cmd_target_list(show_all))
+
+            elif subcmd == "remove":
+                if len(args) < 3:
+                    print_json({"error": "Missing target ID", "usage": "slopesniper target remove ID"})
+                    sys.exit(1)
+                try:
+                    target_id = int(args[2])
+                except ValueError:
+                    print_json({"error": "Target ID must be a number"})
+                    sys.exit(1)
+                asyncio.run(cmd_target_remove(target_id))
+
+            else:
+                print_json({"error": f"Unknown target subcommand: {subcmd}"})
+                sys.exit(1)
+
+        elif cmd == "watch":
+            if len(args) < 2:
+                print_json({"error": "Missing token", "usage": "slopesniper watch TOKEN --mcap VALUE"})
+                sys.exit(1)
+
+            token = args[1]
+            mcap = price = pct_gain = trailing = None
+            sell = "all"
+            interval = 5
+
+            i = 2
+            while i < len(args):
+                arg = args[i]
+                if arg == "--mcap" and i + 1 < len(args):
+                    mcap = float(args[i + 1])
+                    i += 2
+                elif arg == "--price" and i + 1 < len(args):
+                    price = float(args[i + 1])
+                    i += 2
+                elif arg in ("--pct-gain", "--pct", "--gain") and i + 1 < len(args):
+                    pct_gain = float(args[i + 1])
+                    i += 2
+                elif arg in ("--trailing", "--trail") and i + 1 < len(args):
+                    trailing = float(args[i + 1])
+                    i += 2
+                elif arg == "--sell" and i + 1 < len(args):
+                    sell = args[i + 1]
+                    i += 2
+                elif arg in ("--interval", "-i") and i + 1 < len(args):
+                    interval = int(args[i + 1])
+                    i += 2
+                else:
+                    i += 1
+
+            asyncio.run(cmd_watch_foreground(token, mcap, price, pct_gain, trailing, sell, interval))
+
+        elif cmd == "daemon":
+            if len(args) < 2:
+                print_json({
+                    "error": "Missing subcommand",
+                    "usage": ["slopesniper daemon start", "slopesniper daemon stop", "slopesniper daemon status"],
+                })
+                sys.exit(1)
+
+            subcmd = args[1].lower()
+
+            if subcmd == "start":
+                interval = 15
+                if "--interval" in args:
+                    idx = args.index("--interval")
+                    if idx + 1 < len(args):
+                        interval = int(args[idx + 1])
+                from .daemon import start_daemon
+                result = start_daemon(interval)
+                print_json(result)
+
+            elif subcmd == "stop":
+                from .daemon import stop_daemon
+                result = stop_daemon()
+                print_json(result)
+
+            elif subcmd == "status":
+                from .daemon import get_daemon_status
+                result = get_daemon_status()
+                print_json(result)
+
+            elif subcmd == "logs":
+                tail = 50
+                if "--tail" in args:
+                    idx = args.index("--tail")
+                    if idx + 1 < len(args):
+                        tail = int(args[idx + 1])
+                from .daemon import get_daemon_logs
+                result = get_daemon_logs(tail)
+                print_json(result)
+
+            else:
+                print_json({"error": f"Unknown daemon subcommand: {subcmd}"})
+                sys.exit(1)
 
         else:
             print(f"Unknown command: {cmd}")
