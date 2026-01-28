@@ -307,9 +307,13 @@ def _migrate_plaintext_wallet() -> dict | None:
     return None
 
 
-def load_local_wallet() -> dict | None:
+def load_local_wallet(raise_on_decrypt_error: bool = False) -> dict | None:
     """
     Load wallet from encrypted local storage.
+
+    Args:
+        raise_on_decrypt_error: If True, raise exception on decryption failure
+            instead of returning None. Useful for diagnosing issues.
 
     Returns:
         dict with private_key and address, or None if not found
@@ -323,9 +327,17 @@ def load_local_wallet() -> dict | None:
             if "private_key" in data and "address" in data:
                 return data
         except InvalidToken:
-            # Key mismatch - wallet from different machine or corrupted
+            # Key mismatch - wallet from different machine or corrupted .machine_key
+            if raise_on_decrypt_error:
+                raise ValueError(
+                    "Cannot decrypt wallet.enc - machine key mismatch. "
+                    "This wallet was created on a different machine or .machine_key is corrupted. "
+                    "Check ~/.slopesniper/wallet_backups/ for recoverable backups."
+                )
             return None
-        except Exception:
+        except Exception as e:
+            if raise_on_decrypt_error:
+                raise ValueError(f"Failed to load wallet: {e}")
             pass
 
     # Try to migrate old plaintext wallet
@@ -1146,3 +1158,191 @@ def get_policy_config() -> PolicyConfig:
         config.ALLOW_MINTS = [m.strip() for m in allow_mints.split(",") if m.strip()]
 
     return config
+
+
+def restore_backup_wallet(timestamp: str) -> dict:
+    """
+    Restore a wallet from backup, making it the active wallet.
+
+    This exports the backup and imports it as the current wallet.
+    The current wallet (if any) is backed up first.
+
+    Args:
+        timestamp: Backup timestamp (YYYYMMDD_HHMMSS format)
+
+    Returns:
+        Dict with success status, restored address, or error
+    """
+    # Get the backup
+    backup = export_backup_wallet(timestamp)
+
+    if not backup:
+        return {
+            "success": False,
+            "error": f"Backup not found: {timestamp}",
+            "hint": "Run 'slopesniper export --list-backups' to see available backups.",
+        }
+
+    if "error" in backup:
+        return {
+            "success": False,
+            "error": backup["error"],
+            "timestamp": timestamp,
+        }
+
+    # Import the backup as the current wallet
+    private_key = backup.get("private_key")
+    address = backup.get("address")
+
+    if not private_key or not address:
+        return {
+            "success": False,
+            "error": "Backup is missing private_key or address",
+            "timestamp": timestamp,
+        }
+
+    # Save as current wallet (this backs up the existing wallet first)
+    save_wallet(private_key, address)
+
+    return {
+        "success": True,
+        "restored_address": address,
+        "from_backup": timestamp,
+        "message": f"Wallet restored from backup. Active wallet is now: {address}",
+    }
+
+
+def get_wallet_integrity_status() -> dict:
+    """
+    Comprehensive wallet integrity check.
+
+    Diagnoses common issues:
+    - Machine key status
+    - Wallet file existence and readability
+    - Encryption/decryption health
+    - Backup availability
+    - Environment vs local conflicts
+
+    Returns:
+        Dict with detailed diagnostic info
+    """
+    result = {
+        "machine_key": {
+            "exists": MACHINE_KEY_FILE.exists(),
+            "readable": False,
+            "valid": False,
+        },
+        "wallet_file": {
+            "exists": WALLET_FILE_ENCRYPTED.exists(),
+            "readable": False,
+            "decryptable": False,
+            "address": None,
+        },
+        "legacy_wallet": {
+            "exists": WALLET_FILE.exists(),
+        },
+        "backups": {
+            "count": 0,
+            "available": [],
+        },
+        "environment": {
+            "configured": bool(os.environ.get("SOLANA_PRIVATE_KEY")),
+            "address": None,
+        },
+        "issues": [],
+        "recommendations": [],
+    }
+
+    # Check machine key
+    if MACHINE_KEY_FILE.exists():
+        try:
+            key_data = json.loads(MACHINE_KEY_FILE.read_text())
+            if "salt" in key_data:
+                result["machine_key"]["readable"] = True
+                result["machine_key"]["valid"] = True
+        except Exception as e:
+            result["issues"].append(f"Machine key file corrupted: {e}")
+            result["recommendations"].append(
+                "Machine key is corrupted. Wallet may be unrecoverable. "
+                "Check backups with 'slopesniper export --list-backups'."
+            )
+
+    # Check wallet file
+    if WALLET_FILE_ENCRYPTED.exists():
+        result["wallet_file"]["readable"] = True
+        try:
+            wallet = load_local_wallet(raise_on_decrypt_error=True)
+            if wallet:
+                result["wallet_file"]["decryptable"] = True
+                result["wallet_file"]["address"] = wallet.get("address")
+        except ValueError as e:
+            result["issues"].append(str(e))
+            result["recommendations"].append(
+                "Wallet file exists but cannot be decrypted. "
+                "This usually means the wallet was created on a different machine. "
+                "Check backups or import your private key again."
+            )
+        except Exception as e:
+            result["issues"].append(f"Wallet read error: {e}")
+
+    # Check legacy wallet
+    if WALLET_FILE.exists():
+        result["issues"].append("Legacy plaintext wallet.json found - should be migrated")
+        result["recommendations"].append(
+            "Run 'slopesniper status' to automatically migrate the plaintext wallet."
+        )
+
+    # Check backups
+    backups = list_wallet_backups()
+    result["backups"]["count"] = len(backups)
+    result["backups"]["available"] = [
+        {"timestamp": b["timestamp"], "address": b["address"]}
+        for b in backups[:5]  # Show last 5
+    ]
+
+    # Check environment
+    env_key = os.environ.get("SOLANA_PRIVATE_KEY")
+    if env_key:
+        keypair = _parse_private_key(env_key)
+        if keypair:
+            result["environment"]["address"] = str(keypair.pubkey())
+
+    # Check for conflicts
+    if result["environment"]["configured"] and result["wallet_file"]["decryptable"]:
+        if result["environment"]["address"] != result["wallet_file"]["address"]:
+            result["issues"].append(
+                f"WALLET MISMATCH: Environment ({result['environment']['address'][:8]}...) "
+                f"differs from local file ({result['wallet_file']['address'][:8]}...)"
+            )
+            result["recommendations"].append(
+                "Environment variable takes priority. To use local wallet, unset SOLANA_PRIVATE_KEY. "
+                "To sync, run 'slopesniper setup --import-key' with desired key."
+            )
+
+    # Overall health
+    if not result["issues"]:
+        result["health"] = "ok"
+    elif any("MISMATCH" in issue for issue in result["issues"]):
+        result["health"] = "warning"
+    else:
+        result["health"] = "error"
+
+    return result
+
+
+def get_wallet_fingerprint() -> str | None:
+    """
+    Get a short fingerprint of the current active wallet.
+
+    Useful for detecting wallet changes between processes.
+
+    Returns:
+        Short hash of wallet address, or None if no wallet
+    """
+    sync_status = get_wallet_sync_status()
+    address = sync_status.get("active_address")
+    if not address:
+        return None
+
+    # Create a short fingerprint
+    return hashlib.sha256(address.encode()).hexdigest()[:12]

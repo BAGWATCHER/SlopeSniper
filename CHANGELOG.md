@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.8] - 2026-01-27
+
+### Added
+- **Wallet integrity diagnostics** - `slopesniper health --diagnose` for comprehensive wallet checks
+  - Machine key status verification
+  - Wallet file encryption health
+  - Backup availability
+  - Environment vs local conflict detection
+  - Specific issues and recommendations
+- **Wallet restore command** - `slopesniper restore TIMESTAMP` to restore from backup
+  - Works with timestamps from `slopesniper export --list-backups`
+  - Automatically backs up current wallet before restoring
+- **Wallet fingerprint API** - `get_wallet_fingerprint()` for process sync detection
+- **Better error messages** - Detailed diagnostics when wallet decryption fails
+
+### Fixed
+- **Issue #14**: Users couldn't clear invalid Jupiter API keys
+  - Added `slopesniper config --clear jupiter-key`
+  - Added `clear_jupiter_key()` MCP tool
+- **Issue #15**: Wallet desync between Clawdbot/MCP and CLI
+  - Added `get_wallet_sync_status()` for mismatch detection
+  - Added `wallet_source` field to status output
+  - Added `WALLET_MISMATCH_WARNING` when configs differ
+- **Issue #16**: Couldn't adjust slippage without changing strategy
+  - Added `slopesniper strategy --slippage BPS` (e.g., `--slippage 300` for 3%)
+  - Added `slopesniper strategy --max-trade USD`
+  - Added `set_slippage()` MCP tool for quick adjustment
+
+### Changed
+- `load_local_wallet()` now accepts `raise_on_decrypt_error` parameter for better debugging
+- Health check shows more detailed fix options for wallet mismatches
+- Troubleshooting docs expanded with wallet recovery procedures
+
 ## [0.2.7] - 2026-01-27
 
 ### Added
@@ -138,7 +171,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.7...HEAD
+[Unreleased]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.8...HEAD
+[0.2.8]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.4...v0.2.5

@@ -26,6 +26,8 @@ Usage:
     slopesniper config --set KEY VALUE   Set config (jupiter-key, rpc-provider, rpc-url)
     slopesniper config --clear KEY       Clear config (rpc, jupiter-key)
     slopesniper health              Check system health and wallet sync status
+    slopesniper health --diagnose   Run comprehensive wallet integrity diagnostics
+    slopesniper restore TIMESTAMP   Restore wallet from backup (see export --list-backups)
     slopesniper contribute          Check for improvements and report to GitHub
     slopesniper contribute --enable       Enable contribution callbacks
     slopesniper contribute --disable      Disable contribution callbacks
@@ -365,9 +367,12 @@ def cmd_config(
         print_json(result)
 
 
-def cmd_health() -> None:
+def cmd_health(diagnose: bool = False) -> None:
     """
     Check system health and wallet sync status.
+
+    Args:
+        diagnose: If True, run comprehensive integrity diagnostics
 
     Shows:
     - Wallet configuration sources (env vs local)
@@ -380,6 +385,7 @@ def cmd_health() -> None:
 
     from .tools.config import (
         get_config_status,
+        get_wallet_integrity_status,
         get_wallet_sync_status,
         load_user_config,
     )
@@ -421,6 +427,35 @@ def cmd_health() -> None:
             "3. To see which wallet is active: check 'active_source' above",
         ]
 
+    # Run comprehensive diagnostics if requested
+    if diagnose:
+        integrity = get_wallet_integrity_status()
+        result["diagnostics"] = integrity
+
+        # Update health based on diagnostics
+        if integrity.get("health") == "error":
+            result["health"] = "error"
+        elif integrity.get("health") == "warning" and result["health"] == "ok":
+            result["health"] = "warning"
+
+        if integrity.get("issues"):
+            result["issues"] = integrity["issues"]
+        if integrity.get("recommendations"):
+            result["recommendations"] = integrity["recommendations"]
+
+    print_json(result)
+
+
+def cmd_restore(timestamp: str) -> None:
+    """
+    Restore a wallet from backup.
+
+    Args:
+        timestamp: Backup timestamp (YYYYMMDD_HHMMSS format)
+    """
+    from .tools.config import restore_backup_wallet
+
+    result = restore_backup_wallet(timestamp)
     print_json(result)
 
 
@@ -902,7 +937,14 @@ def main() -> None:
             cmd_config(set_key=set_key, set_value=set_value, clear_key=clear_key)
 
         elif cmd == "health":
-            cmd_health()
+            diagnose = "--diagnose" in args or "-d" in args
+            cmd_health(diagnose=diagnose)
+
+        elif cmd == "restore":
+            if len(args) < 2:
+                print_json({"error": "Missing timestamp", "usage": "slopesniper restore TIMESTAMP"})
+                sys.exit(1)
+            cmd_restore(args[1])
 
         elif cmd == "version":
             check_latest = "--check" in args or "-c" in args
