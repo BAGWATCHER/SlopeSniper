@@ -559,6 +559,32 @@ async def get_strategy() -> dict:
 
 
 @mcp.tool()
+async def set_slippage(slippage_bps: int) -> dict:
+    """
+    Quick-set slippage tolerance without changing other strategy settings.
+
+    USE THIS when trades fail due to slippage in volatile markets.
+    Common values:
+    - 50 = 0.5% (tight, may fail on volatile tokens)
+    - 100 = 1% (default for balanced strategy)
+    - 200 = 2% (aggressive)
+    - 300 = 3% (for volatile meme coins)
+    - 500 = 5% (degen mode)
+
+    Args:
+        slippage_bps: Slippage in basis points (100 = 1%)
+
+    Returns:
+        Updated strategy with new slippage
+
+    Example:
+        # Trade failing? Increase slippage:
+        set_slippage(300)  # Set to 3%
+    """
+    return await skill_set_strategy(slippage_bps=slippage_bps)
+
+
+@mcp.tool()
 async def list_strategies() -> dict:
     """
     List all available strategy presets.

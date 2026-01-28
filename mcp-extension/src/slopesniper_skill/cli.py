@@ -19,6 +19,8 @@ Usage:
     slopesniper search <query>      Search for tokens (returns mint addresses)
     slopesniper resolve <token>     Get mint address from symbol
     slopesniper strategy [name]     View or set strategy
+    slopesniper strategy --slippage BPS   Set slippage (e.g., 300 for 3%)
+    slopesniper strategy --max-trade USD  Set max trade size
     slopesniper scan [filter]       Scan for opportunities (trending/new/graduated/pumping)
     slopesniper config              View current configuration
     slopesniper config --set KEY VALUE   Set config (jupiter-key, rpc-provider, rpc-url)
@@ -279,15 +281,29 @@ async def cmd_resolve(token: str) -> None:
     print_json(result)
 
 
-async def cmd_strategy(name: str | None = None) -> None:
-    """View or set trading strategy."""
-    if name:
-        from . import set_strategy
+async def cmd_strategy(
+    name: str | None = None,
+    slippage_bps: int | None = None,
+    max_trade_usd: float | None = None,
+) -> None:
+    """
+    View or set trading strategy.
 
-        result = await set_strategy(name)
+    Args:
+        name: Strategy preset name (conservative/balanced/aggressive/degen)
+        slippage_bps: Override slippage tolerance in basis points (100 = 1%)
+        max_trade_usd: Override max trade size in USD
+    """
+    from . import get_strategy, set_strategy
+
+    # If any parameter is set, update strategy
+    if name or slippage_bps is not None or max_trade_usd is not None:
+        result = await set_strategy(
+            strategy=name,
+            slippage_bps=slippage_bps,
+            max_trade_usd=max_trade_usd,
+        )
     else:
-        from . import get_strategy
-
         result = await get_strategy()
     print_json(result)
 
@@ -818,8 +834,35 @@ def main() -> None:
             asyncio.run(cmd_resolve(args[1]))
 
         elif cmd == "strategy":
-            name = args[1] if len(args) > 1 else None
-            asyncio.run(cmd_strategy(name))
+            # Parse strategy flags: [name] [--slippage BPS] [--max-trade USD]
+            name = None
+            slippage_bps = None
+            max_trade_usd = None
+
+            i = 1
+            while i < len(args):
+                arg = args[i]
+                if arg in ("--slippage", "-s") and i + 1 < len(args):
+                    try:
+                        slippage_bps = int(args[i + 1])
+                    except ValueError:
+                        print(f"Error: slippage must be an integer (basis points)")
+                        sys.exit(1)
+                    i += 2
+                elif arg in ("--max-trade", "-m") and i + 1 < len(args):
+                    try:
+                        max_trade_usd = float(args[i + 1])
+                    except ValueError:
+                        print(f"Error: max-trade must be a number (USD)")
+                        sys.exit(1)
+                    i += 2
+                elif not arg.startswith("-"):
+                    name = arg
+                    i += 1
+                else:
+                    i += 1
+
+            asyncio.run(cmd_strategy(name, slippage_bps, max_trade_usd))
 
         elif cmd == "scan":
             filter_type = args[1] if len(args) > 1 else "all"
