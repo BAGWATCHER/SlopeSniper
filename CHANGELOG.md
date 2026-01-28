@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.91] - 2026-01-27
+
+### Fixed
+- **Issue submission for AI assistants** - Added MCP GitHub tool as primary method
+  - AI now uses `mcp__github__create_issue` when `gh` CLI unavailable
+  - Updated SKILL.md and AI_CONTRIBUTION_POLICY.md with clear priority chain
+  - Fixes issue where Claude fell back to manual when MCP tool was available
+
 ## [0.2.9] - 2026-01-27
 
 ### Added

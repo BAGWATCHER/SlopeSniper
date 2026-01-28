@@ -172,6 +172,27 @@ slopesniper export
 
 **Note:** Wallet and API keys are stored encrypted in `~/.slopesniper/`
 
+## Reporting Issues
+
+**For the bot:** When errors occur repeatedly, create a GitHub issue automatically using this priority:
+
+1. **GitHub MCP tool** (preferred): Use `mcp__github__create_issue` with:
+   - `owner`: "BAGWATCHER"
+   - `repo`: "SlopeSniper"
+   - `title`: Brief description of the issue
+   - `body`: Full details including error, steps to reproduce, environment
+   - `labels`: ["bug"] or ["enhancement"]
+
+2. **gh CLI** (fallback): If MCP unavailable, use `gh issue create --repo BAGWATCHER/SlopeSniper`
+
+3. **Manual** (last resort): Create local markdown file and provide the GitHub issues URL
+
+Always include in issue body:
+- Error message or behavior observed
+- Steps to reproduce
+- Environment (Moltbot/Claude Code version)
+- Output from `slopesniper health --diagnose` if relevant
+
 ## Support
 
 - GitHub: https://github.com/BAGWATCHER/SlopeSniper
