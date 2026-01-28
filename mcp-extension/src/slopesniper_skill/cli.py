@@ -23,6 +23,7 @@ Usage:
     slopesniper config              View current configuration
     slopesniper config --set KEY VALUE   Set config (jupiter-key, rpc-provider, rpc-url)
     slopesniper config --clear KEY       Clear config (rpc, jupiter-key)
+    slopesniper health              Check system health and wallet sync status
     slopesniper contribute          Check for improvements and report to GitHub
     slopesniper contribute --enable       Enable contribution callbacks
     slopesniper contribute --disable      Disable contribution callbacks
@@ -346,6 +347,65 @@ def cmd_config(
     else:
         result = get_config_status()
         print_json(result)
+
+
+def cmd_health() -> None:
+    """
+    Check system health and wallet sync status.
+
+    Shows:
+    - Wallet configuration sources (env vs local)
+    - Mismatch warnings if env and local wallets differ
+    - Jupiter API key status
+    - RPC configuration status
+    - Overall system health
+    """
+    from . import __version__
+
+    from .tools.config import (
+        get_config_status,
+        get_wallet_sync_status,
+        load_user_config,
+    )
+
+    # Get wallet sync status
+    sync_status = get_wallet_sync_status()
+
+    # Get config status
+    config = load_user_config() or {}
+
+    result = {
+        "version": __version__,
+        "health": "ok" if sync_status["is_synced"] else "warning",
+        "wallet": {
+            "active_source": sync_status["active_source"],
+            "active_address": sync_status["active_address"],
+            "env_configured": sync_status["env_configured"],
+            "env_address": sync_status["env_address"],
+            "local_configured": sync_status["local_configured"],
+            "local_address": sync_status["local_address"],
+            "is_synced": sync_status["is_synced"],
+        },
+        "jupiter_api_key": {
+            "configured": bool(config.get("jupiter_api_key")),
+            "source": "local_config" if config.get("jupiter_api_key") else "bundled",
+        },
+        "rpc": {
+            "configured": bool(config.get("rpc_provider")),
+            "provider": config.get("rpc_provider", "default"),
+        },
+    }
+
+    # Add warning if wallet mismatch detected
+    if not sync_status["is_synced"]:
+        result["WARNING"] = sync_status["warning"]
+        result["fix_options"] = [
+            "1. To use the LOCAL wallet: unset SOLANA_PRIVATE_KEY environment variable",
+            "2. To sync ENV to LOCAL: slopesniper setup --import-key $SOLANA_PRIVATE_KEY",
+            "3. To see which wallet is active: check 'active_source' above",
+        ]
+
+    print_json(result)
 
 
 def cmd_version(check_latest: bool = False) -> None:
@@ -797,6 +857,9 @@ def main() -> None:
                     i += 1
 
             cmd_config(set_key=set_key, set_value=set_value, clear_key=clear_key)
+
+        elif cmd == "health":
+            cmd_health()
 
         elif cmd == "version":
             check_latest = "--check" in args or "-c" in args

@@ -15,6 +15,7 @@ from .config import (
     get_rpc_url,
     get_secret,
     get_wallet_address,
+    get_wallet_sync_status,
     set_rpc_config,
 )
 from .intents import (
@@ -111,6 +112,7 @@ __all__ = [
     "get_secret",
     "get_keypair",
     "get_wallet_address",
+    "get_wallet_sync_status",
     "get_rpc_url",
     "get_jupiter_api_key",
     "get_policy_config",

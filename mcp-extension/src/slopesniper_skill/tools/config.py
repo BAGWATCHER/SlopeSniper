@@ -453,6 +453,72 @@ def get_wallet_address() -> str | None:
     return None
 
 
+def get_wallet_sync_status() -> dict:
+    """
+    Check wallet configuration sync status.
+
+    Detects mismatches between environment variable and local wallet file.
+    This helps identify desynchronization issues between wrapper (Clawdbot/MCP)
+    and CLI configurations.
+
+    Returns:
+        Dict with:
+        - active_source: "environment" | "local" | "none"
+        - active_address: Current active wallet address
+        - env_configured: bool
+        - env_address: Address from env var (if set)
+        - local_configured: bool
+        - local_address: Address from local file (if exists)
+        - is_synced: True if no mismatch detected
+        - warning: Warning message if mismatch detected
+    """
+    result = {
+        "active_source": "none",
+        "active_address": None,
+        "env_configured": False,
+        "env_address": None,
+        "local_configured": False,
+        "local_address": None,
+        "is_synced": True,
+        "warning": None,
+    }
+
+    # Check environment variable
+    env_key = os.environ.get("SOLANA_PRIVATE_KEY")
+    if env_key:
+        keypair = _parse_private_key(env_key)
+        if keypair:
+            result["env_configured"] = True
+            result["env_address"] = str(keypair.pubkey())
+
+    # Check local wallet file
+    local_wallet = load_local_wallet()
+    if local_wallet:
+        result["local_configured"] = True
+        result["local_address"] = local_wallet.get("address")
+
+    # Determine active source (matches get_keypair priority)
+    if result["env_configured"]:
+        result["active_source"] = "environment"
+        result["active_address"] = result["env_address"]
+    elif result["local_configured"]:
+        result["active_source"] = "local"
+        result["active_address"] = result["local_address"]
+
+    # Check for mismatch
+    if result["env_configured"] and result["local_configured"]:
+        if result["env_address"] != result["local_address"]:
+            result["is_synced"] = False
+            result["warning"] = (
+                f"WALLET MISMATCH: Environment variable points to {result['env_address'][:8]}... "
+                f"but local wallet file contains {result['local_address'][:8]}... "
+                f"Using environment variable (priority). "
+                f"Run 'slopesniper setup --import-key' to sync, or unset SOLANA_PRIVATE_KEY to use local."
+            )
+
+    return result
+
+
 def get_rpc_url() -> str:
     """
     Get Solana RPC URL with priority: env > user config > default.
