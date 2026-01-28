@@ -8,15 +8,20 @@ SKILL_NAME="slopesniper"
 REPO_URL="https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/slopesniper"
 PACKAGE_URL="slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension"
 
-# Detect Moltbot skills directory
+# Detect Moltbot/Clawdbot skills directory (supports both for backward compatibility)
 detect_skills_dir() {
-    # Check common locations
+    # Check common locations - moltbot first, then clawdbot fallback
     local possible_dirs=(
         "$(npm root -g 2>/dev/null)/moltbot/skills"
         "$(dirname $(which moltbot 2>/dev/null) 2>/dev/null)/../lib/node_modules/moltbot/skills"
         "${HOME}/.moltbot/skills"
         "/usr/local/lib/node_modules/moltbot/skills"
         "/usr/lib/node_modules/moltbot/skills"
+        "$(npm root -g 2>/dev/null)/clawdbot/skills"
+        "$(dirname $(which clawdbot 2>/dev/null) 2>/dev/null)/../lib/node_modules/clawdbot/skills"
+        "${HOME}/.clawdbot/skills"
+        "/usr/local/lib/node_modules/clawdbot/skills"
+        "/usr/lib/node_modules/clawdbot/skills"
     )
 
     for dir in "${possible_dirs[@]}"; do
@@ -26,7 +31,7 @@ detect_skills_dir() {
         fi
     done
 
-    # Fallback to ~/.moltbot/skills
+    # Fallback to ~/.moltbot/skills (new default)
     echo "${HOME}/.moltbot/skills"
 }
 

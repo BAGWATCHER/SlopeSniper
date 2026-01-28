@@ -402,8 +402,8 @@ def get_secret(name: str) -> str | None:
     2. Environment variable
     3. None
     """
-    # Try moltbot gateway first (future integration point)
-    gateway_url = os.environ.get("MOLTBOT_GATEWAY_URL")
+    # Try moltbot gateway first, fallback to clawdbot for backward compatibility
+    gateway_url = os.environ.get("MOLTBOT_GATEWAY_URL") or os.environ.get("CLAWDBOT_GATEWAY_URL")
     if gateway_url:
         try:
             # Future: implement gateway secret fetch
