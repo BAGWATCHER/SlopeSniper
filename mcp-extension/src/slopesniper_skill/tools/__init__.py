@@ -15,7 +15,10 @@ from .config import (
     get_rpc_url,
     get_secret,
     get_wallet_address,
+    get_wallet_fingerprint,
+    get_wallet_integrity_status,
     get_wallet_sync_status,
+    restore_backup_wallet,
     set_rpc_config,
 )
 from .intents import (
@@ -113,6 +116,9 @@ __all__ = [
     "get_keypair",
     "get_wallet_address",
     "get_wallet_sync_status",
+    "get_wallet_integrity_status",
+    "get_wallet_fingerprint",
+    "restore_backup_wallet",
     "get_rpc_url",
     "get_jupiter_api_key",
     "get_policy_config",

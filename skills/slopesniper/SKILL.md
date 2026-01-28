@@ -198,6 +198,7 @@ slopesniper export
 | 401 Unauthorized | `slopesniper config --clear jupiter-key` |
 | Trade failed (slippage) | `slopesniper strategy --slippage 300` |
 | Wallet mismatch | `slopesniper health` to check sync |
+| Wallet reverts to old address | `slopesniper health --diagnose` then restore from backup |
 | Slow transactions | Configure custom RPC (see below) |
 
 ### Health Check
@@ -207,16 +208,41 @@ Run a full system health check:
 slopesniper health
 ```
 
+For comprehensive diagnostics (wallet integrity, machine key status, backups):
+```bash
+slopesniper health --diagnose
+```
+
 This shows:
 - Wallet source (environment vs local file)
 - Sync status and mismatch warnings
 - API key configuration
 - RPC provider status
+- (with --diagnose) Machine key integrity, backup availability, specific issues and recommendations
+
+### Wallet Recovery
+
+If your wallet keeps reverting or you need to restore from backup:
+
+1. **List available backups:**
+   ```bash
+   slopesniper export --list-backups
+   ```
+
+2. **Restore from a backup:**
+   ```bash
+   slopesniper restore TIMESTAMP
+   ```
+   (Replace TIMESTAMP with value from list-backups, e.g., `20240127_103045`)
+
+3. **If backups can't be decrypted** (different machine):
+   - Re-import your private key: `slopesniper setup --import-key YOUR_KEY`
+   - Check address files in `~/.slopesniper/wallet_backups/*.address` for reference
 
 ### Reporting Issues
 
 If you encounter persistent errors:
-1. Run `slopesniper health` and note the output
+1. Run `slopesniper health --diagnose` and note the output
 2. Create an issue at: https://github.com/BAGWATCHER/SlopeSniper/issues
 3. Include: error message, health output, steps to reproduce
 
