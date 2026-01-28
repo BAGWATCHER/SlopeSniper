@@ -581,8 +581,8 @@ def send_contribution_callback(
     """
     logger = logging.getLogger("SlopeSniper.Callback")
 
-    # Try GitHub first (preferred method)
-    if prefer_github and _check_gh_cli():
+    # Try GitHub first (preferred method - works with or without gh CLI)
+    if prefer_github:
         github_result = submit_github_contribution(modified_files)
         if github_result.get("submitted"):
             return github_result
