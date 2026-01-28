@@ -34,6 +34,15 @@ class DexScreenerClient:
     def __init__(self) -> None:
         self.logger = Utils.setup_logger("DexScreenerClient")
 
+    def _get_version(self) -> str:
+        """Get package version for User-Agent."""
+        try:
+            from .. import __version__
+
+            return __version__
+        except Exception:
+            return "unknown"
+
     async def _request(
         self, endpoint: str, params: dict | None = None, timeout: int = 15
     ) -> dict[str, Any]:
@@ -47,7 +56,7 @@ class DexScreenerClient:
                     url,
                     params=params,
                     timeout=aiohttp.ClientTimeout(total=timeout),
-                    headers={"User-Agent": "SlopeSniper/0.1.0"},
+                    headers={"User-Agent": f"SlopeSniper/{self._get_version()}"},
                 ) as resp:
                     if resp.status == 200:
                         data = await resp.json()
