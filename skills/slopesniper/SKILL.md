@@ -26,6 +26,22 @@ Trade Solana meme coins and tokens using natural language. Just tell me what you
 | "Set aggressive mode" | Changes trading strategy |
 | "Export my key" | Shows private key for backup |
 
+## Important: Always Fetch Fresh Data
+
+**CRITICAL:** When asked about prices, positions, or market data:
+- **ALWAYS run the command** - Never rely on cached conversation data
+- Crypto markets move fast - data older than 30 seconds is stale
+- Run `slopesniper price MINT` or `slopesniper wallet` every time
+
+**Example:**
+```
+User: "How's my Peyote position?"
+BAD:  Use price from 30 minutes ago in conversation history
+GOOD: Run `slopesniper wallet` to get current value
+```
+
+This ensures users always see accurate, real-time information.
+
 ## Getting Started
 
 ### New Users (Recommended)
@@ -51,6 +67,37 @@ Set your own Jupiter API key for 10x better performance:
 slopesniper config --set-jupiter-key YOUR_KEY
 ```
 Get a free key at: https://station.jup.ag/docs/apis/ultra-api
+
+## Performance Tips
+
+### Multiple Positions (10+ tokens)
+
+If you hold 10 or more different tokens, wallet balance checks may be slow due to Jupiter API rate limits.
+
+**Symptoms:**
+- `slopesniper wallet` takes 30+ seconds
+- Retry messages in logs
+- API timeout errors
+
+**Solutions:**
+
+1. **Get your own Jupiter API key** (Recommended):
+   ```bash
+   slopesniper config --set-jupiter-key YOUR_KEY
+   ```
+   Free keys at: https://station.jup.ag/docs/apis/ultra-api
+   - 10x higher rate limits
+   - Significantly faster for portfolios with many tokens
+
+2. **Use custom RPC endpoint**:
+   ```bash
+   slopesniper config --set-rpc helius YOUR_KEY
+   ```
+   Reduces load on default public RPC
+
+3. **Limit scanning**:
+   - Avoid frequent `wallet` checks if not needed
+   - Use position-specific commands when possible
 
 ## Trading Strategies
 

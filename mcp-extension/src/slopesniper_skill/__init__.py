@@ -25,7 +25,7 @@ Example:
 # Version is the single source of truth - update here for releases
 # Follow semantic versioning: MAJOR.MINOR.PATCH
 # Beta versions use 0.x.x (0.MINOR.PATCH)
-__version__ = "0.3.0"
+__version__ = "0.3.02"
 
 from .tools import (
     export_wallet,
