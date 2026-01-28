@@ -2,7 +2,7 @@
 
 <img src="logo.jpg" alt="SlopeSniper Logo" width="400">
 
-# SlopeSniper
+# SlopeSniper 🦞 
 
 **Trade Solana tokens with natural language**
 
