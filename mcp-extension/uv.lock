@@ -1244,11 +1244,12 @@ wheels = [
 
 [[package]]
 name = "slopesniper-mcp"
-version = "0.1.0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "base58" },
+    { name = "cryptography" },
     { name = "fastapi" },
     { name = "mcp" },
     { name = "solders" },
@@ -1259,6 +1260,7 @@ dependencies = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.9.0" },
     { name = "base58", specifier = ">=2.1.0" },
+    { name = "cryptography", specifier = ">=42.0.0" },
     { name = "fastapi", specifier = ">=0.109.0" },
     { name = "mcp", specifier = ">=1.0.0" },
     { name = "solders", specifier = ">=0.21.0" },

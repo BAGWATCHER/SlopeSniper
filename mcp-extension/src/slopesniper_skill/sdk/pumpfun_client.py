@@ -33,6 +33,15 @@ class PumpFunClient:
     def __init__(self) -> None:
         self.logger = Utils.setup_logger("PumpFunClient")
 
+    def _get_version(self) -> str:
+        """Get package version for User-Agent."""
+        try:
+            from .. import __version__
+
+            return __version__
+        except Exception:
+            return "unknown"
+
     async def _request(self, url: str, params: dict | None = None, timeout: int = 15) -> Any:
         """Make API request."""
         self.logger.debug(f"[_request] GET {url}")
@@ -44,7 +53,7 @@ class PumpFunClient:
                     params=params,
                     timeout=aiohttp.ClientTimeout(total=timeout),
                     headers={
-                        "User-Agent": "Mozilla/5.0 (compatible; SlopeSniper/0.1.0)",
+                        "User-Agent": f"Mozilla/5.0 (compatible; SlopeSniper/{self._get_version()})",
                         "Accept": "application/json",
                     },
                 ) as resp:

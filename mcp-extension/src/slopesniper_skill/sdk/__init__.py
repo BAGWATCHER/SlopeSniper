@@ -9,7 +9,7 @@ Bundled SDK for Solana token operations:
 - PumpFunClient: Pump.fun graduated/new tokens
 """
 
-__version__ = "0.1.0"
+__version__ = "0.3.03"
 
 from .dexscreener_client import DexScreenerClient
 from .jupiter_data_client import JupiterDataClient
