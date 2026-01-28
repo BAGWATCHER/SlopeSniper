@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-01-27
+
+### Added
+- **Issue #24**: Auto-sell based on market cap/price targets
+  - `slopesniper target add TOKEN --mcap VALUE --sell all` - Add sell targets
+  - `slopesniper target add TOKEN --price VALUE --sell 50%` - Price-based targets
+  - `slopesniper target add TOKEN --pct-gain 100 --sell all` - Percentage gain targets
+  - `slopesniper target add TOKEN --trailing 20 --sell all` - Trailing stop targets
+  - `slopesniper target list` - List active targets
+  - `slopesniper target remove ID` - Cancel a target
+  - `slopesniper watch TOKEN --mcap VALUE` - Foreground watch mode
+  - `slopesniper daemon start/stop/status` - Background monitoring daemon
+  - Supports flexible sell amounts: `all`, `50%`, `USD:100`
+  - SQLite persistence for targets survives restarts
+  - Batch price polling for efficiency
+
+### Changed
+- **README.md**: Fixed repository URLs (maddefientist -> BAGWATCHER)
+- Updated version badge to current version
+
 ## [0.2.92] - 2026-01-27
 
 ### Fixed
@@ -205,7 +225,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.92...HEAD
+[Unreleased]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.92...v0.3.0
 [0.2.92]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.91...v0.2.92
 [0.2.91]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.9...v0.2.91
 [0.2.9]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.8...v0.2.9

@@ -75,6 +75,22 @@ from .strategies import (
     record_trade,
     set_strategy,
 )
+from .targets import (
+    SellTarget,
+    TargetStatus,
+    TargetType,
+    add_target,
+    check_target,
+    execute_target_sell,
+    format_target_for_display,
+    get_active_targets,
+    get_all_targets,
+    get_target,
+    parse_sell_amount,
+    poll_targets_batch,
+    remove_target,
+    update_trailing_peak,
+)
 
 __all__ = [
     # Core Tools
@@ -141,4 +157,19 @@ __all__ = [
     "get_intent_time_remaining",
     "Intent",
     "INTENT_TTL_SECONDS",
+    # Targets (Auto-sell)
+    "add_target",
+    "get_target",
+    "get_active_targets",
+    "get_all_targets",
+    "remove_target",
+    "check_target",
+    "execute_target_sell",
+    "poll_targets_batch",
+    "update_trailing_peak",
+    "parse_sell_amount",
+    "format_target_for_display",
+    "SellTarget",
+    "TargetType",
+    "TargetStatus",
 ]

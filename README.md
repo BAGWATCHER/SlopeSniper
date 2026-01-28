@@ -8,7 +8,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/version-0.2.7-green.svg)](https://github.com/maddefientist/SlopeSniper/releases)
+[![Version](https://img.shields.io/badge/version-0.3.0-green.svg)](https://github.com/BAGWATCHER/SlopeSniper/releases)
 
 [Quick Start](#-quick-start) · [Features](#-features) · [Documentation](#-documentation) · [Contributing](#-contributing)
 
@@ -46,7 +46,7 @@ SlopeSniper handles token resolution, safety checks, quotes, and execution—all
 ### 1. Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/maddefientist/SlopeSniper/main/skills/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash
 ```
 
 ### 2. Set Up Your Wallet
@@ -359,7 +359,7 @@ export POLICY_MAX_SLIPPAGE_BPS=50  # 0.5%
 
 ```bash
 # Clone the repository
-git clone https://github.com/maddefientist/SlopeSniper.git
+git clone https://github.com/BAGWATCHER/SlopeSniper.git
 cd SlopeSniper
 
 # Install in development mode
@@ -432,6 +432,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 **Built for degens, by degens** 🎯
 
-[Report Bug](https://github.com/maddefientist/SlopeSniper/issues) · [Request Feature](https://github.com/maddefientist/SlopeSniper/issues) · [Contribute](https://github.com/maddefientist/SlopeSniper/pulls)
+[Report Bug](https://github.com/BAGWATCHER/SlopeSniper/issues) · [Request Feature](https://github.com/BAGWATCHER/SlopeSniper/issues) · [Contribute](https://github.com/BAGWATCHER/SlopeSniper/pulls)
 
 </div>
