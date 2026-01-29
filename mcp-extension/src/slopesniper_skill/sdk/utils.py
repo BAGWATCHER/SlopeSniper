@@ -20,7 +20,7 @@ class Utils:
     def setup_logger(
         name: str = "SlopeSniper",
         log_file: str | None = None,
-        level: int = logging.INFO,
+        level: int | None = None,
     ) -> logging.Logger:
         """
         Set up a logger with console and optional file output.
@@ -28,7 +28,7 @@ class Utils:
         Args:
             name: Logger name
             log_file: Optional log file path (if None, console only)
-            level: Logging level
+            level: Logging level (default: WARNING, or SLOPESNIPER_LOG_LEVEL env var)
 
         Returns:
             Configured logger instance
@@ -37,6 +37,12 @@ class Utils:
 
         if not logger.hasHandlers():
             logger.propagate = False
+
+            # Determine log level: explicit > env var > default (WARNING for clean CLI output)
+            if level is None:
+                env_level = os.environ.get("SLOPESNIPER_LOG_LEVEL", "WARNING").upper()
+                level = getattr(logging, env_level, logging.WARNING)
+
             logger.setLevel(level)
 
             formatter = logging.Formatter("%(asctime)s | %(name)s | %(levelname)s | %(message)s")

@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.41] - 2026-01-29
+
+### Changed
+- **Default log level changed to WARNING** - CLI output is now clean by default
+  - Use `--verbose` or `-v` for INFO-level debugging output
+  - Use `--quiet` or `-q` to suppress all logging
+  - Set `SLOPESNIPER_LOG_LEVEL=INFO` env var for persistent verbose mode
+
+### Removed
+- **Stale `src/` directory** - Old v0.1.0 duplicate code removed (consolidated to `mcp-extension/`)
+
+### Fixed
+- Version drift across all files synced to 0.3.41
+
+## [0.3.4] - 2026-01-29
+
+### Added
+- **Discord webhook notifications for CI/CD** (#39, #40)
+  - Push notifications for dev/production branches
+  - PR merge notifications with diff colors (orange=dev, green=prod)
+  - Release notifications with changelog summary
+  - Proper JSON escaping for webhook payloads
+
+### Fixed
+- Discord release notification JSON parsing errors (using jq for safe escaping)
+
+### Changed
+- Updated BAGWATCHER PAT with proper scopes (secrets, workflow)
+
+## [0.3.3] - 2026-01-29
+
+### Added
+- Pre-merge testing requirement documented in CONTRIBUTING.md
+- Explicit testing steps before PR merge
+
+### Fixed
+- Version sync documentation improvements
+
 ## [0.3.2] - 2026-01-29
 
 ### Changed
@@ -284,7 +322,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.41...HEAD
+[0.3.41]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.4...v0.3.41
+[0.3.4]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.3...v0.3.4
+[0.3.3]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.03...v0.3.1
 [0.3.03]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.02...v0.3.03
