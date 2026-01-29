@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="logo.jpg" alt="SlopeSniper Logo" width="400">
+<img src="banner.jpg" alt="SlopeSniper Logo" width="400">
 
 # SlopeSniper 🦞 
 
