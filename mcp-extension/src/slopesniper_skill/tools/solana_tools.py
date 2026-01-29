@@ -695,7 +695,43 @@ async def solana_swap_confirm(intent_id: str) -> dict[str, Any]:
         except Exception:
             pass  # Don't fail the trade if recording fails
 
-        return {
+        # Auto-cleanup: If this was a sell and position is now closed, remove targets
+        targets_removed = 0
+        cleanup_note = None
+        sol_mint = SYMBOL_TO_MINT["SOL"]
+        if intent.to_mint == sol_mint:  # Selling token for SOL
+            try:
+                # Check if position is now zero
+                wallet_address = get_wallet_address()
+                holdings = await ultra_client.get_holdings(wallet_address)
+                tokens_data = holdings.get("tokens", {})
+
+                remaining_balance = 0
+                if intent.from_mint in tokens_data:
+                    token_accounts = tokens_data[intent.from_mint]
+                    if isinstance(token_accounts, list):
+                        remaining_balance = sum(
+                            _safe_float(acc.get("uiAmount")) for acc in token_accounts
+                        )
+                    elif isinstance(token_accounts, dict):
+                        remaining_balance = _safe_float(token_accounts.get("uiAmount"))
+
+                # If position is now zero or near-zero, remove targets
+                if remaining_balance < 0.0001:
+                    from .targets import cancel_target, get_active_targets
+
+                    active_targets = get_active_targets()
+                    symbol = _get_symbol_for_mint(intent.from_mint)
+                    for target in active_targets:
+                        if target.mint == intent.from_mint:
+                            cancel_target(target.id)
+                            targets_removed += 1
+                    if targets_removed > 0:
+                        cleanup_note = f"Removed {targets_removed} monitoring target(s) for {symbol} (position closed)"
+            except Exception:
+                pass  # Don't fail the trade if cleanup fails
+
+        result_dict = {
             "success": True,
             "signature": signature,
             "from_mint": intent.from_mint,
@@ -704,6 +740,12 @@ async def solana_swap_confirm(intent_id: str) -> dict[str, Any]:
             "out_amount_actual": f"{out_amount_ui:.6f}".rstrip("0").rstrip("."),
             "explorer_url": f"https://solscan.io/tx/{signature}",
         }
+
+        if targets_removed > 0:
+            result_dict["targets_removed"] = targets_removed
+            result_dict["cleanup_note"] = cleanup_note
+
+        return result_dict
     else:
         return {
             "success": False,
@@ -924,13 +966,33 @@ async def quick_trade(
         # Auto-execute the trade
         exec_result = await solana_swap_confirm(quote_result["intent_id"])
 
-        return {
+        # Auto-cleanup: Remove targets for this token if we sold the entire position
+        targets_removed = 0
+        if action == "sell" and sell_all and exec_result.get("success"):
+            try:
+                from .targets import cancel_target, get_active_targets
+
+                active_targets = get_active_targets()
+                for target in active_targets:
+                    if target.mint == mint:
+                        cancel_target(target.id)
+                        targets_removed += 1
+            except Exception:
+                pass  # Don't fail the trade if target cleanup fails
+
+        result = {
             "auto_executed": True,
             "action": action,
             "token": token_symbol,
             "amount_usd": amount_usd,
             **exec_result,
         }
+
+        if targets_removed > 0:
+            result["targets_removed"] = targets_removed
+            result["cleanup_note"] = f"Removed {targets_removed} monitoring target(s) for {token_symbol} (position closed)"
+
+        return result
     else:
         # Return quote for manual confirmation
         return {
