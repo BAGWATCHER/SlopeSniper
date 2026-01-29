@@ -1,6 +1,6 @@
 [project]
 name = "slopesniper-mcp"
-version = "0.3.03"
+version = "0.3.1"
 description = "SlopeSniper MCP Server - Safe Solana Token Trading"
 requires-python = ">=3.10"
 dependencies = [

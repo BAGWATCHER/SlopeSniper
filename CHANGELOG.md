@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-01-29
+
+### Added
+- **Issue #33**: Monitoring lifecycle management improvements
+  - `slopesniper status` now shows monitoring info (daemon status, active targets)
+  - Auto-cleanup: Selling entire position automatically removes monitoring targets
+  - No more orphaned monitors - selling stops watching automatically
+  - MoltBot compatibility assessment document (`docs/MOLTBOT_COMPATIBILITY.md`)
+  - Persistent developer documentation (`PROJECT.md`, updated `CONTEXT.md`)
+
+### Changed
+- SKILL.md install method updated: curl script is now primary (recommended)
+- Synced duplicate SKILL.md files between `skills/` and `mcp-extension/`
+
+### Fixed
+- Monitoring targets now respect position lifecycle (auto-remove on position close)
+
 ## [0.3.03] - 2026-01-28
 
 ### Added

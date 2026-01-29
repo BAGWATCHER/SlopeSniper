@@ -71,15 +71,41 @@ def print_json(data: dict) -> None:
 
 
 async def cmd_status() -> None:
-    """Full status: wallet, holdings, strategy, and config."""
+    """Full status: wallet, holdings, strategy, config, and monitoring."""
     from . import get_status, get_strategy, solana_get_wallet
     from .tools.config import get_config_status
+    from .tools.targets import get_active_targets
 
     # Get all status info
     status = await get_status()
     wallet = await solana_get_wallet() if status.get("wallet_configured") else {}
     strategy = await get_strategy()
     config = get_config_status()
+
+    # Get monitoring info (targets + daemon)
+    try:
+        active_targets = get_active_targets()
+        targets_summary = [
+            {
+                "id": t.id,
+                "symbol": t.symbol or t.mint[:8],
+                "type": t.target_type.value,
+                "target": t.target_value,
+                "sell": t.sell_amount,
+            }
+            for t in active_targets
+        ]
+    except Exception:
+        targets_summary = []
+
+    # Check daemon status
+    try:
+        from .daemon import get_daemon_status
+
+        daemon_info = get_daemon_status()
+        daemon_running = daemon_info.get("running", False)
+    except Exception:
+        daemon_running = False
 
     result = {
         "wallet": {
@@ -99,6 +125,11 @@ async def cmd_status() -> None:
         "config": {
             "jupiter_api_key": config.get("jupiter_api_key_status"),
             "rpc": config.get("rpc"),
+        },
+        "monitoring": {
+            "daemon_running": daemon_running,
+            "active_targets": len(targets_summary),
+            "targets": targets_summary,
         },
         "ready_to_trade": status.get("ready_to_trade", False),
     }
