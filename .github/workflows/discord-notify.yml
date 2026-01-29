@@ -1,0 +1,83 @@
+name: Discord Notifications
+
+on:
+  push:
+    branches: [main, bagwatcher-release]
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  notify-push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get commit info
+        id: commit
+        run: |
+          echo "message=$(git log -1 --pretty=format:'%s')" >> $GITHUB_OUTPUT
+          echo "author=$(git log -1 --pretty=format:'%an')" >> $GITHUB_OUTPUT
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "files_changed=$(git diff --name-only HEAD~1 HEAD | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.repository }}" == "BAGWATCHER/SlopeSniper" ]]; then
+            echo "env_name=Production" >> $GITHUB_OUTPUT
+            echo "color=3066993" >> $GITHUB_OUTPUT
+          else
+            echo "env_name=Development" >> $GITHUB_OUTPUT
+            echo "color=15105570" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_PUSH_WEBHOOK }}
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "📦 ${{ steps.env.outputs.env_name }} Push",
+                "description": "**${{ steps.commit.outputs.message }}**",
+                "color": ${{ steps.env.outputs.color }},
+                "fields": [
+                  {"name": "Branch", "value": "`${{ github.ref_name }}`", "inline": true},
+                  {"name": "Commit", "value": "[`${{ steps.commit.outputs.sha_short }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})", "inline": true},
+                  {"name": "Files Changed", "value": "${{ steps.commit.outputs.files_changed }}", "inline": true},
+                  {"name": "Author", "value": "${{ steps.commit.outputs.author }}", "inline": true}
+                ],
+                "footer": {"text": "${{ github.repository }}"},
+                "timestamp": "${{ github.event.head_commit.timestamp }}"
+              }]
+            }' \
+            $DISCORD_WEBHOOK
+
+  notify-pr-merge:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_PUSH_WEBHOOK }}
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "🔀 PR Merged to Production",
+                "description": "**${{ github.event.pull_request.title }}**",
+                "color": 3066993,
+                "fields": [
+                  {"name": "PR", "value": "[#${{ github.event.pull_request.number }}](${{ github.event.pull_request.html_url }})", "inline": true},
+                  {"name": "Author", "value": "${{ github.event.pull_request.user.login }}", "inline": true},
+                  {"name": "Commits", "value": "${{ github.event.pull_request.commits }}", "inline": true}
+                ],
+                "footer": {"text": "${{ github.repository }}"},
+                "timestamp": "${{ github.event.pull_request.merged_at }}"
+              }]
+            }' \
+            $DISCORD_WEBHOOK

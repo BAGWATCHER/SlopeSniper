@@ -76,3 +76,27 @@ jobs:
           draft: false
           prerelease: ${{ contains(steps.version.outputs.VERSION, 'alpha') || contains(steps.version.outputs.VERSION, 'beta') || contains(steps.version.outputs.VERSION, 'rc') }}
           generate_release_notes: true
+
+      - name: Send Discord release notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          CHANGELOG=$(echo '${{ steps.changelog.outputs.CHANGELOG }}' | head -c 1000)
+
+          curl -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"🚀 SlopeSniper v${VERSION} Released!\",
+                \"description\": \"A new version of SlopeSniper is now available.\",
+                \"url\": \"${{ github.server_url }}/${{ github.repository }}/releases/tag/v${VERSION}\",
+                \"color\": 5793266,
+                \"fields\": [
+                  {\"name\": \"What's New\", \"value\": \"${CHANGELOG:-See release notes}\", \"inline\": false},
+                  {\"name\": \"Install\", \"value\": \"\`\`\`bash\ncurl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash\n\`\`\`\", \"inline\": false}
+                ],
+                \"footer\": {\"text\": \"BAGWATCHER/SlopeSniper\"},
+                \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+              }]
+            }" \
+            $DISCORD_WEBHOOK
