@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-01-29
+
+### Changed
+- **Pump.fun data source migrated to PumpPortal** - The old Pump.fun API endpoints are dead
+  - Now uses PumpPortal WebSocket API (`wss://pumpportal.fun/api/data`)
+  - Real-time streaming for new tokens, trades, and migrations
+  - Free tier: Bonding curve data (no API key needed)
+  - BYOK support: Set `PUMPPORTAL_API_KEY` for PumpSwap data after migration
+  - Backward compatible: `PumpFunClient` alias still works
+
+### Fixed
+- **Dead API endpoints removed** - Removed non-functional `frontend-api.pump.fun` and Heroku endpoints
+- **Added `websockets` dependency** - Required for PumpPortal WebSocket connections
+
 ## [0.3.1] - 2026-01-29
 
 ### Added
@@ -270,7 +284,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.03...HEAD
+[Unreleased]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.03...v0.3.1
 [0.3.03]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.02...v0.3.03
 [0.3.02]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.0...v0.3.02
 [0.3.0]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.92...v0.3.0
