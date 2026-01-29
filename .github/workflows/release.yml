@@ -82,21 +82,34 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
-          CHANGELOG=$(echo '${{ steps.changelog.outputs.CHANGELOG }}' | head -c 1000)
 
-          curl -H "Content-Type: application/json" \
-            -d "{
-              \"embeds\": [{
-                \"title\": \"🚀 SlopeSniper v${VERSION} Released!\",
-                \"description\": \"A new version of SlopeSniper is now available.\",
-                \"url\": \"${{ github.server_url }}/${{ github.repository }}/releases/tag/v${VERSION}\",
-                \"color\": 5793266,
-                \"fields\": [
-                  {\"name\": \"What's New\", \"value\": \"${CHANGELOG:-See release notes}\", \"inline\": false},
-                  {\"name\": \"Install\", \"value\": \"\`\`\`bash\ncurl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash\n\`\`\`\", \"inline\": false}
+          # Safely escape changelog for JSON using jq
+          CHANGELOG_RAW=$(cat <<'CHLOG'
+          ${{ steps.changelog.outputs.CHANGELOG }}
+          CHLOG
+          )
+          CHANGELOG=$(echo "$CHANGELOG_RAW" | head -c 800 | jq -Rs '.')
+
+          # Build JSON payload with jq to handle escaping
+          PAYLOAD=$(jq -n \
+            --arg title "🚀 SlopeSniper v${VERSION} Released!" \
+            --arg desc "A new version of SlopeSniper is now available." \
+            --arg url "${{ github.server_url }}/${{ github.repository }}/releases/tag/v${VERSION}" \
+            --argjson changelog "$CHANGELOG" \
+            --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $desc,
+                url: $url,
+                color: 5793266,
+                fields: [
+                  {name: "What'\''s New", value: ($changelog // "See release notes"), inline: false},
+                  {name: "Install", value: "```bash\ncurl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash\n```", inline: false}
                 ],
-                \"footer\": {\"text\": \"BAGWATCHER/SlopeSniper\"},
-                \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+                footer: {text: "BAGWATCHER/SlopeSniper"},
+                timestamp: $timestamp
               }]
-            }" \
-            $DISCORD_WEBHOOK
+            }')
+
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" $DISCORD_WEBHOOK
