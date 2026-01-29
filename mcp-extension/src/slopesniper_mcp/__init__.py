@@ -1,3 +1,3 @@
 """SlopeSniper MCP Server."""
 
-__version__ = "0.3.03"
+__version__ = "0.3.41"

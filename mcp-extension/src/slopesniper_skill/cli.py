@@ -55,7 +55,8 @@ Auto-sell targets:
     slopesniper daemon status
 
 Global flags:
-    --quiet, -q                     Suppress logging output (only JSON to stdout)
+    --quiet, -q                     Suppress all logging (only JSON to stdout)
+    --verbose, -v                   Enable verbose logging for debugging
 """
 
 from __future__ import annotations
@@ -1133,17 +1134,24 @@ def main() -> None:
     """CLI entry point."""
     args = sys.argv[1:]
 
-    # Check for --quiet flag (suppresses logging for clean JSON output)
+    # Check for --quiet flag (suppresses ALL logging)
     quiet = "--quiet" in args or "-q" in args
     if quiet:
         args = [a for a in args if a not in ("--quiet", "-q")]
         import logging
 
         logging.disable(logging.CRITICAL)
-        # Also suppress warnings from libraries
         import warnings
 
         warnings.filterwarnings("ignore")
+
+    # Check for --verbose flag (enables INFO logging for debugging)
+    verbose = "--verbose" in args or "-v" in args
+    if verbose:
+        args = [a for a in args if a not in ("--verbose", "-v")]
+        import os
+
+        os.environ["SLOPESNIPER_LOG_LEVEL"] = "INFO"
 
     if not args or args[0] in ("-h", "--help", "help"):
         print_help()

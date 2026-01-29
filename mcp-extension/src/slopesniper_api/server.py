@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="SlopeSniper API",
     description="Solana token trading via Jupiter DEX",
-    version="0.3.03",
+    version="0.3.41",
     lifespan=lifespan,
 )
 
@@ -126,7 +126,7 @@ async def root():
     """Health check and API info."""
     return {
         "service": "SlopeSniper API",
-        "version": "0.3.03",
+        "version": "0.3.41",
         "status": "running",
         "endpoints": [
             "/status",
