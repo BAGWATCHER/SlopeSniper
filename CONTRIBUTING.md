@@ -50,6 +50,22 @@ mypy src/
 3. Make changes with tests
 4. Run `pytest` and `ruff check`
 5. Open a PR
+6. **Pre-merge testing** (see below)
+
+## Pre-Merge Testing (REQUIRED)
+
+**Before merging any PR, test the dev branch as an actual install:**
+
+```bash
+# Install from dev branch (catches dependency/import issues)
+uv tool install --force "git+https://github.com/maddefientist/SlopeSniper.git@bagwatcher-release#subdirectory=mcp-extension"
+
+# Verify CLI works
+slopesniper version
+slopesniper status
+```
+
+> **Why this matters:** v0.3.2 shipped with a breaking import (`websockets` module missing at runtime). Local `pytest` passed because it uses the dev venv with all deps installed, but the global install failed because the new dependency wasn't being pulled. Always test the real install path before merging.
 
 ## Code Style
 
