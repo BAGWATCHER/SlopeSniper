@@ -434,7 +434,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 <div align="center">
 
 **Built for degens, by degens** 🎯
-<img src="logo.jpg" alt="SlopeSniper Logo" width="800">
+<img src="banner.jpg" alt="SlopeSniper Logo" width="800">
 
 
 [Report Bug](https://github.com/BAGWATCHER/SlopeSniper/issues) · [Request Feature](https://github.com/BAGWATCHER/SlopeSniper/issues) · [Contribute](https://github.com/BAGWATCHER/SlopeSniper/pulls)
