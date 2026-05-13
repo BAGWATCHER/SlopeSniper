@@ -1,12 +1,12 @@
 #!/bin/bash
 # SlopeSniper Moltbot Skill Installer/Updater
-# Usage: curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/skills/install.sh | bash
 
 set -e
 
 SKILL_NAME="slopesniper"
-REPO_URL="https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/slopesniper"
-PACKAGE_URL="slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension"
+REPO_URL="https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/skills/slopesniper"
+PACKAGE_URL="slopesniper-mcp @ git+https://github.com/optimizedwf/SlopeSniper.git#subdirectory=mcp-extension"
 
 # Detect Moltbot/Clawdbot skills directory (supports both for backward compatibility)
 detect_skills_dir() {

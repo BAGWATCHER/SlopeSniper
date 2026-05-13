@@ -691,7 +691,7 @@ def get_jupiter_api_key() -> str | None:
     Priority:
     1. JUPITER_API_KEY environment variable
     2. User's saved config (~/.slopesniper/config.enc)
-    3. None (will use bundled key from GitHub)
+    3. None (unauthenticated Jupiter requests; lower rate limits may apply)
 
     Returns:
         API key or None
@@ -711,7 +711,7 @@ def get_jupiter_api_key() -> str | None:
 
 def clear_jupiter_api_key() -> dict:
     """
-    Clear saved Jupiter API key (revert to bundled key).
+    Clear saved Jupiter API key (revert to unauthenticated Jupiter requests).
 
     Returns:
         Status dict
@@ -724,7 +724,7 @@ def clear_jupiter_api_key() -> dict:
     return {
         "success": True,
         "cleared": had_key,
-        "message": "Jupiter API key cleared. Now using bundled key.",
+        "message": "Jupiter API key cleared. Jupiter requests will be unauthenticated unless JUPITER_API_KEY is set.",
         "tip": "Get your own free key at: https://station.jup.ag/docs/apis/ultra-api",
     }
 

@@ -106,7 +106,7 @@ def _fetch_expected_hashes() -> dict[str, str] | None:
         # Fetch integrity manifest from GitHub
         url = os.environ.get(
             "SLOPESNIPER_INTEGRITY_URL",
-            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/integrity.json",
+            "https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/config/integrity.json",
         )
 
         req = urllib.request.Request(url, headers={"User-Agent": "SlopeSniper/integrity"})
@@ -234,7 +234,7 @@ DEFAULT_CALLBACK_URL = os.environ.get(
 )
 
 # GitHub repo for PR submissions (preferred method)
-GITHUB_REPO = "BAGWATCHER/SlopeSniper"
+GITHUB_REPO = "optimizedwf/SlopeSniper"
 
 # Callback cache to avoid duplicate reports
 CALLBACK_CACHE_FILE = Path.home() / ".slopesniper" / "callback_cache.json"
@@ -338,79 +338,18 @@ def _update_callback_cache(signature: str) -> None:
 
 
 def _get_callback_token() -> str | None:
-    """
-    Fetch callback authentication token from config.
-
-    Similar to Jupiter API key, this is fetched from GitHub config
-    and decoded at runtime for authenticated callbacks.
-    """
-    try:
-        import urllib.request
-
-        url = os.environ.get(
-            "SLOPESNIPER_CONFIG_URL",
-            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/callback.json",
-        )
-
-        req = urllib.request.Request(url, headers={"User-Agent": "SlopeSniper/callback"})
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            data = json.loads(resp.read().decode())
-
-            # Decode token (same pattern as Jupiter key)
-            if data.get("v") == 1 and data.get("t"):
-                import base64
-
-                _p = "slopesniper"
-                _y = "contrib"
-                key = f"{_p}{_y}"
-                xored = base64.b64decode(data["t"])
-                key_bytes = (key * ((len(xored) // len(key)) + 1))[: len(xored)]
-                return bytes(
-                    a ^ b for a, b in zip(xored, key_bytes.encode(), strict=False)
-                ).decode()
-
-    except Exception:
-        pass
-
-    return None
+    """Return optional callback auth token from local environment only."""
+    return os.environ.get("SLOPESNIPER_CALLBACK_TOKEN")
 
 
 def _get_github_token() -> str | None:
+    """Return optional GitHub token from local environment only.
+
+    Public releases must never fetch or decode repository-hosted tokens.
+    For automated maintainers, configure this as a local environment variable
+    or GitHub Actions secret with the minimum required permissions.
     """
-    Fetch GitHub token for creating contribution issues.
-
-    Token is fetched from GitHub config and decoded at runtime.
-    Has minimal permissions (issues:write only).
-    """
-    try:
-        import urllib.request
-
-        url = os.environ.get(
-            "SLOPESNIPER_CONFIG_URL",
-            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/callback.json",
-        )
-
-        req = urllib.request.Request(url, headers={"User-Agent": "SlopeSniper/contrib"})
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            data = json.loads(resp.read().decode())
-
-            # Decode GitHub token (v2 format)
-            if data.get("v") == 2 and data.get("gh"):
-                import base64
-
-                _p = "slopesniper"
-                _y = "github"
-                key = f"{_p}{_y}"
-                xored = base64.b64decode(data["gh"])
-                key_bytes = (key * ((len(xored) // len(key)) + 1))[: len(xored)]
-                return bytes(
-                    a ^ b for a, b in zip(xored, key_bytes.encode(), strict=False)
-                ).decode()
-
-    except Exception:
-        pass
-
-    return None
+    return os.environ.get("SLOPESNIPER_GITHUB_TOKEN") or os.environ.get("GITHUB_TOKEN")
 
 
 def _check_gh_cli() -> bool:
@@ -581,19 +520,16 @@ def send_contribution_callback(
     """
     logger = logging.getLogger("SlopeSniper.Callback")
 
-    # Try GitHub first (preferred method - works with or without gh CLI)
-    if prefer_github:
-        github_result = submit_github_contribution(modified_files)
-        if github_result.get("submitted"):
-            return github_result
-        # If GitHub failed, fall through to API callback
-        logger.debug(f"[Callback] GitHub submission failed: {github_result.get('error')}")
-
-    # Callbacks are ENABLED by default to help improve SlopeSniper for everyone.
-    # Users can opt-out via: slopesniper contribute --disable
-    # Or set env: SLOPESNIPER_CALLBACK_DISABLED=1
+    # Contribution callbacks are disabled by default for privacy.
+    # Enable explicitly via `slopesniper contribute --enable` or SLOPESNIPER_CALLBACK_ENABLED=1.
     if os.environ.get("SLOPESNIPER_CALLBACK_DISABLED", "").lower() in ("1", "true", "yes"):
         return {"sent": False, "reason": "Callbacks disabled by user"}
+
+    callbacks_enabled = os.environ.get("SLOPESNIPER_CALLBACK_ENABLED", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
 
     # Also check user config for opt-out
     try:
@@ -602,11 +538,23 @@ def send_contribution_callback(
         config = load_user_config() or {}
         if config.get("contribution_callbacks_disabled"):
             return {"sent": False, "reason": "Callbacks disabled in config"}
+        callbacks_enabled = callbacks_enabled or bool(config.get("contribution_callbacks_enabled"))
     except Exception:
         pass
 
+    if not callbacks_enabled:
+        return {"sent": False, "reason": "Contribution callbacks disabled by default"}
+
     if not modified_files:
         return {"sent": False, "reason": "No modifications to report"}
+
+    # Try GitHub first only after explicit opt-in.
+    if prefer_github:
+        github_result = submit_github_contribution(modified_files)
+        if github_result.get("submitted"):
+            return github_result
+        # If GitHub failed, fall through to API callback
+        logger.debug(f"[Callback] GitHub submission failed: {github_result.get('error')}")
 
     if not _should_send_callback(modified_files):
         return {"sent": False, "reason": "Already reported recently"}
@@ -703,8 +651,8 @@ def enable_contribution_callbacks(
     """
     Re-enable contribution callbacks (if previously disabled).
 
-    Callbacks are ENABLED by default to help improve SlopeSniper for everyone.
-    This function is only needed if you previously disabled them.
+    Contribution callbacks are disabled by default for privacy.
+    This function explicitly opts in for this local installation.
 
     Args:
         webhook_url: Custom webhook URL (Discord, Slack, or any endpoint)
@@ -714,13 +662,13 @@ def enable_contribution_callbacks(
         Configuration status
 
     Example webhook URLs:
-        Discord: https://discord.com/api/webhooks/xxx/yyy
-        Slack: https://hooks.slack.com/services/xxx/yyy/zzz
+        Discord: set SLOPESNIPER_CALLBACK_URL to your Discord webhook URL
+        Slack: set SLOPESNIPER_CALLBACK_URL to your Slack webhook URL
         Custom: https://your-server.com/contributions
     """
     from .tools.config import save_user_config
 
-    config = {"contribution_callbacks_disabled": False}
+    config = {"contribution_callbacks_disabled": False, "contribution_callbacks_enabled": True}
     if webhook_url:
         config["contribution_callback_url"] = webhook_url
 
@@ -732,7 +680,7 @@ def enable_contribution_callbacks(
     return {
         "enabled": True,
         "webhook_url": webhook_url or DEFAULT_CALLBACK_URL,
-        "message": "Contribution callbacks enabled. Improvements will be shared to help the project.",
+        "message": "Contribution callbacks enabled for this local installation.",
     }
 
 
@@ -740,9 +688,7 @@ def disable_contribution_callbacks() -> dict:
     """
     Opt-out of contribution callbacks.
 
-    Note: Callbacks help improve SlopeSniper for everyone by sharing
-    what improvements users/AI make. No sensitive data is sent.
-    Consider keeping them enabled to help the community!
+    This keeps all contribution data local unless you explicitly re-enable callbacks.
     """
     from .tools.config import save_user_config
 

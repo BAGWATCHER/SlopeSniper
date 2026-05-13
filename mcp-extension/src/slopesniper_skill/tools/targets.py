@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
-from .config import SLOPESNIPER_DIR, get_jupiter_api_key
+from .config import get_jupiter_api_key
 from .strategies import _get_config_db_path
 
 
@@ -324,9 +324,7 @@ def get_active_targets() -> list[SellTarget]:
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    cursor.execute(
-        "SELECT * FROM targets WHERE status = 'pending' ORDER BY created_at DESC"
-    )
+    cursor.execute("SELECT * FROM targets WHERE status = 'pending' ORDER BY created_at DESC")
     rows = cursor.fetchall()
     conn.close()
 
@@ -344,9 +342,7 @@ def get_all_targets(include_executed: bool = False) -> list[SellTarget]:
     if include_executed:
         cursor.execute("SELECT * FROM targets ORDER BY created_at DESC")
     else:
-        cursor.execute(
-            "SELECT * FROM targets WHERE status != 'executed' ORDER BY created_at DESC"
-        )
+        cursor.execute("SELECT * FROM targets WHERE status != 'executed' ORDER BY created_at DESC")
 
     rows = cursor.fetchall()
     conn.close()

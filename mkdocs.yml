@@ -1,8 +1,8 @@
 site_name: SlopeSniper Skill
 site_description: Safe Solana token trading skill for Claude Code
-site_url: https://slopesniper.github.io/slopesniper-skill
-repo_url: https://github.com/slopesniper/slopesniper-skill
-repo_name: slopesniper/slopesniper-skill
+site_url: https://optimizedwf.github.io/SlopeSniper
+repo_url: https://github.com/optimizedwf/SlopeSniper
+repo_name: optimizedwf/SlopeSniper
 
 theme:
   name: material
@@ -77,6 +77,4 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/slopesniper
-    - icon: fontawesome/brands/twitter
-      link: https://twitter.com/slopesniper
+      link: https://github.com/optimizedwf/SlopeSniper

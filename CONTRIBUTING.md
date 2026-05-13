@@ -1,78 +1,47 @@
-# Contributing to SlopeSniper Skill
+# Contributing to SlopeSniper
 
-Thanks for your interest in contributing! See our [full contributing guide](https://slopesniper.github.io/slopesniper-skill/contributing/) for details.
+Thanks for helping improve SlopeSniper. This project touches real wallets and volatile assets, so contributions should favor safety, clear UX, and test coverage over speed.
 
-## Version Control
-
-We follow semantic versioning with issue-based patch increments:
-
-**Format:** `0.MINOR.PATCH` (beta) → `MAJOR.MINOR.PATCH` (stable)
-
-**Issue-based versioning:**
-- Each GitHub issue addressed increments the patch version
-- Example: Issues addressed at version `0.3.0` become `0.3.01`, `0.3.02`, etc.
-- Multiple issues in one PR still get individual patch bumps
-
-**Workflow:**
-1. Fork to your account (e.g., `maddefientist/SlopeSniper`)
-2. Create/use `bagwatcher-release` branch for staging changes
-3. Address issue → bump version to `0.X.0Y` where Y is the issue sequence
-4. Open PR back to `bagwatcher/slopesniper` main branch
-5. Version file: `mcp-extension/src/slopesniper_skill/__init__.py`
-
-**Version bump locations:**
-- Primary: `mcp-extension/src/slopesniper_skill/__init__.py` (`__version__`)
-- Keep other version strings in sync when doing major releases
-
-## Quick Start
+## Development setup
 
 ```bash
-# Clone and setup
-git clone https://github.com/slopesniper/slopesniper-skill.git
-cd slopesniper-skill
-pip install -e ".[dev]"
+git clone https://github.com/optimizedwf/SlopeSniper.git
+cd SlopeSniper
+python -m pip install --upgrade pip
+python -m pip install -e "mcp-extension[dev]"
 
-# Run tests
+# Run the test suite
 pytest
 
-# Lint
-ruff check src/ tests/
-ruff format src/ tests/
+# Lint and format
+ruff check mcp-extension/src tests
+ruff format mcp-extension/src tests
 
-# Type check
-mypy src/
+# Build the package
+python -m build mcp-extension
 ```
 
-## Pull Requests
+## Pull request checklist
 
-1. Fork the repo
-2. Create a feature branch
-3. Make changes with tests
-4. Run `pytest` and `ruff check`
-5. Open a PR
-6. **Pre-merge testing** (see below)
+- Open a focused feature branch from `main`.
+- Add or update tests for behavior changes.
+- Do not commit private keys, wallet files, API keys, webhook URLs, RPC tokens, or generated local config.
+- Keep trading changes conservative by default; risky behavior must require explicit opt-in.
+- Update README/docs when commands, config, security behavior, or user-visible output changes.
+- Run `pytest`, `ruff check`, and `python -m build mcp-extension` before opening a PR.
 
-## Pre-Merge Testing (REQUIRED)
+## Security-sensitive changes
 
-**Before merging any PR, test the dev branch as an actual install:**
+Please be extra careful with:
 
-```bash
-# Install from dev branch (catches dependency/import issues)
-uv tool install --force "git+https://github.com/maddefientist/SlopeSniper.git@bagwatcher-release#subdirectory=mcp-extension"
+- wallet creation/import/export
+- transaction signing and swap confirmation
+- token safety/rugcheck logic
+- RPC/Jupiter API key handling
+- contribution callbacks, webhooks, and GitHub automation
 
-# Verify CLI works
-slopesniper version
-slopesniper status
-```
+Never hide secrets in source using encoding, obfuscation, or remote public config. If a feature needs a credential, load it from environment variables, encrypted local user config, or GitHub Actions secrets.
 
-> **Why this matters:** v0.3.2 shipped with a breaking import (`websockets` module missing at runtime). Local `pytest` passed because it uses the dev venv with all deps installed, but the global install failed because the new dependency wasn't being pulled. Always test the real install path before merging.
+## Reporting vulnerabilities
 
-## Code Style
-
-- Type hints required
-- PEP 8 style
-- Docstrings for public functions
-
-## Security Issues
-
-Email security@slopesniper.io for vulnerabilities.
+Do **not** open a public issue for vulnerabilities involving key leakage, fund loss, auth bypass, or unsafe trade execution. Follow [SECURITY.md](SECURITY.md).

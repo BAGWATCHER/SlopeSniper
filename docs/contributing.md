@@ -6,8 +6,8 @@ Thanks for your interest in contributing to SlopeSniper Skill!
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/slopesniper/slopesniper-skill.git
-cd slopesniper-skill
+git clone https://github.com/optimizedwf/SlopeSniper.git
+cd SlopeSniper
 ```
 
 2. Create a virtual environment:
@@ -100,7 +100,7 @@ When reporting issues, please include:
 
 ## Security Issues
 
-For security vulnerabilities, please email security@slopesniper.io instead of opening a public issue.
+For security vulnerabilities, please email GitHub private vulnerability reporting instead of opening a public issue.
 
 ## License
 

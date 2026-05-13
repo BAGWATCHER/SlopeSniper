@@ -2,7 +2,7 @@ name: Discord Notifications
 
 on:
   push:
-    branches: [main, bagwatcher-release]
+    branches: [main]
   pull_request:
     types: [closed]
     branches: [main]
@@ -27,13 +27,8 @@ jobs:
       - name: Determine environment
         id: env
         run: |
-          if [[ "${{ github.repository }}" == "BAGWATCHER/SlopeSniper" ]]; then
-            echo "env_name=Production" >> $GITHUB_OUTPUT
-            echo "color=3066993" >> $GITHUB_OUTPUT
-          else
-            echo "env_name=Development" >> $GITHUB_OUTPUT
-            echo "color=15105570" >> $GITHUB_OUTPUT
-          fi
+          echo "env_name=Production" >> $GITHUB_OUTPUT
+          echo "color=3066993" >> $GITHUB_OUTPUT
 
       - name: Send Discord notification
         env:

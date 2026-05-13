@@ -59,12 +59,12 @@ jobs:
 
             **For Moltbot users:**
             ```bash
-            curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash
+            curl -fsSL https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/skills/install.sh | bash
             ```
 
             **For Claude Desktop:**
             ```bash
-            curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/mcp-extension/install.sh | bash
+            curl -fsSL https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/mcp-extension/install.sh | bash
             ```
 
             **Update existing installation:**
@@ -72,7 +72,7 @@ jobs:
             slopesniper update
             ```
 
-            See [CHANGELOG.md](https://github.com/BAGWATCHER/SlopeSniper/blob/main/CHANGELOG.md) for full history.
+            See [CHANGELOG.md](https://github.com/optimizedwf/SlopeSniper/blob/main/CHANGELOG.md) for full history.
           draft: false
           prerelease: ${{ contains(steps.version.outputs.VERSION, 'alpha') || contains(steps.version.outputs.VERSION, 'beta') || contains(steps.version.outputs.VERSION, 'rc') }}
           generate_release_notes: true
@@ -105,9 +105,9 @@ jobs:
                 color: 5793266,
                 fields: [
                   {name: "What'\''s New", value: ($changelog // "See release notes"), inline: false},
-                  {name: "Install", value: "```bash\ncurl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash\n```", inline: false}
+                  {name: "Install", value: "```bash\ncurl -fsSL https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/skills/install.sh | bash\n```", inline: false}
                 ],
-                footer: {text: "BAGWATCHER/SlopeSniper"},
+                footer: {text: "optimizedwf/SlopeSniper"},
                 timestamp: $timestamp
               }]
             }')

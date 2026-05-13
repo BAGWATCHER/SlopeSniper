@@ -8,14 +8,14 @@
 ## Install from PyPI
 
 ```bash
-pip install slopesniper-skill
+pip install SlopeSniper
 ```
 
 ## Install from Source
 
 ```bash
-git clone https://github.com/slopesniper/slopesniper-skill.git
-cd slopesniper-skill
+git clone https://github.com/optimizedwf/SlopeSniper.git
+cd SlopeSniper
 pip install -e .
 ```
 

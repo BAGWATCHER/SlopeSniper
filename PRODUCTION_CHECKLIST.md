@@ -4,7 +4,7 @@
 
 ### Code Quality
 - [x] All code merged to main branch
-- [x] URLs updated to production repo (BAGWATCHER/SlopeSniper)
+- [x] URLs updated to production repo (optimizedwf/SlopeSniper)
 - [x] Install scripts tested
 - [x] Run full test suite (45/45 passing)
 - [x] Verify no hardcoded test keys
@@ -58,12 +58,12 @@ clawdhub install slopesniper
 
 ### Direct Install (curl)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/skills/install.sh | bash
 ```
 
 ### Manual Install
 ```bash
-git clone https://github.com/BAGWATCHER/SlopeSniper.git
+git clone https://github.com/optimizedwf/SlopeSniper.git
 cp -r SlopeSniper/skills/slopesniper ~/.moltbot/skills/
 ```
 
@@ -104,5 +104,5 @@ curl http://localhost:8420/status
 
 ## Contact
 
-- GitHub: https://github.com/BAGWATCHER/SlopeSniper
-- Issues: https://github.com/BAGWATCHER/SlopeSniper/issues
+- GitHub: https://github.com/optimizedwf/SlopeSniper
+- Issues: https://github.com/optimizedwf/SlopeSniper/issues

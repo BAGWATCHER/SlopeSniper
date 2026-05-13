@@ -794,15 +794,17 @@ def pnl_stats() -> dict:
             if total_bought > 0:
                 pnl = total_sold - total_bought
                 pnl_pct = (pnl / total_bought) * 100
-                closed_positions.append({
-                    "symbol": data["symbol"],
-                    "mint": mint,
-                    "invested": total_bought,
-                    "returned": total_sold,
-                    "pnl": pnl,
-                    "pnl_pct": pnl_pct,
-                    "is_win": pnl > 0,
-                })
+                closed_positions.append(
+                    {
+                        "symbol": data["symbol"],
+                        "mint": mint,
+                        "invested": total_bought,
+                        "returned": total_sold,
+                        "pnl": pnl,
+                        "pnl_pct": pnl_pct,
+                        "is_win": pnl > 0,
+                    }
+                )
 
     if not closed_positions:
         return {
@@ -834,12 +836,16 @@ def pnl_stats() -> dict:
             "symbol": largest_win["symbol"],
             "pnl": round(largest_win["pnl"], 2),
             "pnl_pct": round(largest_win["pnl_pct"], 2),
-        } if largest_win else None,
+        }
+        if largest_win
+        else None,
         "largest_loss": {
             "symbol": largest_loss["symbol"],
             "pnl": round(largest_loss["pnl"], 2),
             "pnl_pct": round(largest_loss["pnl_pct"], 2),
-        } if largest_loss else None,
+        }
+        if largest_loss
+        else None,
         "total_realized_pnl": round(sum(p["pnl"] for p in closed_positions), 2),
     }
 
@@ -892,28 +898,34 @@ async def pnl_positions() -> dict:
         cost_basis = holdings * avg_buy_price
 
         # Calculate PnL
-        realized_pnl = total_sold_usd - (total_sold_tokens * avg_buy_price) if total_sold_tokens > 0 else 0
+        realized_pnl = (
+            total_sold_usd - (total_sold_tokens * avg_buy_price) if total_sold_tokens > 0 else 0
+        )
         unrealized_pnl = holdings_value - cost_basis
         total_pnl = realized_pnl + unrealized_pnl
 
         status = "closed" if holdings <= 0 else "open"
 
-        positions.append({
-            "symbol": data["symbol"],
-            "mint": mint,
-            "status": status,
-            "current_holdings": holdings,
-            "current_price": current_price,
-            "holdings_value_usd": round(holdings_value, 2),
-            "total_invested": round(total_bought_usd, 2),
-            "avg_buy_price": avg_buy_price,
-            "realized_pnl": round(realized_pnl, 2),
-            "unrealized_pnl": round(unrealized_pnl, 2),
-            "total_pnl": round(total_pnl, 2),
-            "total_pnl_pct": round((total_pnl / total_bought_usd) * 100, 2) if total_bought_usd > 0 else 0,
-            "first_trade": data["first_trade"],
-            "trade_count": len(data["buys"]) + len(data["sells"]),
-        })
+        positions.append(
+            {
+                "symbol": data["symbol"],
+                "mint": mint,
+                "status": status,
+                "current_holdings": holdings,
+                "current_price": current_price,
+                "holdings_value_usd": round(holdings_value, 2),
+                "total_invested": round(total_bought_usd, 2),
+                "avg_buy_price": avg_buy_price,
+                "realized_pnl": round(realized_pnl, 2),
+                "unrealized_pnl": round(unrealized_pnl, 2),
+                "total_pnl": round(total_pnl, 2),
+                "total_pnl_pct": round((total_pnl / total_bought_usd) * 100, 2)
+                if total_bought_usd > 0
+                else 0,
+                "first_trade": data["first_trade"],
+                "trade_count": len(data["buys"]) + len(data["sells"]),
+            }
+        )
 
     # Sort by status (open first) then by PnL
     positions.sort(key=lambda x: (x["status"] == "closed", -x["total_pnl"]))
@@ -952,23 +964,34 @@ def pnl_export(format_type: str = "json") -> dict:
         writer = csv.writer(output)
 
         # Header
-        writer.writerow([
-            "timestamp", "action", "symbol", "mint", "amount_tokens",
-            "amount_usd", "price_per_token", "signature", "notes"
-        ])
+        writer.writerow(
+            [
+                "timestamp",
+                "action",
+                "symbol",
+                "mint",
+                "amount_tokens",
+                "amount_usd",
+                "price_per_token",
+                "signature",
+                "notes",
+            ]
+        )
 
         for trade in trades:
-            writer.writerow([
-                trade["timestamp"],
-                trade["action"],
-                trade["symbol"],
-                trade["mint"],
-                trade["amount_tokens"],
-                trade["amount_usd"],
-                trade["price_per_token"],
-                trade["signature"] or "",
-                trade["notes"] or "",
-            ])
+            writer.writerow(
+                [
+                    trade["timestamp"],
+                    trade["action"],
+                    trade["symbol"],
+                    trade["mint"],
+                    trade["amount_tokens"],
+                    trade["amount_usd"],
+                    trade["price_per_token"],
+                    trade["signature"] or "",
+                    trade["notes"] or "",
+                ]
+            )
 
         csv_content = output.getvalue()
 

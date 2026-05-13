@@ -108,13 +108,13 @@ When errors occur, help users troubleshoot:
 1. 401 Unauthorized → Run clear_jupiter_key() to reset API key
 2. Wallet mismatch → Run get_status() to check wallet_source and sync status
 3. Trade fails (slippage) → Run set_slippage(300) to increase tolerance
-4. Unknown errors → Create GitHub issue at BAGWATCHER/SlopeSniper with details
+4. Unknown errors → Create GitHub issue at optimizedwf/SlopeSniper with details
 
 For persistent issues, encourage users to run: slopesniper health
 
 CONTRIBUTION POLICY:
 Do NOT modify SlopeSniper source code directly. Report issues to GitHub:
-https://github.com/BAGWATCHER/SlopeSniper/issues""",
+https://github.com/optimizedwf/SlopeSniper/issues""",
 )
 
 
@@ -461,12 +461,12 @@ async def clear_rpc() -> dict:
 @mcp.tool()
 async def clear_jupiter_key() -> dict:
     """
-    Clear saved Jupiter API key and revert to bundled key.
+    Clear saved Jupiter API key and use unauthenticated Jupiter requests.
 
     Use this when:
     - Getting 401 Unauthorized errors
     - Jupiter API key is invalid or expired
-    - Want to reset to default configuration
+    - Want to reset to local default configuration
 
     Returns:
         Status confirming key was cleared

@@ -1,12 +1,9 @@
 """Tests for policy gate functionality."""
 
-import pytest
-
 from slopesniper_skill.tools.policy import (
     PolicyResult,
     check_policy,
     is_known_safe_mint,
-    KNOWN_SAFE_MINTS,
 )
 from slopesniper_skill.tools.config import PolicyConfig
 
@@ -142,7 +139,9 @@ class TestPolicyAllowList:
 
     def test_known_safe_mints_bypass_allow_list(self) -> None:
         # Even with a restrictive allow list, known safe mints should work
-        config = PolicyConfig(ALLOW_MINTS=["SomeOtherMint123456789012345678901234567890"])
+        config = PolicyConfig(
+            ALLOW_MINTS=["SomeOtherMint123456789012345678901234567890"]
+        )
         result = check_policy(
             from_mint=SOL_MINT,
             to_mint=USDC_MINT,

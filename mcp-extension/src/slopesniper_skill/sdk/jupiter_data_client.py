@@ -8,7 +8,6 @@ for getting token prices and searching for tokens.
 from __future__ import annotations
 
 import asyncio
-import base64
 import os
 from typing import Any
 
@@ -42,79 +41,18 @@ class JupiterDataClient:
         self.logger = Utils.setup_logger("JupiterDataClient")
         self.max_retries = max_retries
 
-        # Get API key: user override > env var > bundled default
-        self.api_key = api_key or os.environ.get("JUPITER_API_KEY") or self._get_bundled_key()
+        # Get API key from explicit user-provided sources only.
+        # Public releases must never fetch or decode bundled secrets from GitHub.
+        self.api_key = api_key or os.environ.get("JUPITER_API_KEY") or ""
 
-        if os.environ.get("JUPITER_API_KEY"):
-            self.logger.info("[__init__] JupiterDataClient initialized with custom API key")
-        elif api_key:
-            self.logger.info("[__init__] JupiterDataClient initialized with provided API key")
+        if self.api_key:
+            source = "provided argument" if api_key else "JUPITER_API_KEY"
+            self.logger.info(f"[__init__] JupiterDataClient initialized with API key from {source}")
         else:
-            self.logger.info("[__init__] JupiterDataClient initialized with bundled API key")
-
-    def _get_bundled_key(self) -> str:
-        """
-        Get bundled Jupiter API key from remote config.
-
-        The key is fetched from GitHub and decoded at runtime.
-        No fallback key is embedded in code for security.
-        """
-        config_url = os.environ.get(
-            "SLOPESNIPER_CONFIG_URL",
-            "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/config/jup.json",
-        )
-
-        try:
-            import json
-            import urllib.request
-
-            req = urllib.request.Request(
-                config_url, headers={"User-Agent": f"SlopeSniper/{self._get_version()}"}
+            self.logger.info(
+                "[__init__] JupiterDataClient initialized without API key; "
+                "set JUPITER_API_KEY or run `slopesniper config --set-jupiter-key` for higher rate limits"
             )
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode())
-
-                # Decode key based on version
-                version = data.get("v", 0)
-
-                if version == 1 and data.get("k"):
-                    # v1: XOR obfuscated
-                    key = self._decode_v1(data["k"])
-                    if key:
-                        self.logger.debug("[_get_bundled_key] Fetched key from config (v1)")
-                        return key
-
-                # Legacy format (plain key) - for backwards compatibility
-                if data.get("key"):
-                    self.logger.debug("[_get_bundled_key] Fetched key (legacy format)")
-                    return data["key"]
-
-        except Exception as e:
-            self.logger.warning(f"[_get_bundled_key] Could not fetch config: {e}")
-            self.logger.warning("[_get_bundled_key] Set JUPITER_API_KEY env var or check network")
-
-        return ""
-
-    def _get_version(self) -> str:
-        """Get package version for User-Agent."""
-        try:
-            from .. import __version__
-
-            return __version__
-        except Exception:
-            return "0.0.0"
-
-    def _decode_v1(self, encoded: str) -> str:
-        """Decode v1 format (XOR obfuscated)."""
-        _p = "slopesniper"
-        _y = "2024"
-        try:
-            xored = base64.b64decode(encoded)
-            key = f"{_p}{_y}"
-            key_bytes = (key * ((len(xored) // len(key)) + 1))[: len(xored)]
-            return bytes(a ^ b for a, b in zip(xored, key_bytes.encode(), strict=False)).decode()
-        except Exception:
-            return ""
 
     async def _make_request(
         self,

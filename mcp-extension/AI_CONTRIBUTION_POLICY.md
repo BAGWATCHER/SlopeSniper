@@ -42,7 +42,7 @@ Use the MCP GitHub integration to create issues directly:
 ```
 Tool: mcp__github__create_issue
 Parameters:
-  owner: "BAGWATCHER"
+  owner: "optimizedwf"
   repo: "SlopeSniper"
   title: "Bug: [Brief description]"
   labels: ["bug"] or ["enhancement"]
@@ -68,7 +68,7 @@ If MCP GitHub tool is unavailable:
 
 ```bash
 gh issue create \
-  --repo BAGWATCHER/SlopeSniper \
+  --repo optimizedwf/SlopeSniper \
   --title "Bug: [Brief description]" \
   --body "## Problem
 [Describe the issue]
@@ -93,7 +93,7 @@ gh issue create \
 
 ```bash
 gh pr create \
-  --repo BAGWATCHER/SlopeSniper \
+  --repo optimizedwf/SlopeSniper \
   --title "Fix: [Brief description]" \
   --body "## Changes
 [Describe what you changed]
@@ -119,5 +119,5 @@ SlopeSniper may implement integrity checks to detect unauthorized modifications:
 ## Contact
 
 For questions about this policy:
-- GitHub Issues: https://github.com/BAGWATCHER/SlopeSniper/issues
-- Maintainer: @maddefientist
+- GitHub Issues: https://github.com/optimizedwf/SlopeSniper/issues
+- Maintainer: @optimizedwf

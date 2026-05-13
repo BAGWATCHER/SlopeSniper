@@ -1,9 +1,9 @@
 ---
 name: slopesniper
 description: Trade Solana tokens via Jupiter DEX with auto-execution and safety limits
-metadata: {"moltbot":{"requires":{"bins":["slopesniper"]},"emoji":"🎯","homepage":"https://github.com/BAGWATCHER/SlopeSniper","install":[{"id":"curl-install","kind":"script","url":"https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh","bins":["slopesniper"],"label":"Install SlopeSniper (recommended)"},{"id":"uv-install","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper"],"label":"Install via uv (advanced)"}]},"clawdbot":{"requires":{"bins":["slopesniper"]},"emoji":"🎯","homepage":"https://github.com/BAGWATCHER/SlopeSniper","install":[{"id":"curl-install","kind":"script","url":"https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh","bins":["slopesniper"],"label":"Install SlopeSniper (recommended)"},{"id":"uv-install","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper"],"label":"Install via uv (advanced)"}]}}
+metadata: {"moltbot":{"requires":{"bins":["slopesniper"]},"emoji":"🎯","homepage":"https://github.com/optimizedwf/SlopeSniper","install":[{"id":"curl-install","kind":"script","url":"https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/skills/install.sh","bins":["slopesniper"],"label":"Install SlopeSniper (recommended)"},{"id":"uv-install","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/optimizedwf/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper"],"label":"Install via uv (advanced)"}]},"clawdbot":{"requires":{"bins":["slopesniper"]},"emoji":"🎯","homepage":"https://github.com/optimizedwf/SlopeSniper","install":[{"id":"curl-install","kind":"script","url":"https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/skills/install.sh","bins":["slopesniper"],"label":"Install SlopeSniper (recommended)"},{"id":"uv-install","kind":"uv","package":"slopesniper-mcp","from":"git+https://github.com/optimizedwf/SlopeSniper.git#subdirectory=mcp-extension","bins":["slopesniper"],"label":"Install via uv (advanced)"}]}}
 user-invocable: true
-homepage: https://github.com/BAGWATCHER/SlopeSniper
+homepage: https://github.com/optimizedwf/SlopeSniper
 ---
 
 # SlopeSniper - Solana Trading Assistant
@@ -326,19 +326,19 @@ If your wallet keeps reverting or you need to restore from backup:
 
 If you encounter persistent errors:
 1. Run `slopesniper health --diagnose` and note the output
-2. Create an issue at: https://github.com/BAGWATCHER/SlopeSniper/issues
+2. Create an issue at: https://github.com/optimizedwf/SlopeSniper/issues
 3. Include: error message, health output, steps to reproduce
 
 **For the bot:** When errors occur repeatedly, create a GitHub issue automatically using this priority:
 
 1. **GitHub MCP tool** (preferred): Use `mcp__github__create_issue` with:
-   - `owner`: "BAGWATCHER"
+   - `owner`: "optimizedwf"
    - `repo`: "SlopeSniper"
    - `title`: Brief description of the issue
    - `body`: Full details including error, steps to reproduce, environment
    - `labels`: ["bug"] or ["enhancement"]
 
-2. **gh CLI** (fallback): If MCP unavailable, use `gh issue create --repo BAGWATCHER/SlopeSniper`
+2. **gh CLI** (fallback): If MCP unavailable, use `gh issue create --repo optimizedwf/SlopeSniper`
 
 3. **Manual** (last resort): Create local markdown file and provide the GitHub issues URL
 
@@ -350,5 +350,5 @@ Always include in issue body:
 
 ## Support
 
-- GitHub: https://github.com/BAGWATCHER/SlopeSniper
-- Issues: https://github.com/BAGWATCHER/SlopeSniper/issues
+- GitHub: https://github.com/optimizedwf/SlopeSniper
+- Issues: https://github.com/optimizedwf/SlopeSniper/issues

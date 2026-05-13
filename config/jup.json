@@ -1,4 +1,5 @@
 {
-  "k": "El5aE1ZEWwhdUhYDAx8AR15aXQcRDVBdA0pWCFBSR1xXFlRC",
-  "v": 1
+  "v": 2,
+  "description": "Public example only. SlopeSniper does not ship bundled API keys. Set JUPITER_API_KEY or run `slopesniper config --set-jupiter-key YOUR_KEY`.",
+  "key": null
 }

@@ -2,8 +2,8 @@
 
 **Safe Solana token trading for Claude Code with policy-enforced two-step swaps.**
 
-[![CI](https://github.com/slopesniper/slopesniper-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/slopesniper/slopesniper-skill/actions/workflows/ci.yml)
-[![PyPI version](https://badge.fury.io/py/slopesniper-skill.svg)](https://badge.fury.io/py/slopesniper-skill)
+[![CI](https://github.com/optimizedwf/SlopeSniper/actions/workflows/ci.yml/badge.svg)](https://github.com/optimizedwf/SlopeSniper/actions/workflows/ci.yml)
+[![PyPI version](https://badge.fury.io/py/SlopeSniper.svg)](https://badge.fury.io/py/SlopeSniper)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
@@ -44,7 +44,7 @@ asyncio.run(main())
 ## Installation
 
 ```bash
-pip install slopesniper-skill
+pip install SlopeSniper
 ```
 
 ## Features

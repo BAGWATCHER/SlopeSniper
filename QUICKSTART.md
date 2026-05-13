@@ -14,7 +14,7 @@ The absolute fastest way to start trading Solana tokens with AI.
 ## Step 1: Install (1 minute)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/skills/install.sh | bash
 ```
 
 ---
@@ -58,7 +58,7 @@ You: what's trending?
 
 **Next steps:**
 - Back up your key: `slopesniper export`
-- Learn commands: [SKILL.md](https://github.com/BAGWATCHER/SlopeSniper/blob/main/skills/slopesniper/SKILL.md)
+- Learn commands: [SKILL.md](https://github.com/optimizedwf/SlopeSniper/blob/main/skills/slopesniper/SKILL.md)
 - Read the [FAQ](FAQ.md)
 
 **Problems?** See [SETUP_GUIDE.md](SETUP_GUIDE.md) for detailed help.

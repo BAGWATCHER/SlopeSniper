@@ -1,16 +1,11 @@
 """Tests for intent storage functionality."""
 
-import pytest
-import time
-from datetime import datetime, timezone
-
 from slopesniper_skill.tools.intents import (
     create_intent,
     get_intent,
     mark_executed,
     list_pending_intents,
     get_intent_time_remaining,
-    cleanup_expired,
     INTENT_TTL_SECONDS,
 )
 

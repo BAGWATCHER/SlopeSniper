@@ -990,7 +990,9 @@ async def quick_trade(
 
         if targets_removed > 0:
             result["targets_removed"] = targets_removed
-            result["cleanup_note"] = f"Removed {targets_removed} monitoring target(s) for {token_symbol} (position closed)"
+            result["cleanup_note"] = (
+                f"Removed {targets_removed} monitoring target(s) for {token_symbol} (position closed)"
+            )
 
         return result
     else:

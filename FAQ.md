@@ -244,6 +244,6 @@ slopesniper config --set-rpc helius YOUR_KEY
 
 ## Still Have Questions?
 
-**GitHub Issues:** [github.com/BAGWATCHER/SlopeSniper/issues](https://github.com/BAGWATCHER/SlopeSniper/issues)
+**GitHub Issues:** [github.com/optimizedwf/SlopeSniper/issues](https://github.com/optimizedwf/SlopeSniper/issues)
 
-**Documentation:** [github.com/BAGWATCHER/SlopeSniper](https://github.com/BAGWATCHER/SlopeSniper)
+**Documentation:** [github.com/optimizedwf/SlopeSniper](https://github.com/optimizedwf/SlopeSniper)

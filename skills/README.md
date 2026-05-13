@@ -5,7 +5,7 @@ Trade Solana tokens using natural language through Moltbot.
 ## One-Line Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/skills/install.sh | bash
 ```
 
 ## Manual Install
@@ -14,11 +14,11 @@ curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/
 
 ```bash
 # Clone and copy
-git clone https://github.com/BAGWATCHER/SlopeSniper.git
+git clone https://github.com/optimizedwf/SlopeSniper.git
 cp -r SlopeSniper/skills/slopesniper ~/.moltbot/skills/
 
 # Install the Python package
-uv pip install "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension"
+uv pip install "slopesniper-mcp @ git+https://github.com/optimizedwf/SlopeSniper.git#subdirectory=mcp-extension"
 ```
 
 ### Option 2: ClawdHub (coming soon)
@@ -157,5 +157,5 @@ The wallet file (`~/.slopesniper/wallet.enc`) is encrypted and machine-bound—i
 
 ## Support
 
-- [GitHub Issues](https://github.com/BAGWATCHER/SlopeSniper/issues)
-- [Documentation](https://github.com/BAGWATCHER/SlopeSniper)
+- [GitHub Issues](https://github.com/optimizedwf/SlopeSniper/issues)
+- [Documentation](https://github.com/optimizedwf/SlopeSniper)

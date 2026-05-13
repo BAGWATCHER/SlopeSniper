@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: github-pages
   cancel-in-progress: false
 
 jobs:
@@ -25,12 +25,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install docs dependencies
         run: |
-          pip install -e ".[docs]"
+          python -m pip install --upgrade pip
+          python -m pip install -e "mcp-extension[docs]"
 
       - name: Build docs
-        run: mkdocs build
+        run: mkdocs build --strict
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

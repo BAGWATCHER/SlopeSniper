@@ -105,7 +105,7 @@ Now that Moltbot is running, let's add the trading skill.
 ### Step 1: Install SlopeSniper
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/skills/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/skills/install.sh | bash
 ```
 
 ✅ **You'll know it worked when:** You see "Installation complete!"
@@ -181,7 +181,7 @@ export PATH="$HOME/.local/bin:$PATH"
 **Fix:** The installation didn't complete. Try manually:
 ```bash
 curl -fsSL https://astral.sh/uv/install.sh | sh
-uv tool install "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension"
+uv tool install "slopesniper-mcp @ git+https://github.com/optimizedwf/SlopeSniper.git#subdirectory=mcp-extension"
 ```
 
 ### "Gateway is not running"
@@ -214,7 +214,7 @@ slopesniper strategy --slippage 300
 ## Next Steps
 
 🎓 **Learn the commands:**
-- Read [SKILL.md](https://github.com/BAGWATCHER/SlopeSniper/blob/main/skills/slopesniper/SKILL.md)
+- Read [SKILL.md](https://github.com/optimizedwf/SlopeSniper/blob/main/skills/slopesniper/SKILL.md)
 - All commands work via natural language
 
 ⚙️ **Customize your strategy:**
@@ -249,8 +249,8 @@ slopesniper history    # Recent trades
 
 ## Get Help
 
-- **GitHub Issues:** [github.com/BAGWATCHER/SlopeSniper/issues](https://github.com/BAGWATCHER/SlopeSniper/issues)
-- **Official Docs:** [github.com/BAGWATCHER/SlopeSniper](https://github.com/BAGWATCHER/SlopeSniper)
+- **GitHub Issues:** [github.com/optimizedwf/SlopeSniper/issues](https://github.com/optimizedwf/SlopeSniper/issues)
+- **Official Docs:** [github.com/optimizedwf/SlopeSniper](https://github.com/optimizedwf/SlopeSniper)
 
 ---
 

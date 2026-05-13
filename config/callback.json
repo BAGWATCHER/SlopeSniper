@@ -1,5 +1,6 @@
 {
-  "v": 2,
-  "t": "AB8wEwodGhsZBy0AXgpBQVoDQ11YEQFCW1EWUxZXWgxEE15XRV1ZEV1FVg==",
-  "gh": "FAUbGBARMRkRES1WWDYnMSlBWD5ANCoLWkQrJT0mIxssPTYKGUQgBh4vMVUgAB8MMC0OBx05QSYHKlglDzlSXC1fGwQhXCABFyQpDRo9NildJikgNj0qHyYRNigb"
+  "v": 3,
+  "description": "Public example only. Do not store callback, GitHub, Discord, or API tokens in this repository. Use GitHub Actions secrets or local environment variables instead.",
+  "callback_token": null,
+  "github_token": null
 }

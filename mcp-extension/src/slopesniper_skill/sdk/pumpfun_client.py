@@ -15,8 +15,8 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+from collections.abc import AsyncIterator, Callable
 from datetime import datetime
-from typing import Any, AsyncIterator, Callable
 
 import websockets
 from websockets.exceptions import ConnectionClosed

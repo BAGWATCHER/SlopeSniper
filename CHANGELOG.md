@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Discord release notification JSON parsing errors (using jq for safe escaping)
 
 ### Changed
-- Updated BAGWATCHER PAT with proper scopes (secrets, workflow)
+- Updated optimizedwf PAT with proper scopes (secrets, workflow)
 
 ## [0.3.3] - 2026-01-29
 
@@ -121,7 +121,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Batch price polling for efficiency
 
 ### Changed
-- **README.md**: Fixed repository URLs (maddefientist -> BAGWATCHER)
+- **README.md**: Fixed repository URLs (maddefientist -> optimizedwf)
 - Updated version badge to current version
 
 ## [0.2.92] - 2026-01-27
@@ -322,25 +322,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.41...HEAD
-[0.3.41]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.4...v0.3.41
-[0.3.4]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.3...v0.3.4
-[0.3.3]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.2...v0.3.3
-[0.3.2]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.1...v0.3.2
-[0.3.1]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.03...v0.3.1
-[0.3.03]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.02...v0.3.03
-[0.3.02]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.3.0...v0.3.02
-[0.3.0]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.92...v0.3.0
-[0.2.92]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.91...v0.2.92
-[0.2.91]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.9...v0.2.91
-[0.2.9]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.8...v0.2.9
-[0.2.8]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.7...v0.2.8
-[0.2.7]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.6...v0.2.7
-[0.2.6]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.5...v0.2.6
-[0.2.5]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.4...v0.2.5
-[0.2.4]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.3...v0.2.4
-[0.2.3]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.2...v0.2.3
-[0.2.2]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.1...v0.2.2
-[0.2.1]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/BAGWATCHER/SlopeSniper/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/BAGWATCHER/SlopeSniper/releases/tag/v0.1.0
+[Unreleased]: https://github.com/optimizedwf/SlopeSniper/compare/v0.3.41...HEAD
+[0.3.41]: https://github.com/optimizedwf/SlopeSniper/compare/v0.3.4...v0.3.41
+[0.3.4]: https://github.com/optimizedwf/SlopeSniper/compare/v0.3.3...v0.3.4
+[0.3.3]: https://github.com/optimizedwf/SlopeSniper/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/optimizedwf/SlopeSniper/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/optimizedwf/SlopeSniper/compare/v0.3.03...v0.3.1
+[0.3.03]: https://github.com/optimizedwf/SlopeSniper/compare/v0.3.02...v0.3.03
+[0.3.02]: https://github.com/optimizedwf/SlopeSniper/compare/v0.3.0...v0.3.02
+[0.3.0]: https://github.com/optimizedwf/SlopeSniper/compare/v0.2.92...v0.3.0
+[0.2.92]: https://github.com/optimizedwf/SlopeSniper/compare/v0.2.91...v0.2.92
+[0.2.91]: https://github.com/optimizedwf/SlopeSniper/compare/v0.2.9...v0.2.91
+[0.2.9]: https://github.com/optimizedwf/SlopeSniper/compare/v0.2.8...v0.2.9
+[0.2.8]: https://github.com/optimizedwf/SlopeSniper/compare/v0.2.7...v0.2.8
+[0.2.7]: https://github.com/optimizedwf/SlopeSniper/compare/v0.2.6...v0.2.7
+[0.2.6]: https://github.com/optimizedwf/SlopeSniper/compare/v0.2.5...v0.2.6
+[0.2.5]: https://github.com/optimizedwf/SlopeSniper/compare/v0.2.4...v0.2.5
+[0.2.4]: https://github.com/optimizedwf/SlopeSniper/compare/v0.2.3...v0.2.4
+[0.2.3]: https://github.com/optimizedwf/SlopeSniper/compare/v0.2.2...v0.2.3
+[0.2.2]: https://github.com/optimizedwf/SlopeSniper/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/optimizedwf/SlopeSniper/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/optimizedwf/SlopeSniper/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/optimizedwf/SlopeSniper/releases/tag/v0.1.0

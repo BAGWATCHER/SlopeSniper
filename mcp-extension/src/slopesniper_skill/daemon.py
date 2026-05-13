@@ -18,8 +18,6 @@ import os
 import signal
 import sys
 import time
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from .tools.config import SLOPESNIPER_DIR
@@ -138,9 +136,7 @@ class SlopeSniperDaemon:
                             f"SOLD: {target.symbol} - sig: {result.get('signature', 'N/A')}"
                         )
                     else:
-                        self.logger.error(
-                            f"SELL FAILED: {target.symbol} - {result.get('error')}"
-                        )
+                        self.logger.error(f"SELL FAILED: {target.symbol} - {result.get('error')}")
 
             except Exception as e:
                 self.logger.error(f"Error checking target {target.id}: {e}")

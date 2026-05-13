@@ -475,9 +475,7 @@ def cmd_health(diagnose: bool = False) -> None:
     - Overall system health
     """
     from . import __version__
-
     from .tools.config import (
-        get_config_status,
         get_wallet_integrity_status,
         get_wallet_sync_status,
         load_user_config,
@@ -503,7 +501,7 @@ def cmd_health(diagnose: bool = False) -> None:
         },
         "jupiter_api_key": {
             "configured": bool(config.get("jupiter_api_key")),
-            "source": "local_config" if config.get("jupiter_api_key") else "bundled",
+            "source": "local_config" if config.get("jupiter_api_key") else "not_configured",
         },
         "rpc": {
             "configured": bool(config.get("rpc_provider")),
@@ -559,8 +557,8 @@ def cmd_version(check_latest: bool = False) -> None:
     result = {
         "version": __version__,
         "package": "slopesniper-mcp",
-        "repo": "https://github.com/BAGWATCHER/SlopeSniper",
-        "changelog": "https://github.com/BAGWATCHER/SlopeSniper/blob/main/CHANGELOG.md",
+        "repo": "https://github.com/optimizedwf/SlopeSniper",
+        "changelog": "https://github.com/optimizedwf/SlopeSniper/blob/main/CHANGELOG.md",
     }
 
     if check_latest:
@@ -569,7 +567,7 @@ def cmd_version(check_latest: bool = False) -> None:
             import urllib.request
 
             # Fetch pyproject.toml from GitHub to get latest version
-            url = "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/mcp-extension/pyproject.toml"
+            url = "https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/mcp-extension/pyproject.toml"
             req = urllib.request.Request(url, headers={"User-Agent": "SlopeSniper"})
             with urllib.request.urlopen(req, timeout=5) as resp:
                 content = resp.read().decode()
@@ -610,7 +608,7 @@ def cmd_update() -> None:
                 "uv",
                 "tool",
                 "install",
-                "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension",
+                "slopesniper-mcp @ git+https://github.com/optimizedwf/SlopeSniper.git#subdirectory=mcp-extension",
                 "--force",
                 "--refresh",  # Bust git cache
             ],
@@ -633,7 +631,7 @@ def cmd_update() -> None:
                     "install",
                     "--force-reinstall",
                     "--refresh",  # Bust git cache
-                    "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension",
+                    "slopesniper-mcp @ git+https://github.com/optimizedwf/SlopeSniper.git#subdirectory=mcp-extension",
                 ],
                 capture_output=True,
                 text=True,
@@ -653,7 +651,7 @@ def cmd_update() -> None:
                     "install",
                     "--force-reinstall",
                     "--no-cache-dir",  # Bust pip cache
-                    "slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension",
+                    "slopesniper-mcp @ git+https://github.com/optimizedwf/SlopeSniper.git#subdirectory=mcp-extension",
                 ],
                 capture_output=True,
                 text=True,
@@ -668,7 +666,7 @@ def cmd_update() -> None:
         print_json(
             {
                 "error": "Update failed",
-                "suggestion": "Try manually: uv tool install 'slopesniper-mcp @ git+https://github.com/BAGWATCHER/SlopeSniper.git#subdirectory=mcp-extension' --force",
+                "suggestion": "Try manually: uv tool install 'slopesniper-mcp @ git+https://github.com/optimizedwf/SlopeSniper.git#subdirectory=mcp-extension' --force",
             }
         )
         return
@@ -678,7 +676,7 @@ def cmd_update() -> None:
     changelog_summary = []
     try:
         # Get version
-        version_url = "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/mcp-extension/pyproject.toml"
+        version_url = "https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/mcp-extension/pyproject.toml"
         req = urllib.request.Request(version_url, headers={"User-Agent": "SlopeSniper"})
         with urllib.request.urlopen(req, timeout=5) as resp:
             content = resp.read().decode()
@@ -687,7 +685,9 @@ def cmd_update() -> None:
                 new_version = match.group(1)
 
         # Get recent changelog
-        changelog_url = "https://raw.githubusercontent.com/BAGWATCHER/SlopeSniper/main/CHANGELOG.md"
+        changelog_url = (
+            "https://raw.githubusercontent.com/optimizedwf/SlopeSniper/main/CHANGELOG.md"
+        )
         req = urllib.request.Request(changelog_url, headers={"User-Agent": "SlopeSniper"})
         with urllib.request.urlopen(req, timeout=5) as resp:
             changelog = resp.read().decode()
@@ -727,7 +727,7 @@ def cmd_update() -> None:
         print("-" * 50)
         print("")
 
-    print("Full changelog: https://github.com/BAGWATCHER/SlopeSniper/blob/main/CHANGELOG.md")
+    print("Full changelog: https://github.com/optimizedwf/SlopeSniper/blob/main/CHANGELOG.md")
     print("")
 
 
@@ -862,7 +862,7 @@ def cmd_contribute(
         # No URL needed - contributions go to GitHub Issues
         result = enable_contribution_callbacks()
         result["method"] = "GitHub Issues"
-        result["repo"] = "BAGWATCHER/SlopeSniper"
+        result["repo"] = "optimizedwf/SlopeSniper"
         print_json(result)
     elif disable:
         result = disable_contribution_callbacks()
@@ -1022,7 +1022,7 @@ async def cmd_watch_foreground(
     mint = resolved["mint"]
     symbol = resolved.get("symbol", token)
     entry_price = resolved.get("price_usd", 0)
-    entry_mcap = resolved.get("mcap")
+    resolved.get("mcap")
     peak_price = entry_price
 
     print("")
@@ -1083,7 +1083,7 @@ async def cmd_watch_foreground(
                 if triggered:
                     print("")
                     print("=" * 60)
-                    print(f"  TARGET HIT!")
+                    print("  TARGET HIT!")
                     print("=" * 60)
                     print("")
                     print(f"Executing sell ({sell})...")
@@ -1098,9 +1098,7 @@ async def cmd_watch_foreground(
 
                         wallet = await solana_get_wallet()
                         tokens = wallet.get("tokens", [])
-                        holdings = next(
-                            (t for t in tokens if t.get("mint") == mint), None
-                        )
+                        holdings = next((t for t in tokens if t.get("mint") == mint), None)
                         if holdings:
                             token_amt = holdings.get("amount", 0)
                             value_usd = holdings.get("value_usd", 0)
@@ -1254,14 +1252,14 @@ def main() -> None:
                     try:
                         slippage_bps = int(args[i + 1])
                     except ValueError:
-                        print(f"Error: slippage must be an integer (basis points)")
+                        print("Error: slippage must be an integer (basis points)")
                         sys.exit(1)
                     i += 2
                 elif arg in ("--max-trade", "-m") and i + 1 < len(args):
                     try:
                         max_trade_usd = float(args[i + 1])
                     except ValueError:
-                        print(f"Error: max-trade must be a number (USD)")
+                        print("Error: max-trade must be a number (USD)")
                         sys.exit(1)
                     i += 2
                 elif not arg.startswith("-"):
@@ -1341,21 +1339,28 @@ def main() -> None:
         # ================================================================
         elif cmd == "target":
             if len(args) < 2:
-                print_json({
-                    "error": "Missing subcommand",
-                    "usage": [
-                        "slopesniper target add TOKEN --mcap VALUE --sell all",
-                        "slopesniper target list [--all]",
-                        "slopesniper target remove ID",
-                    ],
-                })
+                print_json(
+                    {
+                        "error": "Missing subcommand",
+                        "usage": [
+                            "slopesniper target add TOKEN --mcap VALUE --sell all",
+                            "slopesniper target list [--all]",
+                            "slopesniper target remove ID",
+                        ],
+                    }
+                )
                 sys.exit(1)
 
             subcmd = args[1].lower()
 
             if subcmd == "add":
                 if len(args) < 3:
-                    print_json({"error": "Missing token", "usage": "slopesniper target add TOKEN --mcap VALUE"})
+                    print_json(
+                        {
+                            "error": "Missing token",
+                            "usage": "slopesniper target add TOKEN --mcap VALUE",
+                        }
+                    )
                     sys.exit(1)
 
                 token = args[2]
@@ -1391,7 +1396,9 @@ def main() -> None:
 
             elif subcmd == "remove":
                 if len(args) < 3:
-                    print_json({"error": "Missing target ID", "usage": "slopesniper target remove ID"})
+                    print_json(
+                        {"error": "Missing target ID", "usage": "slopesniper target remove ID"}
+                    )
                     sys.exit(1)
                 try:
                     target_id = int(args[2])
@@ -1406,7 +1413,9 @@ def main() -> None:
 
         elif cmd == "watch":
             if len(args) < 2:
-                print_json({"error": "Missing token", "usage": "slopesniper watch TOKEN --mcap VALUE"})
+                print_json(
+                    {"error": "Missing token", "usage": "slopesniper watch TOKEN --mcap VALUE"}
+                )
                 sys.exit(1)
 
             token = args[1]
@@ -1438,14 +1447,22 @@ def main() -> None:
                 else:
                     i += 1
 
-            asyncio.run(cmd_watch_foreground(token, mcap, price, pct_gain, trailing, sell, interval))
+            asyncio.run(
+                cmd_watch_foreground(token, mcap, price, pct_gain, trailing, sell, interval)
+            )
 
         elif cmd == "daemon":
             if len(args) < 2:
-                print_json({
-                    "error": "Missing subcommand",
-                    "usage": ["slopesniper daemon start", "slopesniper daemon stop", "slopesniper daemon status"],
-                })
+                print_json(
+                    {
+                        "error": "Missing subcommand",
+                        "usage": [
+                            "slopesniper daemon start",
+                            "slopesniper daemon stop",
+                            "slopesniper daemon status",
+                        ],
+                    }
+                )
                 sys.exit(1)
 
             subcmd = args[1].lower()
@@ -1457,16 +1474,19 @@ def main() -> None:
                     if idx + 1 < len(args):
                         interval = int(args[idx + 1])
                 from .daemon import start_daemon
+
                 result = start_daemon(interval)
                 print_json(result)
 
             elif subcmd == "stop":
                 from .daemon import stop_daemon
+
                 result = stop_daemon()
                 print_json(result)
 
             elif subcmd == "status":
                 from .daemon import get_daemon_status
+
                 result = get_daemon_status()
                 print_json(result)
 
@@ -1477,6 +1497,7 @@ def main() -> None:
                     if idx + 1 < len(args):
                         tail = int(args[idx + 1])
                 from .daemon import get_daemon_logs
+
                 result = get_daemon_logs(tail)
                 print_json(result)
 
